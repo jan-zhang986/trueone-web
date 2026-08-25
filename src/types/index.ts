@@ -4,9 +4,6 @@ import type {
   UserProfile,
 } from '@/services/metadata';
 
-// 导出效能指标类型
-export * from './efficiency';
-
 // 导出消息管理类型
 export * from './message';
 

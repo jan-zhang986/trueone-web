@@ -26,6 +26,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 
 const COLUMNS_CONFIG = [
+  { key: 'caseType', label: '用例类型' },
   { key: 'reviewStatus', label: '评审结果' },
   { key: 'lastExecuteResult', label: '执行结果' },
   { key: 'moduleId', label: '所属模块' },
@@ -45,6 +46,7 @@ export const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
   num: 96,
   name: 180,
   caseLevel: 80,
+  caseType: 96,
   reviewStatus: 96,
   lastExecuteResult: 96,
   moduleId: 144,

@@ -108,7 +108,6 @@ export const routeMap: Record<string, { path: string; params?: Record<string, st
   'quality-workspace': { path: '/quality-workspace' },
   'project-management': { path: '/project-management' },
   'bug-management': { path: '/bug-management' },
-  'gate-management': { path: '/gate-management' },
   'test-factory': { path: '/test-factory' },
   'case-management': { path: '/case-management' },
   'precision-test': { path: '/precision-test' },

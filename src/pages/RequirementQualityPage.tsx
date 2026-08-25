@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Archive,
   ArrowRight,
+  Bookmark,
   ClipboardCheck,
   FileText,
   Loader2,
@@ -11,7 +12,6 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
-  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -523,7 +523,7 @@ export function RequirementQualityPage() {
                 <div className="mt-1 text-sm text-slate-500">风险项</div>
               </Card>
               <Card className="rounded-[24px] border-amber-100 bg-white p-5">
-                <Sparkles className="mb-4 h-6 w-6 text-amber-600" />
+                <Bookmark className="mb-4 h-6 w-6 text-amber-600" />
                 <div className="text-3xl font-black text-slate-950">{proposals.length}</div>
                 <div className="mt-1 text-sm text-slate-500">资产沉淀提案</div>
               </Card>

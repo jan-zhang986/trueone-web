@@ -11,8 +11,8 @@ import { Card } from '@/components/ui/card';
 import { BarChart, Bar, PieChart, Pie, Cell, Sector, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
 import { MetricCard, UserFilterBar } from '@/components/features/snap-test/components';
 import { useUserFilter, useSnapTestData, useSnapTestCharts } from '@/components/features/snap-test/hooks';
-import { PermissionGate } from '@/components/features/efficiency-dashboard/components/PermissionGate';
-import { usePermissionCheck, useSystemAdminCheck } from '@/components/features/efficiency-dashboard/hooks';
+import { PermissionGate } from '@/components/PermissionGate';
+import { usePermissionCheck, useSystemAdminCheck } from '@/hooks/usePermissionCheck';
 import type { SnapTestTimeRangeType, ComplexityDetailItem } from '@/types/snap-test';
 
 export type { SnapTestMetrics } from '@/types/snap-test';

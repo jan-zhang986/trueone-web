@@ -10,6 +10,9 @@ export interface CaseItem {
   projectId: string;
   moduleId?: string;
   moduleName?: string;
+  /** 用例类型：FUNCTIONAL / API / UI_AUTOMATION / PERF */
+  type?: string;
+  caseType?: string;
   /** 用例等级（从 customFields 解析） */
   caseLevel?: string;
   /** 评审结果：UN_REVIEWED/UNDER_REVIEWED/PASS/UN_PASS/RE_REVIEWED */

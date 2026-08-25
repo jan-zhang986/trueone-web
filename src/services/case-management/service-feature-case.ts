@@ -896,6 +896,11 @@ export interface CaseRepositoryItem {
   code?: string;
   defaultBranch?: string;
   description?: string;
+  creator?: string;
+  createUser?: string;
+  updateUser?: string;
+  createTime?: number;
+  updateTime?: number;
   branches?: string[];
   caseCount?: number;
 }
@@ -906,6 +911,14 @@ export function getCaseRepositories(projectId?: string, spaceId?: string) {
   });
 }
 
-export function createCaseRepository(data: { name: string; code?: string; defaultBranch?: string; description?: string }) {
+export function createCaseRepository(data: { name: string; code?: string; defaultBranch?: string; description?: string; creator?: string }) {
   return http.post<CaseRepositoryItem>('/api/case/repository/create', data);
+}
+
+export function updateCaseRepository(data: { id: string; name?: string; code?: string; defaultBranch?: string; description?: string }) {
+  return http.post<CaseRepositoryItem>('/api/case/repository/update', data);
+}
+
+export function deleteCaseRepository(id: string) {
+  return http.delete<boolean>(`/api/case/repository/delete/${id}`);
 }

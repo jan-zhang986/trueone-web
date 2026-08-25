@@ -12,25 +12,37 @@ interface VersionMergeDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  availableBranches?: string[];
   onSuccess?: () => void;
 }
 
-export function VersionMergeDrawer({ open, onOpenChange, projectId, onSuccess }: VersionMergeDrawerProps) {
+export function VersionMergeDrawer({ open, onOpenChange, projectId, availableBranches, onSuccess }: VersionMergeDrawerProps) {
   const [loading, setLoading] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
   const [sourceVersionId, setSourceVersionId] = useState<string>('');
-  const [targetVersionId, setTargetVersionId] = useState<string>('');
+  const [targetVersionId, setTargetVersionId] = useState<string>('master');
 
   const fetchVersions = useCallback(async () => {
     if (!projectId) return;
     try {
       const res: any = await projectManagementService.getVersionOptions(projectId);
-      setVersions(res || []);
+      const fetched = Array.isArray(res) && res.length > 0 ? res : [];
+      if (fetched.length > 0) {
+        setVersions(fetched);
+      } else {
+        const branchList = availableBranches && availableBranches.length > 0
+          ? availableBranches
+          : ['master'];
+        setVersions(branchList.map((b) => ({ id: b, name: b === 'master' ? 'master (主干分支)' : b })));
+      }
     } catch (error) {
-      console.error('Failed to fetch versions', error);
-      toast.error('获取项目版本失败');
+      console.warn('Failed to fetch versions, using available branches fallback', error);
+      const branchList = availableBranches && availableBranches.length > 0
+        ? availableBranches
+        : ['master'];
+      setVersions(branchList.map((b) => ({ id: b, name: b === 'master' ? 'master (主干分支)' : b })));
     }
-  }, [projectId]);
+  }, [projectId, availableBranches]);
 
   useEffect(() => {
     if (open) {

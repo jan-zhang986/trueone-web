@@ -189,15 +189,13 @@ request.interceptors.request.use(
     }
 
     // 添加 API 前缀（如果URL还没有这个前缀）
-    // 例外：/metrics/dashboard 和 /functional/case/metrics 开头的 URL 不添加 /api 前缀，直接通过 nginx 代理
+    // 例外：部分路径不添加 /api 前缀，直接通过 nginx 代理
     if (config.url && !config.url.startsWith('http') && API_PREFIX && !config.url.startsWith(API_PREFIX)) {
       // 这些路径需要直接使用，不添加 /api 前缀，由 nginx 代理转发
       const directProxyPaths = [
         '/import/database/table',
-        '/metrics/dashboard',
         '/metrics/efficiency', // 数据监控大盘 - Aegis 后端
         '/metrics/requirement-quality',
-        '/functional/case/metrics',
         '/system/user',
         '/user/profile',
         '/lark',

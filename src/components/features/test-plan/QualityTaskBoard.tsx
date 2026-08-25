@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ClipboardCheck, Eye, FlaskConical, Link2, ListChecks, Loader2, Paperclip, PlayCircle, Plus, ShieldCheck, Sparkles, Target, UserRound, Workflow } from 'lucide-react';
+import { AlertTriangle, ClipboardCheck, Eye, FlaskConical, Link2, ListChecks, Loader2, Paperclip, PlayCircle, Plus, ShieldCheck, Target, UserRound, Workflow } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ interface QualityTaskBoardProps {
 }
 
 const TASK_TYPE_META: Record<string, { label: string; tone: string; icon: typeof Target }> = {
-  ANALYSIS: { label: '测试分析', tone: 'bg-sky-50 text-sky-700 ring-sky-100', icon: Sparkles },
+  ANALYSIS: { label: '测试分析', tone: 'bg-sky-50 text-sky-700 ring-sky-100', icon: ListChecks },
   REVIEW: { label: '测试评审', tone: 'bg-cyan-50 text-cyan-700 ring-cyan-100', icon: ClipboardCheck },
   FUNCTIONAL_CHECK: { label: '功能检查', tone: 'bg-blue-50 text-blue-700 ring-blue-100', icon: ClipboardCheck },
   REGRESSION: { label: '回归测试', tone: 'bg-indigo-50 text-indigo-700 ring-indigo-100', icon: Workflow },

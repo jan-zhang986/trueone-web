@@ -3,7 +3,7 @@
  * 消息管理主页面 - 交互与原项目（aegis-next-server）一致，复用 ProjectMessageView
  */
 
-import { usePermissionCheck } from '@/components/features/efficiency-dashboard/hooks/usePermissionCheck';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 import { ProjectMessageView } from '@/components/features/project-management/ProjectMessageView';
 import { Lock } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

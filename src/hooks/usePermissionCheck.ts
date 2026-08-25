@@ -1,7 +1,6 @@
 /**
  * Permission Check Hook
  * 管理权限检查逻辑
- * 从 EfficiencyDashboard.tsx 提取
  */
 
 import { useState, useEffect } from 'react';

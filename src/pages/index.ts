@@ -16,7 +16,4 @@ export { TestReportPage } from './TestReportPage';
 export { TestReportListPage } from './TestReportListPage';
 export { AIAssistantPage } from './AIAssistantPage';
 export { PrecisionTestPage } from './PrecisionTestPage';
-/** Preferred ordinary-user entry for case realizations */
-export { CaseRealizationPage } from './E2EAutomationPage';
-export { SpaceAssetDetailPage } from './SpaceAssetDetailPage';
 export { SystemSettingPage } from './SystemSettingPage';

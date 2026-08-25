@@ -2,7 +2,7 @@
  * 需求质量视图 - 需求详情整页（图表 + 指标 + Top10）
  */
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   TrendingUp,
   AlertTriangle,
@@ -11,11 +11,8 @@ import {
   ArrowLeft,
   Clock,
   Users,
-  GitBranch,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { gateManagementService } from '@/services/gate-management';
-import type { PipelineRecordListItem } from '@/services/gate-management';
 import {
   Bar,
   Line,
@@ -109,33 +106,8 @@ export function RequirementDetailView({ requirement, detail, onBack }: Requireme
     [contributorList]
   );
   const [sortBy, setSortBy] = useState<string>('execCount');
-  const [pipelineList, setPipelineList] = useState<PipelineRecordListItem[]>([]);
-  const [pipelineLoading, setPipelineLoading] = useState(false);
 
   const caseList = useMemo(() => detail?.caseExecutionList ?? [], [detail?.caseExecutionList]);
-
-  const fetchPipelineList = useCallback(async () => {
-    if (!requirement?.id) return;
-    setPipelineLoading(true);
-    try {
-      const res = await gateManagementService.list({
-        storyId: requirement.id,
-        current: 1,
-        pageSize: 200,
-      });
-      setPipelineList(Array.isArray(res?.list) ? res.list : []);
-    } catch {
-      setPipelineList([]);
-    } finally {
-      setPipelineLoading(false);
-    }
-  }, [requirement?.id]);
-
-  useEffect(() => {
-    if (requirement?.id) {
-      fetchPipelineList();
-    }
-  }, [requirement?.id, fetchPipelineList]);
 
   const blockReasonList = useMemo(() => detail?.blockReasonDistribution ?? [], [detail?.blockReasonDistribution]);
   const blockReasonChartData = useMemo(() => {
@@ -706,111 +678,6 @@ export function RequirementDetailView({ requirement, detail, onBack }: Requireme
                       <td className="py-2 px-3 text-gray-400 text-xs">{item.failReason ?? ''}</td>
                     </tr>
                   ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* 区域二：流水线发布明细（独立区域，在用例执行明细下方） */}
-        <Card className="rounded-xl bg-white/5 border border-white/10 p-5">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-white mb-4">
-            <GitBranch className="w-4 h-4" />
-            流水线发布明细
-          </h3>
-          <div className="overflow-auto max-h-96 relative scrollbar-theme-dark-blue">
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-10 bg-[#1a2744] shadow-[0_1px_0_0_rgba(255,255,255,0.1)]">
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-2 px-3 text-gray-300 font-semibold">流水线名称</th>
-                  <th className="text-center py-2 px-2 text-gray-300 font-semibold">发布结果</th>
-                  <th className="text-center py-2 px-2 text-gray-300 font-semibold">发布时间</th>
-                  <th className="text-center py-2 px-2 text-gray-300 font-semibold">回滚</th>
-                  <th className="text-center py-2 px-2 text-gray-300 font-semibold">热修</th>
-                  <th className="text-left py-2 px-3 text-gray-300 font-semibold">环境</th>
-                  <th className="text-left py-2 px-3 text-gray-300 font-semibold">项目</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pipelineLoading ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400">
-                      加载中…
-                    </td>
-                  </tr>
-                ) : pipelineList.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400">
-                      暂无该需求关联的流水线发布记录
-                    </td>
-                  </tr>
-                ) : (
-                  pipelineList.map((row) => {
-                    const flowUrl = row.pipelineUrl || null;
-                    return (
-                    <tr key={row.id} className="border-b border-white/5 hover:bg-white/5">
-                      <td className="py-2 px-3 text-gray-200">
-                        {flowUrl ? (
-                          <a
-                            href={flowUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 hover:underline truncate block max-w-full"
-                            title={`在阿里云 Flow 中打开：${flowUrl}`}
-                          >
-                            {row.pipelineName ?? row.pipelineId ?? '-'}
-                          </a>
-                        ) : (
-                          row.pipelineName ?? row.pipelineId ?? '-'
-                        )}
-                      </td>
-                      <td className="py-2 px-2 text-center">
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            row.deployResult === 'SUCCESS'
-                              ? 'bg-green-500/20 text-green-300'
-                              : row.deployResult === 'FAILED' || row.deployResult === 'ROLLED_BACK'
-                                ? 'bg-red-500/20 text-red-300'
-                                : row.deployResult === 'PENDING'
-                                  ? 'bg-gray-500/20 text-gray-400'
-                                  : 'bg-orange-500/20 text-orange-300'
-                          }`}
-                        >
-                          {row.deployResult === 'SUCCESS'
-                            ? '成功'
-                            : row.deployResult === 'FAILED'
-                              ? '失败'
-                              : row.deployResult === 'ROLLED_BACK'
-                                ? '回滚'
-                                : row.deployResult === 'HOTFIX'
-                                  ? '热修'
-                                  : row.deployResult === 'PENDING'
-                                    ? '待补全'
-                                    : row.deployResult ?? '-'}
-                        </span>
-                      </td>
-                      <td className="py-2 px-2 text-center text-gray-400 text-xs">
-                        {row.deployTime
-                          ? new Date(row.deployTime).toLocaleString('zh-CN', {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '-'}
-                      </td>
-                      <td className="py-2 px-2 text-center text-gray-400">
-                        {row.isRollback ? '是' : '否'}
-                      </td>
-                      <td className="py-2 px-2 text-center text-gray-400">
-                        {row.isHotfix ? '是' : '否'}
-                      </td>
-                      <td className="py-2 px-3 text-gray-400 text-xs">{row.env ?? '-'}</td>
-                      <td className="py-2 px-3 text-gray-400 text-xs">{row.projectName ?? row.projectId ?? '-'}</td>
-                    </tr>
-                    );
-                  })
                 )}
               </tbody>
             </table>

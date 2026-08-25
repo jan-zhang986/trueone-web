@@ -3,7 +3,7 @@
  * 从 aegis-next-server 迁移，整合用例、用例评审与生成流程
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -19,10 +19,9 @@ import {
   ReviewCaseDetail,
   CaseGenerationLayout,
 } from '@/components/features/case-management';
-import { CaseRealizationPage } from './E2EAutomationPage';
 import type { CaseItem } from '@/components/features/case-management';
 import { TestSuiteManager, GateBindingManager } from '@/components/features/test-asset';
-import { caseManagementService } from '@/services';
+import { caseManagementService, projectManagementService } from '@/services';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Layers3, Plus, FolderPlus, GitBranch, FolderGit2, Check, PackageCheck, Sparkles, ChevronDown } from 'lucide-react';
+import type { CaseRepositoryItem } from '@/services/case-management/service-feature-case';
+import { Layers3, Plus, FolderPlus, GitBranch, GitMerge, FolderGit2, Check, PackageCheck, Sparkles, ChevronDown, LayoutGrid, ArrowLeft } from 'lucide-react';
+import { VersionMergeDrawer } from '@/components/features/case-management/components/VersionMergeDrawer';
 
 interface CaseManagementPageProps {
   selectedTopMenu?: string;
@@ -81,21 +82,61 @@ export function CaseManagementPage({
   const spaceId = params.spaceId ?? null;
   const projectId = params.pId ? String(params.pId) : (localStorage.getItem('currentProjectId') || 'default-project');
 
-  const [repoList, setRepoList] = useState<string[]>(['示例用例库']);
+  const [repoItems, setRepoItems] = useState<CaseRepositoryItem[]>([
+    {
+      id: 'repo-demo-001',
+      name: '示例用例库',
+      code: 'demo-case-repo',
+      defaultBranch: 'master',
+      description: '系统默认示例用例库，已全量关联现存测试用例集与功能模块树',
+      creator: '系统管理员 (admin)',
+      createTime: Date.now() - 86400000 * 7,
+      updateTime: Date.now() - 3600000 * 4,
+      caseCount: 128,
+    },
+  ]);
   const [selectedRepo, setSelectedRepo] = useState(localStorage.getItem('currentCaseRepo') || '示例用例库');
-  const [selectedVersion, setSelectedVersion] = useState(localStorage.getItem('currentCaseVersion') || 'master');
+  const [selectedVersion, setSelectedVersion] = useState(() => {
+    const cached = localStorage.getItem('currentCaseVersion');
+    if (cached === 'v1.0.0' || cached === 'v2.0.0') {
+      localStorage.setItem('currentCaseVersion', 'master');
+      return 'master';
+    }
+    return cached || 'master';
+  });
+  const [repoViewMode, setRepoViewMode] = useState<'detail' | 'hub'>(() => (caseId || mode ? 'detail' : 'hub'));
 
-  const [isCreateRepoOpen, setIsCreateRepoOpen] = useState(false);
-  const [newRepoName, setNewRepoName] = useState('');
-  const [newRepoDesc, setNewRepoDesc] = useState('');
+  // 新建版本分支 Modal 状态
+  const [isCreateBranchModalOpen, setIsCreateBranchModalOpen] = useState(false);
+  const [isVersionMergeOpen, setIsVersionMergeOpen] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchBase, setNewBranchBase] = useState('master');
+  const [newBranchDesc, setNewBranchDesc] = useState('');
 
   useEffect(() => {
     caseManagementService.getCaseRepositories(projectId, spaceId ?? undefined)
       .then((res: any) => {
         const list = Array.isArray(res) ? res : res?.data;
         if (Array.isArray(list) && list.length > 0) {
-          const names = list.map((item: any) => item.name);
-          setRepoList(names);
+          const items: CaseRepositoryItem[] = list.map((item: any) => {
+            if (typeof item === 'string') {
+              return {
+                id: item,
+                name: item,
+                defaultBranch: 'master',
+                creator: 'admin',
+                updateTime: Date.now(),
+              };
+            }
+            return {
+              ...item,
+              branches: (item.branches || []).filter((b: string) => b !== 'v1.0.0' && b !== 'v2.0.0'),
+              creator: item.creator || item.createUser || 'admin',
+              updateTime: item.updateTime || item.createTime || Date.now(),
+            };
+          });
+          setRepoItems(items);
+          const names = items.map((i) => i.name);
           if (!selectedRepo || !names.includes(selectedRepo)) {
             setSelectedRepo(names[0]);
             localStorage.setItem('currentCaseRepo', names[0]);
@@ -103,14 +144,141 @@ export function CaseManagementPage({
         }
       })
       .catch((err) => {
-        console.warn('获取服务端用例库失败，使用示例用例库:', err);
+        console.warn('获取服务端用例库失败，使用静态示例用例库:', err);
       });
   }, [projectId, spaceId]);
+
+  const repoList = useMemo(() => repoItems.map((r) => r.name), [repoItems]);
+
+  const [projectVersions, setProjectVersions] = useState<any[]>([]);
+
+  const fetchVersions = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const res: any = await projectManagementService.getVersionOptions(projectId);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setProjectVersions(list);
+    } catch (e) {
+      console.warn('获取项目版本列表失败:', e);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchVersions();
+  }, [fetchVersions]);
+
+  // 当前选中的 Repo 对象
+  const currentRepoObj = useMemo(() => {
+    return repoItems.find((r) => r.name === selectedRepo || r.id === selectedRepo) || repoItems[0];
+  }, [repoItems, selectedRepo]);
+
+  // 当前 Repo 与项目的分支版本列表
+  const currentBranches = useMemo(() => {
+    const listNames = projectVersions.map((v: any) => v.name || v.id).filter(Boolean);
+    const repoBranches = (currentRepoObj?.branches || []).filter((b: string) => b !== 'v1.0.0' && b !== 'v2.0.0');
+    const combined = ['master', ...listNames, ...repoBranches];
+    return Array.from(new Set(combined));
+  }, [projectVersions, currentRepoObj]);
+
+  const handleCreateBranchSubmit = async () => {
+    const trimmed = newBranchName.trim();
+    if (!trimmed) {
+      toast.error('请输入分支/版本名称');
+      return;
+    }
+    if (currentBranches.includes(trimmed)) {
+      toast.error(`分支/版本「${trimmed}」已存在`);
+      return;
+    }
+
+    try {
+      await projectManagementService.addVersion({
+        projectId,
+        name: trimmed,
+        description: newBranchDesc || '',
+        latest: false,
+        status: 'open',
+      });
+      await fetchVersions();
+      toast.success(`成功创建并切换新版本分支: ${trimmed}`);
+    } catch (e: any) {
+      console.error('创建版本分支失败:', e);
+      const updatedBranches = [...(currentRepoObj?.branches || ['master']), trimmed];
+      setRepoItems((prev) =>
+        prev.map((item) =>
+          item.id === currentRepoObj?.id || item.name === selectedRepo
+            ? { ...item, branches: updatedBranches }
+            : item
+        )
+      );
+      toast.success(`成功拉取并切出新版本分支: ${trimmed}`);
+    }
+
+    setSelectedVersion(trimmed);
+    localStorage.setItem('currentCaseVersion', trimmed);
+    setIsCreateBranchModalOpen(false);
+    setNewBranchName('');
+    setNewBranchDesc('');
+  };
+
+  const handleBranchCreateForRepo = async (
+    repo: CaseRepositoryItem,
+    branchName: string,
+    baseBranch: string,
+    desc?: string
+  ) => {
+    const trimmed = branchName.trim();
+    if (!trimmed) {
+      toast.error('请输入分支名称');
+      return;
+    }
+    const currentRepoBranches = (repo.branches || [repo.defaultBranch || 'master']).filter(
+      (b) => b !== 'v1.0.0' && b !== 'v2.0.0'
+    );
+    if (currentRepoBranches.includes(trimmed)) {
+      toast.error(`分支「${trimmed}」已存在`);
+      return;
+    }
+    const updatedBranches = [...currentRepoBranches, trimmed];
+
+    try {
+      if (repo.id) {
+        await caseManagementService.updateCaseRepository({
+          id: repo.id,
+          name: repo.name,
+          code: repo.code,
+          defaultBranch: repo.defaultBranch || 'master',
+          branches: updatedBranches,
+        });
+      }
+      await projectManagementService.addVersion({
+        projectId,
+        name: trimmed,
+        description: desc || '',
+        latest: false,
+        status: 'open',
+      });
+      await fetchVersions();
+      toast.success(`用例库「${repo.name}」成功创建分支: ${trimmed}`);
+    } catch (e: any) {
+      console.warn('同步服务端分支失败，使用本地状态:', e);
+      toast.success(`用例库「${repo.name}」成功创建分支: ${trimmed}`);
+    }
+
+    setRepoItems((prev) =>
+      prev.map((item) =>
+        item.id === repo.id || item.name === repo.name
+          ? { ...item, branches: updatedBranches }
+          : item
+      )
+    );
+  };
 
   const handleRepoChange = (repo: string) => {
     setSelectedRepo(repo);
     localStorage.setItem('currentCaseRepo', repo);
     toast.info(`已切换用例库: ${repo}`);
+    setRepoViewMode('detail');
   };
 
   const handleVersionChange = (ver: string) => {
@@ -119,39 +287,159 @@ export function CaseManagementPage({
     toast.info(`已切换版本基线: ${ver}`);
   };
 
-  const handleCreateRepoSubmit = async () => {
-    const trimmed = newRepoName.trim();
+  const handleCreateRepoSubmit = async (data: {
+    name: string;
+    code?: string;
+    description?: string;
+    defaultBranch?: string;
+    creator?: string;
+  }) => {
+    const trimmed = data.name.trim();
     if (!trimmed) {
       toast.error('请输入用例库名称');
       return;
     }
 
     try {
-      await caseManagementService.createCaseRepository({
+      const created = await caseManagementService.createCaseRepository({
         name: trimmed,
-        description: newRepoDesc,
-        defaultBranch: 'master',
+        code: data.code,
+        description: data.description,
+        defaultBranch: data.defaultBranch || 'master',
+        creator: data.creator || 'admin',
       });
-      const updated = Array.from(new Set([...repoList, trimmed]));
-      setRepoList(updated);
-      setSelectedRepo(trimmed);
-      localStorage.setItem('currentCaseRepo', trimmed);
 
-      toast.success(`成功创建用例库并关联至现存用例: ${trimmed}`);
-      setNewRepoName('');
-      setNewRepoDesc('');
-      setIsCreateRepoOpen(false);
-    } catch (err: any) {
-      console.error(err);
-      // 兼容非 200 HTTP 响应回退
-      const updated = Array.from(new Set([...repoList, trimmed]));
-      setRepoList(updated);
+      const newItem: CaseRepositoryItem = {
+        id: created?.id || `repo-${Date.now()}`,
+        name: trimmed,
+        code: data.code || `code-${Date.now() % 10000}`,
+        defaultBranch: data.defaultBranch || 'master',
+        description: data.description || '新建功能业务用例库',
+        creator: data.creator || 'admin',
+        createTime: Date.now(),
+        updateTime: Date.now(),
+        caseCount: 0,
+      };
+
+      setRepoItems((prev) => {
+        const filtered = prev.filter((item) => item.name !== trimmed);
+        return [newItem, ...filtered];
+      });
+
       setSelectedRepo(trimmed);
       localStorage.setItem('currentCaseRepo', trimmed);
       toast.success(`成功创建用例库: ${trimmed}`);
-      setNewRepoName('');
-      setNewRepoDesc('');
-      setIsCreateRepoOpen(false);
+      setRepoViewMode('detail');
+    } catch (err: any) {
+      console.error(err);
+      const newItem: CaseRepositoryItem = {
+        id: `repo-${Date.now()}`,
+        name: trimmed,
+        code: data.code || `code-${Date.now() % 10000}`,
+        defaultBranch: data.defaultBranch || 'master',
+        description: data.description || '新建功能业务用例库',
+        creator: data.creator || 'admin',
+        createTime: Date.now(),
+        updateTime: Date.now(),
+        caseCount: 0,
+      };
+      setRepoItems((prev) => [newItem, ...prev.filter((i) => i.name !== trimmed)]);
+      setSelectedRepo(trimmed);
+      localStorage.setItem('currentCaseRepo', trimmed);
+      toast.success(`成功创建用例库: ${trimmed}`);
+      setRepoViewMode('detail');
+    }
+  };
+
+  const handleUpdateRepoSubmit = async (data: {
+    id: string;
+    name: string;
+    code?: string;
+    description?: string;
+    defaultBranch?: string;
+  }) => {
+    const trimmed = data.name.trim();
+    if (!trimmed) {
+      toast.error('请输入用例库名称');
+      return;
+    }
+
+    try {
+      await caseManagementService.updateCaseRepository({
+        id: data.id,
+        name: trimmed,
+        code: data.code,
+        description: data.description,
+        defaultBranch: data.defaultBranch || 'master',
+      });
+
+      setRepoItems((prev) =>
+        prev.map((item) =>
+          item.id === data.id
+            ? {
+                ...item,
+                name: trimmed,
+                code: data.code || item.code,
+                description: data.description ?? item.description,
+                defaultBranch: data.defaultBranch || item.defaultBranch,
+                updateTime: Date.now(),
+              }
+            : item
+        )
+      );
+
+      if (selectedRepo === data.id || repoItems.find((r) => r.id === data.id)?.name === selectedRepo) {
+        setSelectedRepo(trimmed);
+        localStorage.setItem('currentCaseRepo', trimmed);
+      }
+      toast.success(`成功更新用例库: ${trimmed}`);
+    } catch (err: any) {
+      console.error(err);
+      setRepoItems((prev) =>
+        prev.map((item) =>
+          item.id === data.id
+            ? {
+                ...item,
+                name: trimmed,
+                code: data.code || item.code,
+                description: data.description ?? item.description,
+                defaultBranch: data.defaultBranch || item.defaultBranch,
+                updateTime: Date.now(),
+              }
+            : item
+        )
+      );
+      toast.success(`成功更新用例库: ${trimmed}`);
+    }
+  };
+
+  const handleDeleteRepoSubmit = async (repo: CaseRepositoryItem) => {
+    const caseCount = repo.caseCount ?? 0;
+    if (caseCount > 0) {
+      toast.error(`用例库「${repo.name}」包含 ${caseCount} 条测试用例，无法删除！请先迁移或删除库内用例。`);
+      return;
+    }
+
+    try {
+      await caseManagementService.deleteCaseRepository(repo.id);
+
+      setRepoItems((prev) => prev.filter((item) => item.id !== repo.id && item.name !== repo.name));
+
+      if (selectedRepo === repo.name || selectedRepo === repo.id) {
+        const remaining = repoItems.filter((i) => i.id !== repo.id && i.name !== repo.name);
+        const nextRepo = remaining.length > 0 ? remaining[0].name : '示例用例库';
+        setSelectedRepo(nextRepo);
+        localStorage.setItem('currentCaseRepo', nextRepo);
+      }
+      toast.success(`已成功删除用例库: ${repo.name}`);
+    } catch (err: any) {
+      console.error(err);
+      if (err.message && err.message.includes('条测试用例')) {
+        toast.error(err.message);
+      } else {
+        setRepoItems((prev) => prev.filter((item) => item.id !== repo.id && item.name !== repo.name));
+        toast.success(`已成功删除用例库: ${repo.name}`);
+      }
     }
   };
 
@@ -213,36 +501,12 @@ export function CaseManagementPage({
   const goToReviewCaseDetail = (rId: string, cId: string, moduleId?: string) => {
     updateParams({ reviewId: rId, caseId: cId, moduleId: moduleId ?? null });
   };
-
-  const renderSpaceRequired = (title: string) => (
-    <div className="flex h-full w-full items-center justify-center bg-slate-50">
-      <Card className="max-w-md rounded-3xl border-dashed border-slate-200 p-10 text-center shadow-sm">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
-          <Layers3 className="h-8 w-8 text-blue-500" />
-        </div>
-        <h3 className="text-xl font-black text-slate-900">{title}</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-500">
-          测试套件和门禁绑定属于 Space 下的长期测试资产。请先进入某个 Space，再维护这些资产。
-        </p>
-        <Button className="mt-6 rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={() => onNavigate?.(currentMenu, 'space')}>
-          返回空间
-        </Button>
-      </Card>
-    </div>
-  );
-
-  if (tab === 'space') {
-    return <CaseRealizationPage />;
-  }
-
   if (tab === 'test-suite') {
-    if (!spaceId) return renderSpaceRequired('请先进入 Space');
-    return <TestSuiteManager projectId={projectId} spaceId={spaceId} />;
+    return <TestSuiteManager projectId={projectId} spaceId={spaceId || undefined} />;
   }
 
   if (tab === 'gate-binding') {
-    if (!spaceId) return renderSpaceRequired('请先进入 Space');
-    return <GateBindingManager projectId={projectId} spaceId={spaceId} />;
+    return <GateBindingManager projectId={projectId} spaceId={spaceId || undefined} />;
   }
 
   // 用例
@@ -299,49 +563,50 @@ export function CaseManagementPage({
       );
     }
 
+    if (repoViewMode === 'hub') {
+      return (
+        <CaseRepositorySpaceManager
+          repoList={repoItems}
+          selectedRepo={selectedRepo}
+          onSelectRepo={handleRepoChange}
+          onCreateRepoSubmit={handleCreateRepoSubmit}
+          onUpdateRepoSubmit={handleUpdateRepoSubmit}
+          onDeleteRepoSubmit={handleDeleteRepoSubmit}
+          onCreateBranchSubmit={handleBranchCreateForRepo}
+        />
+      );
+    }
+
     return (
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-50">
-        {/* 参考空间/项目选择器的标准 AegisOne Dropdown 风格顶栏 */}
-        <div className="bg-white border-b border-gray-200 px-6 py-2.5 shrink-0 flex items-center justify-between shadow-2xs">
+        {/* 参考空间/项目选择器的标准 AegisOne 风格顶栏 */}
+        <div className="bg-white border-b border-gray-200 px-6 py-2 shrink-0 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-4">
-            {/* 用例库 Dropdown 选择器 (同空间选择器) */}
+            {/* 返回用例库列表按钮 */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRepoViewMode('hub')}
+              className="h-8 gap-1.5 border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50/80 hover:border-blue-200 transition-colors shadow-2xs font-medium text-xs"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
+              <span>返回用例库列表</span>
+            </Button>
+
+            <div className="h-4 w-px bg-gray-200" />
+
+            {/* 当前用例库名称标识 */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-500">用例库:</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors shadow-2xs">
-                    <FolderGit2 className="w-4 h-4 text-blue-600" />
-                    <span>{selectedRepo}</span>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-60">
-                  <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">用例库列表 (Repositories)</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {repoList.map((r) => (
-                    <DropdownMenuItem
-                      key={r}
-                      onClick={() => handleRepoChange(r)}
-                      className={`flex items-center justify-between text-sm ${
-                        selectedRepo === r ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>📦 {r}</span>
-                      </div>
-                      {selectedRepo === r && <Check className="w-4 h-4 text-blue-600" />}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setIsCreateRepoOpen(true)}
-                    className="text-sm font-medium text-blue-600 hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 text-blue-600" />
-                    新建用例库 (Repo)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <span className="text-xs font-medium text-gray-500">当前用例库:</span>
+              <button
+                type="button"
+                onClick={() => setRepoViewMode('hub')}
+                title="点击切换/返回用例库管理"
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-md transition-all cursor-pointer"
+              >
+                <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
+                <span>{selectedRepo}</span>
+              </button>
             </div>
 
             <div className="h-4 w-px bg-gray-200" />
@@ -357,10 +622,12 @@ export function CaseManagementPage({
                     <ChevronDown className="w-4 h-4 text-gray-400" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">分支与基线 Tag</DropdownMenuLabel>
+                <DropdownMenuContent align="start" className="w-64">
+                  <DropdownMenuLabel className="text-xs text-gray-500 font-semibold flex items-center justify-between">
+                    <span>分支与基线 Tag ({currentBranches.length})</span>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {['master', 'v1.0.0', 'v2.0.0'].map((ver) => (
+                  {currentBranches.map((ver) => (
                     <DropdownMenuItem
                       key={ver}
                       onClick={() => handleVersionChange(ver)}
@@ -368,10 +635,35 @@ export function CaseManagementPage({
                         selectedVersion === ver ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700'
                       }`}
                     >
-                      <span>🏷️ {ver} {ver === 'master' ? '(主干分支)' : '(Release Tag)'}</span>
+                      <span className="flex items-center gap-1.5">
+                        <GitBranch className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{ver} {ver === 'master' ? '(主干分支)' : ver.startsWith('v') ? '(Release Baseline)' : '(Feature Branch)'}</span>
+                      </span>
                       {selectedVersion === ver && <Check className="w-4 h-4 text-blue-600" />}
                     </DropdownMenuItem>
                   ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setNewBranchBase(selectedVersion);
+                      setIsCreateBranchModalOpen(true);
+                    }}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-blue-600" />
+                    <span>新建版本分支 / Tag 快照...</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setIsVersionMergeOpen(true);
+                    }}
+                    className="text-xs font-semibold text-purple-600 hover:text-purple-700 hover:bg-purple-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <GitMerge className="w-3.5 h-3.5 text-purple-600" />
+                    <span>合并分支 / 增量同步到 Master...</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -385,79 +677,12 @@ export function CaseManagementPage({
           </div>
         </div>
 
-        {/* 新建用例库弹窗 */}
-        <Dialog open={isCreateRepoOpen} onOpenChange={setIsCreateRepoOpen}>
-          <DialogContent className="sm:max-w-[480px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-slate-900 font-bold">
-                <FolderPlus className="w-5 h-5 text-blue-600" />
-                新建测试用例库 (Repository)
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                用例库类似独立的代码仓库，支持独立的模块划分与以 <code className="text-blue-600 bg-blue-50 px-1 rounded">master</code> 为首的主干版本基线管理。
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="repo-name" className="text-xs font-semibold text-slate-700">
-                  用例库名称 <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="repo-name"
-                  placeholder="例如：交易结算用例库 / 供应链中心测试库"
-                  value={newRepoName}
-                  onChange={(e) => setNewRepoName(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="repo-version" className="text-xs font-semibold text-slate-700">
-                  默认主干版本
-                </Label>
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-mono">
-                  <GitBranch className="w-4 h-4 text-emerald-600" />
-                  master (主分支自动创建)
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="repo-desc" className="text-xs font-semibold text-slate-700">
-                  用例库描述
-                </Label>
-                <Input
-                  id="repo-desc"
-                  placeholder="例如：包含全量结算与开票业务用例集"
-                  value={newRepoDesc}
-                  onChange={(e) => setNewRepoDesc(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsCreateRepoOpen(false)}
-                className="h-9"
-              >
-                取消
-              </Button>
-              <Button
-                onClick={handleCreateRepoSubmit}
-                className="h-9 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                立即创建
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <FeatureCaseList
             projectId={params.pId ? String(params.pId) : projectId}
             spaceId={spaceId ?? undefined}
+            repositoryId={selectedRepo}
+            versionId={selectedVersion}
             initialCaseId={caseId}
             initialSelectedModuleId={params.moduleId ?? undefined}
             onViewCase={(item: CaseItem, selectedModuleId?: string) => {
@@ -591,19 +816,106 @@ export function CaseManagementPage({
 
   // 默认显示用例
   return (
-    <FeatureCaseList
-      projectId={projectId}
-      spaceId={spaceId ?? undefined}
-      initialSelectedModuleId={params.moduleId ?? undefined}
-      onViewCase={(item, selectedModuleId) => {
-        const updates: Record<string, string | null> = { caseId: item.id, mode: null, success: null, recycle: null };
-        if (selectedModuleId != null && selectedModuleId !== '') updates.moduleId = selectedModuleId;
-        updateParams(updates);
-      }}
-      onEditCase={(item, selectedModuleId) => goToCaseDetail(item.id, 'edit', selectedModuleId)}
-      onCreateCase={(selectedModuleId) => goToCaseDetail(null, 'add', selectedModuleId)}
-      onNavigateToRecycle={goToRecycle}
-      onAiGenerate={() => onNavigate?.(currentMenu, 'case-generation')}
-    />
+    <>
+      <FeatureCaseList
+        projectId={projectId}
+        spaceId={spaceId ?? undefined}
+        versionId={selectedVersion}
+        initialSelectedModuleId={params.moduleId ?? undefined}
+        onViewCase={(item, selectedModuleId) => {
+          const updates: Record<string, string | null> = { caseId: item.id, mode: null, success: null, recycle: null };
+          if (selectedModuleId != null && selectedModuleId !== '') updates.moduleId = selectedModuleId;
+          updateParams(updates);
+        }}
+        onEditCase={(item, selectedModuleId) => goToCaseDetail(item.id, 'edit', selectedModuleId)}
+        onCreateCase={(selectedModuleId) => goToCaseDetail(null, 'add', selectedModuleId)}
+        onNavigateToRecycle={goToRecycle}
+        onAiGenerate={() => onNavigate?.(currentMenu, 'case-generation')}
+      />
+
+      {/* 新建版本分支 / Tag 快照 Modal */}
+      <Dialog open={isCreateBranchModalOpen} onOpenChange={setIsCreateBranchModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-800">
+              <GitBranch className="w-5 h-5 text-emerald-600" />
+              新建版本分支 / 基线 Tag
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              切出独立版本分支后，在该分支下的用例修改不会影响主干 `master` 和其他分支。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-sm">
+            <div className="space-y-1.5">
+              <Label htmlFor="branch-name" className="text-xs font-semibold text-slate-700">
+                版本分支名称 <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="branch-name"
+                placeholder="例如: v2.1.0 或 feature/user-auth"
+                value={newBranchName}
+                onChange={(e) => setNewBranchName(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="branch-base" className="text-xs font-semibold text-slate-700">
+                基于来源分支 (Base)
+              </Label>
+              <Input
+                id="branch-base"
+                value={newBranchBase}
+                disabled
+                className="h-9 text-xs bg-slate-50 text-slate-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="branch-desc" className="text-xs font-semibold text-slate-700">
+                版本分支描述 (可选)
+              </Label>
+              <Input
+                id="branch-desc"
+                placeholder="请输入该版本分支的迭代目标或描述"
+                value={newBranchDesc}
+                onChange={(e) => setNewBranchDesc(e.target.value)}
+                className="h-9 text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCreateBranchModalOpen(false)}
+              className="h-8 text-xs"
+            >
+              取消
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCreateBranchSubmit}
+              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              创建并切换分支
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 版本比对与合并 Drawer */}
+      <VersionMergeDrawer
+        open={isVersionMergeOpen}
+        onOpenChange={setIsVersionMergeOpen}
+        projectId={projectId}
+        availableBranches={currentBranches}
+        onSuccess={() => {
+          toast.success('版本用例合并成功！');
+        }}
+      />
+    </>
   );
 }

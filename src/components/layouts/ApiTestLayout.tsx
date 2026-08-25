@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
-import { useSystemAdminCheck } from '@/components/features/efficiency-dashboard/hooks';
+import { useSystemAdminCheck } from '@/hooks/usePermissionCheck';
 import { TopNavigation } from './TopNavigation';
 import { LeftSidebar } from './LeftSidebar';
 import { MainContent } from '@/components/features/MainContent';
@@ -12,21 +12,17 @@ import { TestReportManagementView } from '@/components/features/test-report/Test
 import { TestReportListPage } from '@/pages/TestReportListPage';
 import { ProjectManagementPage } from '@/pages/ProjectManagementPage';
 import { BugManagementPage } from '@/pages/BugManagementPage';
-import { GateManagementPage } from '@/pages/GateManagementPage';
 import { RequirementQualityPage } from '@/pages/RequirementQualityPage';
 import { QualityWorkspacePage } from '@/pages/QualityWorkspacePage';
 import { QualityWorkspaceDetailPage } from '@/pages/QualityWorkspaceDetailPage';
 import { QualityWorkspaceReportPage, QualityWorkspaceReportDetailPage } from '@/pages/QualityWorkspaceReportPage';
 import { CaseManagementPage } from '@/pages/CaseManagementPage';
 import { PrecisionTestPage } from '@/pages/PrecisionTestPage';
-import { CaseRealizationPage } from '@/pages/E2EAutomationPage';
 import { SystemSettingPage } from '@/pages/SystemSettingPage';
 import { AIAssistantPage } from '@/pages/AIAssistantPage';
 import { KnowledgeBasePage } from '@/pages/KnowledgeBasePage';
 import { AgentSettingsPage } from '@/pages/AgentSettingsPage';
 import { AgentListPage } from '@/pages/AgentListPage';
-import { DialManagementPage } from '@/pages/DialManagementPage';
-import { TaskManagementPage } from '@/pages/TaskManagementPage';
 import { WelcomePage } from '@/pages/WelcomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -42,7 +38,6 @@ const MENU_CANONICAL_PATH: Record<string, string> = {
   'test-factory': '/',
   'precision-test': '/precision-test',
   'bug-management': '/bug-management',
-  'gate-management': '/gate-management',
   'dial-management': '/dial-management',
   'task-management': '/task-management',
   'aegis-agent': '/',
@@ -84,7 +79,7 @@ export function ApiTestLayout() {
   const isCaseManagementPath = pathname === '/case-management' || pathname.startsWith('/case-management/');
   const isTaskManagementPath = pathname === '/task-management';
   const isDialManagementPath = pathname === '/dial-management';
-  const isBugOrOtherPath = /^\/(bug-management|gate-management|precision-test|ai-assistant)(\/|$)/.test(pathname);
+  const isBugOrOtherPath = /^\/(bug-management|precision-test|ai-assistant)(\/|$)/.test(pathname);
   const isRootPath = pathname === '/' || pathname === '';
   // 根路径 / 下根据 tab 推断 menu，避免 /?tab=system 无 menu 时错显测试工厂
   const settingTabs = ['system', 'organization'];
@@ -117,9 +112,10 @@ export function ApiTestLayout() {
                       : isBugOrOtherPath
                         ? (pathname.slice(1).split('/')[0] as string) || 'workspace'
                         : menuFromRootTab ?? rawMenu;
+  const FEATURE_CASE_TAB = 'feature-case' as const;
   const SPACE_TAB = 'space' as const;
   const REALIZATION_TAB = 'realization' as const;
-  const CASE_MANAGEMENT_TABS = ['space', 'feature-case', 'test-suite', 'gate-binding', 'case-review', 'case-generation', 'realization'] as const;
+  const CASE_MANAGEMENT_TABS = ['feature-case', 'space', 'test-suite', 'gate-binding', 'case-review', 'case-generation', 'realization'] as const;
 
   const rawTopMenu = testFactoryReportPathMatch ? 'test-report' : (searchParams.get('tab') || 'api');
   const normalizedTopMenu = rawTopMenu;
@@ -135,7 +131,7 @@ export function ApiTestLayout() {
     (selectedMenuItem === 'workspace' && !validWorkspaceTabs.includes(rawTopMenu))
       ? 'requirement-quality'
       : (selectedMenuItem === 'test-case' && !CASE_MANAGEMENT_TABS.includes(normalizedTopMenu as (typeof CASE_MANAGEMENT_TABS)[number]))
-      ? SPACE_TAB
+      ? FEATURE_CASE_TAB
     : (selectedMenuItem === 'quality-workspace' && !['requirements', 'workspace', 'test-report'].includes(rawTopMenu))
         ? 'requirements'
         : (selectedMenuItem === 'aegis-agent' && !validAegisAgentTabs.includes(rawTopMenu))
@@ -152,6 +148,14 @@ export function ApiTestLayout() {
       navigate('/welcome', { replace: true });
     }
   }, [isSystemAdmin, selectedMenuItem, navigate]);
+
+  // 任务中心、拨测管理、发布管理入口已下线：旧链接重定向到欢迎页
+  useEffect(() => {
+    const hiddenByPath = pathname === '/task-management' || pathname === '/dial-management' || pathname === '/gate-management' || pathname.startsWith('/task-management/') || pathname.startsWith('/dial-management/') || pathname.startsWith('/gate-management/');
+    const hiddenByMenu = rawMenu === 'task-management' || rawMenu === 'dial-management' || rawMenu === 'gate-management';
+    if (!hiddenByPath && !hiddenByMenu) return;
+    navigate('/welcome', { replace: true });
+  }, [pathname, rawMenu, navigate]);
 
   // 旧测试计划入口下线：/test-plan 不再渲染旧页面，只作为旧链接识别后跳到需求质量主路径。
   useEffect(() => {
@@ -196,9 +200,7 @@ export function ApiTestLayout() {
     } else if (item === 'workspace') {
       params.set('tab', 'requirement-quality');
     } else if (item === 'test-case') {
-      params.set('tab', SPACE_TAB);
-    } else if (item === 'gate-management') {
-      params.set('tab', 'deploy');
+      params.set('tab', FEATURE_CASE_TAB);
     } else if (item === 'setting') {
       params.set('tab', 'system');
     } else if (item === 'aegis-agent') {
@@ -248,6 +250,7 @@ export function ApiTestLayout() {
   useEffect(() => {
     if (searchParams.get('menu')) return;
     if (pathname.startsWith('/quality-workspace') || pathname.startsWith('/test-plan')) return;
+    if (pathname === '/task-management' || pathname === '/dial-management' || pathname === '/gate-management' || pathname.startsWith('/task-management/') || pathname.startsWith('/dial-management/') || pathname.startsWith('/gate-management/')) return;
     const params = new URLSearchParams(location.search);
     let menu = '';
     if (pathname === '/case-management' || pathname.startsWith('/case-management/')) {
@@ -259,15 +262,9 @@ export function ApiTestLayout() {
     } else if (pathname === '/project-management') {
       menu = 'project-management';
       if (!params.has('tab')) params.set('tab', 'project-permission');
-    } else if (pathname === '/task-management') {
-      menu = 'task-management';
-      if (!params.has('tab')) params.set('tab', 'tasks');
-    } else if (pathname === '/dial-management') {
-      menu = 'dial-management';
-      if (!params.has('tab')) params.set('tab', 'account');
     } else if (pathname === '/welcome' || pathname === '/' || pathname === '') {
       menu = 'welcome';
-    } else if (pathname.startsWith('/bug-management') || pathname.startsWith('/gate-management') || pathname.startsWith('/precision-test') || pathname.startsWith('/ai-assistant')) {
+    } else if (pathname.startsWith('/bug-management') || pathname.startsWith('/precision-test') || pathname.startsWith('/ai-assistant')) {
       menu = pathname.slice(1).split('/')[0] || 'workspace';
     } else {
       // 未知路径，不设置 menu，让 renderContent 渲染 NotFoundPage
@@ -291,15 +288,15 @@ export function ApiTestLayout() {
     } else if (pathname === '/welcome') {
       expectedMenu = 'welcome';
     } else if (pathname === '/' || pathname === '') {
-      expectedMenu = searchParams.get('menu') || 'welcome';
+      const rootMenu = searchParams.get('menu') || 'welcome';
+      if (rootMenu === 'task-management' || rootMenu === 'dial-management' || rootMenu === 'gate-management') return;
+      expectedMenu = rootMenu;
     } else if (isWorkspacePath) {
       expectedMenu = 'workspace';
     } else if (isCaseManagementPath) {
       expectedMenu = 'test-case';
-    } else if (isTaskManagementPath) {
-      expectedMenu = 'task-management';
-    } else if (isDialManagementPath) {
-      expectedMenu = 'dial-management';
+    } else if (isTaskManagementPath || isDialManagementPath) {
+      return;
     } else if (isBugOrOtherPath) {
       expectedMenu = pathname.slice(1).split('/')[0] || '';
     } else if (isRootPath && (settingTabs.includes(rawTab) || aegisAgentTabs.includes(rawTab))) {
@@ -401,8 +398,7 @@ export function ApiTestLayout() {
     selectedMenuItem === 'setting' ||
     selectedMenuItem === 'aegis-agent' ||
     selectedMenuItem === 'dial-management' ||
-    selectedMenuItem === 'task-management' ||
-    selectedMenuItem === 'gate-management';
+    selectedMenuItem === 'task-management';
 
   // 判断菜单类型（用于 TopNavigation 渲染对应二级菜单项）
   const menuType =
@@ -414,8 +410,7 @@ export function ApiTestLayout() {
               selectedMenuItem === 'aegis-agent' ? 'aegis-agent' :
                 selectedMenuItem === 'dial-management' ? 'dial-management' :
                   selectedMenuItem === 'task-management' ? 'task-management' :
-                    selectedMenuItem === 'gate-management' ? 'gate-management' :
-                      'test-factory';
+                    'test-factory';
 
   // 获取当前上下文，传递给AI助手
   const getCurrentContext = (): 'test-factory' | 'realization' | 'data-dashboard' | 'test-report' | 'metadata' => {
@@ -451,18 +446,6 @@ export function ApiTestLayout() {
           <ProjectManagementPage selectedTopMenu={selectedTopMenu} />
         ) : selectedMenuItem === 'bug-management' ? (
           <BugManagementPage />
-        ) : selectedMenuItem === 'gate-management' ? (
-          <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
-            <GateManagementPage selectedTopMenu={selectedTopMenu} />
-          </div>
-        ) : selectedMenuItem === 'dial-management' ? (
-          <div className="flex-1 w-full h-full relative overflow-hidden">
-            <DialManagementPage selectedTopMenu={selectedTopMenu} />
-          </div>
-        ) : selectedMenuItem === 'task-management' ? (
-          <div className="flex-1 w-full h-full relative overflow-hidden">
-            <TaskManagementPage selectedTopMenu={selectedTopMenu} />
-          </div>
         ) : selectedMenuItem === 'quality-workspace' ? (
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
             {selectedTopMenu === 'test-report' ? (
@@ -481,16 +464,10 @@ export function ApiTestLayout() {
           </div>
         ) : selectedMenuItem === 'test-case' || selectedMenuItem === 'case-management' ? (
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
-            {selectedTopMenu === SPACE_TAB || selectedTopMenu === REALIZATION_TAB ? (
-              <div className="flex-1 w-full h-full relative overflow-hidden">
-                <CaseRealizationPage />
-              </div>
-            ) : (
-              <CaseManagementPage
-                selectedTopMenu={selectedTopMenu}
-                onNavigate={(menu, tab) => { if (tab) updateUrl(menu, tab); }}
-              />
-            )}
+            <CaseManagementPage
+              selectedTopMenu={selectedTopMenu}
+              onNavigate={(menu, tab) => { if (tab) updateUrl(menu, tab); }}
+            />
           </div>
         ) : selectedMenuItem === 'precision-test' ? (
           <div className="flex-1 w-full h-full relative overflow-hidden">

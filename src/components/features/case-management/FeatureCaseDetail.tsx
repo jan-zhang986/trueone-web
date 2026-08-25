@@ -1,7 +1,6 @@
 /**
  * 用例详情（创建/编辑）
  * 参考 aegis-next-server caseDetail.vue 与 MsCard 布局
- * 埋点：创建/复制时统计编写时长（UserActivityTracker），复用用例编辑时统计修改时长（ModificationTracker）
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -11,7 +10,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Play } from 'lucide-react';
 import { caseManagementService } from '@/services';
-import { getGlobalUserActivityTracker, modificationTracker } from '@/utils/tracking';
 import { CaseDetailForm, type CaseDetailFormRef } from './components';
 import type { CaseDetail, CreateOrUpdateCaseRequest } from './types';
 
@@ -164,10 +162,6 @@ export function FeatureCaseDetail({
   const title = mode === 'edit' ? '编辑用例' : mode === 'copy' ? '复制用例' : '创建用例';
   const okText = mode === 'edit' ? '更新' : '确定';
   const isEdit = mode === 'edit';
-  const userActivityTracker = getGlobalUserActivityTracker();
-  /** 复用用例：编辑时来自复用的用例需统计修改耗时 */
-  const isReusedCase = Boolean(isEdit && defaultCaseInfo?.caseSourceType === 'REUSE');
-
   const [executing, setExecuting] = useState(false);
   const handleExecute = async () => {
     if (!caseId) return;
@@ -224,32 +218,34 @@ export function FeatureCaseDetail({
     try {
       const req = form.getRequest();
       const request: Record<string, any> = {
-        projectId: req.projectId,
-        templateId: req.templateId,
+        projectId: req.projectId || projectId || defaultCaseInfo?.projectId || localStorage.getItem('currentProjectId') || 'default-project',
+        templateId: req.templateId || defaultCaseInfo?.templateId || 'default-template',
         name: req.name,
         prerequisite: req.prerequisite,
-        caseEditType: req.caseEditType,
+        caseEditType: req.caseEditType || defaultCaseInfo?.caseEditType || 'STEP',
         steps: req.steps,
         textDescription: req.textDescription,
         expectedResult: req.expectedResult,
         description: req.description,
-        moduleId: req.moduleId,
+        moduleId: req.moduleId || defaultCaseInfo?.moduleId,
         tags: req.tags,
         customFields: req.customFields,
-        spaceId,
+        versionId: req.versionId || defaultCaseInfo?.versionId,
+        spaceId: spaceId || defaultCaseInfo?.spaceId,
       };
       if (caseId && mode === 'edit') {
         request.id = caseId;
       }
 
       if (mode === 'add' || mode === 'copy') {
-        // 埋点：保存前停止追踪并取编写时长，创建成功后用真实 caseId 上报
-        const trackedDuration = userActivityTracker.stopAndGetDuration();
         let id = '';
         if (!spaceId) {
           const { fileList: fl, ...reqBody } = req;
           const res: any = await caseManagementService.createCaseRequest({
-            request: reqBody,
+            request: {
+              ...request,
+              ...reqBody,
+            },
             fileList: fl || [],
           });
           id = res?.id ?? res?.data?.id ?? '';
@@ -263,44 +259,41 @@ export function FeatureCaseDetail({
             })
           );
         }
-        if (id && trackedDuration > 0) {
-          await userActivityTracker.reportWithCaseId(id, trackedDuration);
-        }
         if (isContinue) {
           toast.success('保存成功');
           form.resetForm();
-          userActivityTracker.stop();
-          userActivityTracker.start(`temp-${Date.now()}`);
           return;
         }
         onSuccess?.(id, req.name);
       } else if (mode === 'edit' && caseId) {
-        userActivityTracker.stop();
-        const modificationDuration = modificationTracker.stopAndGetDuration();
         const resolvedSpaceId = spaceId || defaultCaseInfo?.spaceId;
+        const updatePayload: Record<string, any> = {
+          ...defaultCaseInfo,
+          ...request,
+          id: caseId,
+          fileList: req.fileList || [],
+        };
         if (!resolvedSpaceId) {
-          const updatePayload: Record<string, any> = {
-            ...request,
-            id: caseId,
-          };
-          updatePayload.fileList = req.fileList;
           await caseManagementService.updateCaseRequest(updatePayload);
         } else {
-          const uploadFileIds = await uploadCaseAttachments(req.fileList || []);
-          await caseManagementService.saveUnifiedCase(
-            buildUnifiedCasePayload(req, {
-              caseId,
-              spaceId: resolvedSpaceId,
-              sourceType: defaultCaseInfo?.aiCreate ? 'AI' : undefined,
-              lifecycleStatus: defaultCaseInfo?.reviewStatus,
-              ownerId: defaultCaseInfo?.createUser,
-              uploadFileIds,
-            })
-          );
+          try {
+            const uploadFileIds = await uploadCaseAttachments(req.fileList || []);
+            await caseManagementService.saveUnifiedCase(
+              buildUnifiedCasePayload(req, {
+                caseId,
+                spaceId: resolvedSpaceId,
+                sourceType: defaultCaseInfo?.aiCreate ? 'AI' : undefined,
+                lifecycleStatus: defaultCaseInfo?.reviewStatus,
+                ownerId: defaultCaseInfo?.createUser,
+                uploadFileIds,
+              })
+            );
+          } catch (unifiedErr) {
+            console.warn('Unified save failed in full page mode, fallback to legacy update:', unifiedErr);
+            await caseManagementService.updateCaseRequest(updatePayload);
+          }
         }
-        if (modificationDuration > 0) {
-          await modificationTracker.reportModificationTime(modificationDuration);
-        }
+        toast.success('保存成功');
         onSuccess?.(caseId, req.name);
       }
     } catch (err: any) {
@@ -322,20 +315,6 @@ export function FeatureCaseDetail({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [handleSave]);
-
-  // 埋点：创建/复制时启动编写时长追踪；编辑且为复用用例时启动修改耗时追踪
-  useEffect(() => {
-    if (mode === 'add' || mode === 'copy') {
-      userActivityTracker.start(`temp-${Date.now()}`);
-    } else if (isReusedCase && caseId) {
-      modificationTracker.start(caseId);
-      modificationTracker.markAsModified(); // 进入复用用例编辑即视为可能修改，保存时上报时长
-    }
-    return () => {
-      userActivityTracker.stop();
-      modificationTracker.stop();
-    };
-  }, [mode, caseId, isReusedCase]);
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50 min-h-0 overflow-hidden">
@@ -369,7 +348,7 @@ export function FeatureCaseDetail({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                📖 业务文本视图
+                📖 业务用例
               </button>
               <button
                 type="button"
@@ -380,7 +359,7 @@ export function FeatureCaseDetail({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                ⚡ 自动化 Workflow 视图
+                ⚡ 自动化编排
               </button>
             </div>
           </div>
@@ -405,41 +384,26 @@ export function FeatureCaseDetail({
                 initialModuleId={mode === 'add' ? initialModuleId : undefined}
               />
             ) : (
-              <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 p-6 space-y-6">
-                <div className="flex items-center justify-between pb-4 border-b border-blue-100">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
                     <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-black">⚡</span>
-                      自动化 Workflow 可执行绑定
+                      自动化执行编排
                     </h4>
-                    <p className="text-xs text-slate-500 mt-1">
-                      本用例直接绑定底层 Workflow。服务端派发时将自动进行 Sub-Workflow 递归展开与参数映射。
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      为此用例配置自动化执行指令与节点映射。
                     </p>
                   </div>
                   {defaultCaseInfo?.workflowId ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200">
-                      已绑定 Workflow: {defaultCaseInfo.workflowId}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                      已关联自动化指令
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-200">
-                      未绑定可执行 Workflow
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200">
+                      未绑定自动化指令
                     </span>
                   )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">子工作流引用 (Sub-Workflow Inline)</span>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      包含依赖时，直接插入类型为 <code className="bg-slate-100 text-blue-600 px-1.5 py-0.5 rounded text-xs">sub_workflow</code> 的节点引用公共 Workflow（例如：订单造数流程），服务端在调度前自动进行零冗余递归展开。
-                    </p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">执行调度模式</span>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      展开后的扁平化通用指令节点（HTTP / SQL / UI）将直接下发给无状态 <code className="bg-slate-100 text-emerald-600 px-1.5 py-0.5 rounded text-xs">aegis-runner</code> 节点极速顺序运行。
-                    </p>
-                  </div>
                 </div>
 
                 <CaseDetailForm

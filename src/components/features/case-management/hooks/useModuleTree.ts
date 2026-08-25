@@ -10,6 +10,7 @@ import type { ModuleTreeNode } from '../types';
 interface UseModuleTreeOptions {
   projectId: string;
   spaceId?: string;
+  repositoryId?: string;
   searchKeyword?: string;
 }
 
@@ -37,7 +38,7 @@ function addModuleAndChildrenCount(node: ModuleTreeNode, directCount: Map<string
   return total;
 }
 
-export function useModuleTree({ projectId, spaceId, searchKeyword }: UseModuleTreeOptions) {
+export function useModuleTree({ projectId, spaceId, repositoryId, searchKeyword }: UseModuleTreeOptions) {
   const [moduleTree, setModuleTree] = useState<ModuleTreeNode[]>([]);
   const [modulesCount, setModulesCount] = useState<Record<string, number>>({});
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -45,30 +46,38 @@ export function useModuleTree({ projectId, spaceId, searchKeyword }: UseModuleTr
 
   const fetchModuleTree = useCallback(async () => {
     try {
+      if (repositoryId && repositoryId !== '示例用例库' && !repositoryId.includes('demo')) {
+        // 新建或独立用例库默认开始为空模块树，只有在用户添加模块或导入用例时才展现模块节点
+        setModuleTree([]);
+        setTreeLoaded(true);
+        return;
+      }
       if (spaceId) {
         const result = await metadataModuleService.getModuleTree(projectId, spaceId, 'WORKFLOW');
         setModuleTree((result || []).map(toModuleTreeNode));
       } else {
-        const result = await caseManagementService.getCaseModuleTree({ projectId });
+        const result = await caseManagementService.getCaseModuleTree({ projectId, repositoryId });
         setModuleTree(Array.isArray(result) ? result : []);
       }
-      // 不重置 expandedNodes，避免移动/删除/复制模块后整棵树被收起
     } catch (err) {
       console.error('获取模块树失败:', err);
       setModuleTree([]);
     } finally {
       setTreeLoaded(true);
     }
-  }, [projectId, spaceId]);
+  }, [projectId, spaceId, repositoryId]);
 
   const fetchModulesCount = useCallback(async () => {
     try {
+      if (repositoryId && repositoryId !== '示例用例库' && !repositoryId.includes('demo')) {
+        setModulesCount({ all: 0 });
+        return;
+      }
       if (spaceId) {
         const result = await caseManagementService.getUnifiedCaseList({
           projectId,
           spaceId,
           current: 1,
-          // 后端 BasePageRequest 限制 pageSize <= 500，超出会导致数量请求失败。
           pageSize: 500,
           ...(searchKeyword?.trim() ? { keyword: searchKeyword.trim() } : {}),
         });
@@ -102,9 +111,9 @@ export function useModuleTree({ projectId, spaceId, searchKeyword }: UseModuleTr
       setModulesCount(safeCount);
     } catch (err) {
       console.error('获取模块数量失败:', err);
-      setModulesCount({});
+      setModulesCount({ all: 0 });
     }
-  }, [projectId, spaceId, searchKeyword, moduleTree]);
+  }, [projectId, spaceId, repositoryId, searchKeyword, moduleTree]);
 
   useEffect(() => {
     fetchModuleTree();

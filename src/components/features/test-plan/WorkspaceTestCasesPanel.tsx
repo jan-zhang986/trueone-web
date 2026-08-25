@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   CircleDashed,
   Loader2,
-  Sparkles,
   Wand2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -250,7 +249,7 @@ export function WorkspaceTestCasesPanel({
               </div>
             ) : (
               <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
-                <Sparkles className="mb-3 h-8 w-8 text-slate-300" />
+                <BookOpen className="mb-3 h-8 w-8 text-slate-300" />
                 <p className="text-sm font-bold text-slate-600">尚未生成用例</p>
                 <p className="mt-1 text-xs text-slate-500">点击上方「从分析生成用例」后，这里会展示可执行用例列表。</p>
               </div>

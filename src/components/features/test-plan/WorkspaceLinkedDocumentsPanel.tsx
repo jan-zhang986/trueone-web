@@ -11,7 +11,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Sparkles,
   Target,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -718,7 +717,7 @@ export function WorkspaceLinkedDocumentsPanel({
                   onChange={(e) => setUseAiSearch(e.target.checked)}
                   disabled={demoMode}
                 />
-                AI 语义检索（需 docreader 配置 LLM）
+                语义检索（向量与全文检索）
               </label>
             </div>
           )}
@@ -839,7 +838,7 @@ export function WorkspaceLinkedDocumentsPanel({
                         {generatingItems ? (
                           <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                         ) : (
-                          <Sparkles className="mr-1 h-3 w-3" />
+                          <RefreshCw className="mr-1 h-3 w-3" />
                         )}
                         规则生成
                       </Button>
@@ -850,7 +849,7 @@ export function WorkspaceLinkedDocumentsPanel({
                         disabled={generatingItems}
                         onClick={() => void generateNodeItems(true)}
                       >
-                        AI 生成
+                        自动生成
                       </Button>
                     </div>
                   )}
@@ -859,7 +858,7 @@ export function WorkspaceLinkedDocumentsPanel({
                 <div className="space-y-2">
                   {nodeItems.length === 0 && (
                     <p className="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-3 text-xs text-slate-400">
-                      暂无测试点。测分结论即测试点：可手动添加，或从本节正文「规则 / AI 生成」。
+                      暂无测试点。测分结论即测试点：可手动添加，或从本节正文「规则 / 自动生成」。
                     </p>
                   )}
                   {nodeItems.map((item) => (

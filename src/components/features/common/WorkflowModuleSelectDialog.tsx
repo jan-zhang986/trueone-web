@@ -16,7 +16,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { ChevronRight, ChevronDown, Search } from 'lucide-react';
 import { metadataModuleService, type MetadataModuleTreeNode } from '@/services/metadata-module';
-import { e2eSpaceService, type CaseRealizationSpace } from '@/services/e2e-space';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -101,31 +100,9 @@ export function WorkflowModuleSelectDialog({
   const loadSpacesAndModules = async () => {
     try {
       setLoading(true);
-      // 1. 加载项目下的所有空间
-      const spaceList = await e2eSpaceService.getSpaceList({ projectId });
-      
-      // 2. 初始化空间节点
-      const spaceNodes: SpaceNode[] = spaceList.map(space => ({
-        id: space.id,
-        name: space.name,
-        moduleCount: space.moduleCount || 0,
-        modules: undefined,
-        loading: false,
-      }));
-      
-      setSpaces(spaceNodes);
-      
-      // 3. 默认展开当前空间，并加载其模块
-      if (workspaceId) {
-        const currentSpaceIndex = spaceNodes.findIndex(s => s.id === workspaceId);
-        if (currentSpaceIndex >= 0) {
-          setExpandedSpaces(new Set([workspaceId]));
-          await loadSpaceModules(workspaceId);
-        }
-      }
+      setSpaces([]);
     } catch (error: any) {
-      console.error('加载空间列表失败:', error);
-      toast.error('加载空间列表失败');
+      console.error('加载模块目录失败:', error);
       setSpaces([]);
     } finally {
       setLoading(false);

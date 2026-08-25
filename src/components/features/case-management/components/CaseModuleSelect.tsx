@@ -30,6 +30,10 @@ interface CaseModuleSelectProps {
   onOpenChange?: (open: boolean) => void;
   /** 受控：是否打开下拉框 */
   open?: boolean;
+  /** 触发器样式变体 */
+  variant?: 'default' | 'ghost';
+  /** 自定义触发器样式 */
+  triggerClassName?: string;
 }
 
 /** 递归查找节点名称 */
@@ -55,6 +59,8 @@ export function CaseModuleSelect({
   noLabel = false,
   onOpenChange,
   open: controlledOpen,
+  variant = 'default',
+  triggerClassName,
   className,
 }: CaseModuleSelectProps & { className?: string }) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -200,17 +206,23 @@ export function CaseModuleSelect({
         <PopoverTrigger asChild disabled={disabled}>
           <button
             type="button"
-            className={`
+            className={triggerClassName || (variant === 'ghost' ? `
+              flex items-center justify-between gap-1.5 h-7 px-2 text-xs rounded-md border-0
+              bg-transparent hover:bg-slate-100/80 transition-colors font-semibold
+              focus:outline-none focus:ring-0
+              ${selectedName ? 'text-slate-800' : 'text-slate-400'}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            ` : `
               flex items-center justify-between w-full h-8 px-3 text-xs rounded-md border
               bg-muted/30 border-border/60 hover:bg-muted/40 transition-colors
               focus:outline-none focus:ring-1 focus:ring-ring
               ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
+            `)}
           >
-            <span className={`truncate ${selectedName ? 'text-foreground' : 'text-muted-foreground'}`}>
+            <span className={`truncate ${selectedName ? (variant === 'ghost' ? 'text-slate-800' : 'text-foreground') : 'text-muted-foreground'}`}>
               {selectedName || placeholder}
             </span>
-            <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 ml-2" />
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 ml-1" />
           </button>
         </PopoverTrigger>
 

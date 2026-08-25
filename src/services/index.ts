@@ -19,7 +19,6 @@ export { testPlanManagementService } from './test-plan';
 export { requirementService } from './requirement';
 export { caseManagementService } from './case-management';
 export { requirementQualityService } from './requirement-quality';
-export { gateManagementService } from './gate-management';
 export { metadataService } from './metadata';
 export { environmentService } from './environment';
 export {

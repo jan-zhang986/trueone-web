@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
-  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -236,7 +235,7 @@ export function QualityWorkspaceReportPage({ onViewReport }: QualityWorkspaceRep
               </SelectContent>
             </Select>
             <Button className="rounded-2xl bg-slate-900 font-black text-white hover:bg-slate-800" onClick={generateOverview} disabled={generating || !selectedWorkspaceId}>
-              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
               生成总览报告
             </Button>
             <Button variant="outline" className="rounded-2xl bg-white" onClick={loadReports} disabled={loading}>

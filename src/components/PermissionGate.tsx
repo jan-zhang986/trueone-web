@@ -1,7 +1,6 @@
 /**
  * PermissionGate 组件
  * 权限检查和无权限提示组件
- * 从 EfficiencyDashboard.tsx 提取
  */
 
 import React from 'react';
@@ -21,7 +20,7 @@ export interface PermissionGateProps {
 /**
  * PermissionGate 组件
  */
-const DEFAULT_NO_PERMISSION_FEATURE_NAME = '效能数据大屏';
+const DEFAULT_NO_PERMISSION_FEATURE_NAME = '该功能';
 
 export const PermissionGate = React.memo<PermissionGateProps>(function PermissionGate({
   isCheckingPermission,

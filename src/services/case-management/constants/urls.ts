@@ -6,12 +6,7 @@
 // ==================== 后端服务地址配置 ====================
 // aegis-next-server 后端服务地址
 // 使用相对路径，通过 nginx 代理转发到后端，避免跨域问题
-// nginx 配置中已添加代理规则：/metrics/dashboard 和 /functional/case/metrics -> http://aegis.tst.spotter.ink
 const AEGIS_BACKEND_URL = '';
-
-// 效能埋点上报（用例创建编写时长、复用用例修改时长）
-export const MetricsTrackWriteUrl = `${AEGIS_BACKEND_URL}/api/metrics/track/write`;
-export const MetricsTrackModificationUrl = `${AEGIS_BACKEND_URL}/api/metrics/track/modification`;
 
 // ==================== 功能用例管理 ====================
 
@@ -235,33 +230,6 @@ export const GetCasePlanMinderUrl = '/functional/mind/case/plan/list'; // 获取
 export const GetCasePlanCollectionMinderUrl = '/functional/mind/case/collection/list'; // 获取测试计划用例脑图-测试点
 
 // ==================== 统一导出 ====================
-
-// ==================== 用例效能指标（新版Dashboard API）====================
-
-export const CASE_METRICS_URLS = {
-  // 模块标识
-  MODULE: 'spotter_aegis',
-  
-  // Dashboard综合指标API（开放接口，无需认证）
-  // 后端Controller: @RequestMapping("/metrics/dashboard")
-  // 使用相对路径，通过 nginx 代理转发到后端 http://aegis.tst.spotter.ink，避免跨域问题
-  GET_PROJECT_OVERVIEW: `${AEGIS_BACKEND_URL}/metrics/dashboard/project-overview`,
-  GET_PERSONAL_STATS: `${AEGIS_BACKEND_URL}/metrics/dashboard/personal-stats`,
-  GET_CHANGE_REASON_DISTRIBUTION: `${AEGIS_BACKEND_URL}/metrics/dashboard/change-reason-distribution`,
-  GET_BLOCKED_REASON_DISTRIBUTION: `${AEGIS_BACKEND_URL}/metrics/dashboard/blocked-reason-distribution`,
-  GET_REQUIREMENTS_LIST: `${AEGIS_BACKEND_URL}/metrics/dashboard/requirements`,  // 获取需求列表（支持模糊搜索）
-  GET_CASES_BY_CHANGE_REASON: `${AEGIS_BACKEND_URL}/metrics/dashboard/cases-by-change-reason`,  // 根据变更原因查询用例
-  GET_CASES_BY_BLOCK_REASON: `${AEGIS_BACKEND_URL}/metrics/dashboard/cases-by-block-reason`,    // 根据阻塞原因查询用例
-  GET_CASE_LIST_BY_METRIC: `${AEGIS_BACKEND_URL}/functional/case/metrics/case-list`,            // 根据指标类型查询用例列表及其CS值
-
-  // 旧版兼容接口（已废弃，保留用于迁移）
-  // 这些接口也属于 aegis-next-server 后端项目，直接写死后端地址
-  GET_COMPREHENSIVE_METRICS: `${AEGIS_BACKEND_URL}/functional/case/metrics/comprehensive/public`,
-  GET_TIME_METRICS: `${AEGIS_BACKEND_URL}/functional/case/metrics/time`,
-  GET_BEHAVIOR_METRICS: `${AEGIS_BACKEND_URL}/functional/case/metrics/behavior`,
-  GET_QUALITY_METRICS: `${AEGIS_BACKEND_URL}/functional/case/metrics/quality`,
-  GET_VALUE_METRICS: `${AEGIS_BACKEND_URL}/functional/case/metrics/value`,
-} as const;
 
 export const caseManagementUrls = {
   // 功能用例

@@ -47,7 +47,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AssociateBugDialog } from '@/components/features/test-plan/AssociateBugDialog';
 import { CreateBugDialog } from '@/components/features/test-plan/CreateBugDialog';
 import { FEISHU_BUG_HOMEPAGE_URL } from '@/services/bug-management/constants/feishu-defect-url';
-import { getGlobalExecutionTracker, type ExecutionResult } from '@/utils/tracking';
 import type { ModuleTreeNode } from '@/components/features/case-management/types';
 
 /** 与后端 LastExecuteResults 一致：PENDING/SUCCESS/BLOCKED/ERROR，避免全部显示为未执行 */
@@ -307,13 +306,6 @@ export function TestPlanCaseDetailPage() {
 
     const stepsList = useMemo(() => (detail ? normalizeSteps(detail.steps) : []), [detail]);
 
-    // 测试计划执行耗时埋点：全局 ExecutionTracker 实例
-    const executionTrackerRef = useRef<ReturnType<typeof getGlobalExecutionTracker> | null>(null);
-    if (!executionTrackerRef.current) {
-        executionTrackerRef.current = getGlobalExecutionTracker();
-    }
-    const executionTracker = executionTrackerRef.current;
-
     const fetchPlanDetail = useCallback(async () => {
         if (!planId) return;
         try {
@@ -365,15 +357,6 @@ export function TestPlanCaseDetailPage() {
         };
         loadModuleTree();
     }, [planId, filterModuleId]);
-
-    // 当进入某个计划用例详情时，启动执行耗时追踪；切换用例或离开页面时停止
-    useEffect(() => {
-        if (!planId || !caseId || !executionTracker) return;
-        executionTracker.start();
-        return () => {
-            executionTracker.stop();
-        };
-    }, [planId, caseId, executionTracker]);
 
     const fetchCaseList = useCallback(async () => {
         if (!planId) return;
@@ -584,19 +567,6 @@ export function TestPlanCaseDetailPage() {
                 actualResult: stepActuals[index] != null && stepActuals[index] !== '' ? stepActuals[index] : null,
                 executeResult: stepResults[index] != null && stepResults[index] !== '' ? stepResults[index] : null,
             }));
-            // 提交前结算当前用例的执行耗时（ExecutionTracker 埋点）
-            let execResult: ExecutionResult | null = null;
-            if (executionTracker) {
-                execResult = executionTracker.settle();
-            }
-            const {
-                executionTime = 0,
-                readingTime = 0,
-                isBatch = false,
-                focusOutCount: focusOutCountFromTracker = 0,
-                filteredTime = 0,
-            } = execResult || ({} as ExecutionResult);
-
             const payload: Record<string, unknown> = {
                 projectId,
                 testPlanId: planId,
@@ -605,12 +575,6 @@ export function TestPlanCaseDetailPage() {
                 planCommentFileIds: [],
                 notifier: '', // 与原项目 executeSubmit 一致：评论@的人 id，多个以 ; 隔开
                 stepsExecResult: JSON.stringify(stepExecutionResult),
-                // 执行耗时追踪数据
-                actualExecMs: executionTime,
-                actualReadingMs: readingTime,
-                isBatchFill: isBatch,
-                focusOutCount: focusOutCountFromTracker,
-                filteredTimeMs: filteredTime,
                 isBlocked: result === 'BLOCKED',
                 caseId: functionalCaseId,
                 id: planCaseId,

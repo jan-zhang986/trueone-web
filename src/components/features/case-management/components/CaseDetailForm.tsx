@@ -6,6 +6,7 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef, useCallback, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { caseManagementService } from '@/services';
 import { CaseEditTypeToggle } from './CaseEditTypeToggle';
@@ -96,6 +97,7 @@ export const CaseDetailForm = forwardRef<CaseDetailFormRef, CaseDetailFormProps>
     const [unLinkFilesIds, setUnLinkFilesIds] = useState<string[]>([]);
     const [templateId, setTemplateId] = useState('');
     const [workflowId, setWorkflowId] = useState('');
+    const [type, setType] = useState<string>('FUNCTIONAL');
 
     const initialLoad = useRef(false);
 
@@ -171,6 +173,7 @@ export const CaseDetailForm = forwardRef<CaseDetailFormRef, CaseDetailFormProps>
         setExpectedResult(res?.expectedResult || '');
         setDescription(res?.description || '');
         setModuleId(res?.moduleId || '');
+        setType(res?.type || res?.caseType || 'FUNCTIONAL');
         const tagVal = res?.tags;
         setTags(Array.isArray(tagVal) ? tagVal : typeof tagVal === 'string' ? (tagVal ? [tagVal] : []) : []);
         if (res?.steps) setSteps(parseSteps(res.steps));
@@ -226,6 +229,8 @@ export const CaseDetailForm = forwardRef<CaseDetailFormRef, CaseDetailFormProps>
         expectedResult,
         description,
         moduleId,
+        type,
+        caseType: type,
         tags,
         customFields: Object.entries(customFieldValues).map(([fieldId, value]) => ({
           fieldId,
@@ -456,6 +461,20 @@ export const CaseDetailForm = forwardRef<CaseDetailFormRef, CaseDetailFormProps>
         </div>
         {/* 右侧：模块 + 自定义字段 + 标签（参考 caseTemplateDetail preview-right 428px） */}
         <div className="w-[400px] shrink-0 space-y-5 pl-2">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">用例类型</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="w-full h-9 border-gray-200 bg-white text-xs">
+                <SelectValue placeholder="选择用例类型" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FUNCTIONAL"><span className="text-xs font-semibold">功能测试用例 (Functional)</span></SelectItem>
+                <SelectItem value="API"><span className="text-xs font-semibold">API 接口测试用例 (HTTP)</span></SelectItem>
+                <SelectItem value="UI_AUTOMATION"><span className="text-xs font-semibold">UI 自动化测试用例 (Web UI)</span></SelectItem>
+                <SelectItem value="PERF"><span className="text-xs font-semibold">性能测试用例 (Load Test)</span></SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <CaseModuleSelect
             moduleTree={moduleTree}
             value={moduleId}

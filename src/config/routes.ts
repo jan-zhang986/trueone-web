@@ -12,7 +12,7 @@ const currentMode = import.meta.env.MODE || 'development';
 
 /**
  * AegisOne 后端配置（用例模块 API）
- * 效能数据展示大屏 - 用例模块
+ * 用例模块 API
  */
 export const METERSPHERE_CONFIG = {
   // 本地开发环境
@@ -34,7 +34,7 @@ export const METERSPHERE_CONFIG = {
 
 /**
  * SnapTest 后端配置（Snap API）
- * 效能数据展示大屏 - SnapTest
+ * Snap API
  */
 export const SNAPTEST_CONFIG = {
   // 本地开发环境
@@ -279,9 +279,6 @@ export const FRONTEND_ROUTES = {
   // 缺陷管理
   BUG_MANAGEMENT: '/bug-management',
   
-  // 门禁管理
-  GATE_MANAGEMENT: '/gate-management',
-  
   // @deprecated 旧测试计划入口已下线，保留常量只为旧调用点跳转到需求质量主路径
   TEST_PLAN: '/quality-workspace?menu=quality-workspace&tab=requirements',
   
@@ -296,7 +293,7 @@ export const FRONTEND_ROUTES = {
     BASE: '/test-factory',
     API: '/test-factory/api',
     /** @deprecated compatibility-only route target; ordinary users should enter realizations from Case pages */
-    E2E_AUTO: '/case-management?menu=test-case&tab=realization',
+    E2E_AUTO: '/case-management?menu=test-case&tab=feature-case',
     PERFORMANCE: '/test-factory/performance',
     TEST_REPORT: '/test-factory/test-report',
     TEST_REPORT_DETAIL: (reportId: string) => `/test-factory/test-report/${reportId}`,
@@ -336,10 +333,6 @@ export const METERSPHERE_API_PATHS = {
   
   // 用户相关
   SYSTEM_USER: '/system/user',
-  
-  // 用例效能指标
-  METRICS_DASHBOARD: '/metrics/dashboard',
-  FUNCTIONAL_CASE_METRICS: '/functional/case/metrics',
   
   // 用例管理
   FUNCTIONAL_CASE: '/functional/case',

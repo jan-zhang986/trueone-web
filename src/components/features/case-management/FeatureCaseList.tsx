@@ -49,6 +49,8 @@ interface FeatureCaseListProps {
   projectId?: string;
   /** 当前 Space。新产品主路径要求先进入 Space，再维护 Case。 */
   spaceId?: string;
+  /** 选中的用例库 ID / 名称 (用于项目内多用例库隔离) */
+  repositoryId?: string;
   /** 分享链接打开时，从 URL 传入的 caseId，用于自动打开详情抽屉 */
   initialCaseId?: string | null;
   /** 初始选中的目录 ID（编辑/取消返回后恢复用） */
@@ -68,11 +70,14 @@ interface FeatureCaseListProps {
   hideModuleTree?: boolean;
   /** 外部传入的选中模块 ID */
   externalSelectedModuleId?: string;
+  /** 选中的版本基线 / 分支 */
+  versionId?: string;
 }
 
 export function FeatureCaseList({
   projectId = localStorage.getItem('currentProjectId') || 'default-project',
   spaceId,
+  repositoryId,
   initialCaseId,
   initialSelectedModuleId,
   onViewCase,
@@ -84,6 +89,7 @@ export function FeatureCaseList({
   onAiGenerate,
   hideModuleTree = false,
   externalSelectedModuleId,
+  versionId: propVersionId,
 }: FeatureCaseListProps) {
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(() => urlSearchParams.get('keyword') || '');
@@ -110,9 +116,13 @@ export function FeatureCaseList({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerCaseId, setDrawerCaseId] = useState<string | null>(initialCaseId ?? null);
   const [drawerPreferredTab, setDrawerPreferredTab] = useState<'detail' | 'realization'>('detail');
-  const [versionId, setVersionId] = useState<string>('');
+  const [versionId, setVersionId] = useState<string>(() => propVersionId || '');
   const [currentVersion, setCurrentVersion] = useState<any>(null);
   const [mergeDrawerOpen, setMergeDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (propVersionId) setVersionId(propVersionId);
+  }, [propVersionId]);
 
   useEffect(() => {
     if (initialCaseId) {
@@ -152,7 +162,7 @@ export function FeatureCaseList({
   const [sort, setSort] = useState<SortOption | null>(null);
   const [columnFilter, setColumnFilter] = useState<Record<string, string[]>>({});
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
-  const showLegacyVersionControls = !spaceId;
+  const showLegacyVersionControls = false;
 
   useEffect(() => {
     const views = loadSavedViews();
@@ -190,7 +200,7 @@ export function FeatureCaseList({
     fetchModuleTree,
     fetchModulesCount,
     treeLoaded,
-  } = useModuleTree({ projectId, spaceId, searchKeyword });
+  } = useModuleTree({ projectId, spaceId, repositoryId, searchKeyword });
 
   // 展开树到选中节点（须在 useModuleTree 之后）
   useEffect(() => {
@@ -278,6 +288,7 @@ export function FeatureCaseList({
   } = useCaseList({
     projectId,
     spaceId,
+    repositoryId,
     selectedModuleId,
     offspringIds,
     searchKeyword,
@@ -286,6 +297,7 @@ export function FeatureCaseList({
     filter: listFilter,
     sort,
     columnFilter,
+    versionId,
     onFetchSuccess: fetchModulesCount,
     initialCurrentPage: initialPageFromUrl,
     initialPageSize: initialPageSizeFromUrl,
@@ -490,7 +502,13 @@ export function FeatureCaseList({
     return {
       request: {
         ...detail,
-        id: detail.id,
+        id: detail?.id,
+        projectId: overrides.projectId || detail?.projectId || projectId || localStorage.getItem('currentProjectId') || 'default-project',
+        templateId: overrides.templateId || detail?.templateId || 'default-template',
+        moduleId: overrides.moduleId || detail?.moduleId,
+        name: overrides.name || detail?.name || detail?.title || '',
+        caseEditType: overrides.caseEditType || detail?.caseEditType || (detail?.steps ? 'STEP' : 'TEXT'),
+        versionId: overrides.versionId || detail?.versionId,
         deleteFileMetaIds: [],
         unLinkFilesIds: [],
         newAssociateFileListIds: [],

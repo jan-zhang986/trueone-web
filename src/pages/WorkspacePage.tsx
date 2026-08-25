@@ -4,11 +4,10 @@
  * 这是与路由对应的顶层页面组件
  */
 
-import { EfficiencyDashboard } from '@/components/features/EfficiencyDashboard';
 import { SnapTestModule } from '@/components/features/SnapTestModule';
 import { RequirementQualityView } from '@/components/features/requirement-quality';
 
-type WorkspaceSubMenu = 'efficiency-dashboard' | 'test-factory' | 'requirement-quality';
+type WorkspaceSubMenu = 'test-factory' | 'requirement-quality';
 
 interface WorkspacePageProps {
   selectedSubMenu?: string;
@@ -19,8 +18,6 @@ export function WorkspacePage({ selectedSubMenu: propSelectedSubMenu }: Workspac
 
   const renderContent = () => {
     switch (selectedSubMenu) {
-      case 'efficiency-dashboard':
-        return <EfficiencyDashboard />;
       case 'requirement-quality':
         return <RequirementQualityView />;
       case 'test-factory':

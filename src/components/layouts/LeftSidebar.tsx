@@ -5,18 +5,15 @@ import {
   Layers,
   Globe,
   Bug,
-  Key,
   Target,
   Settings,
   Sparkles,
   Cpu,
-  PhoneCall,
-  LayoutList,
   PanelLeft,
   PanelLeftClose,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { useSystemAdminCheck } from '@/components/features/efficiency-dashboard/hooks';
+import { useSystemAdminCheck } from '@/hooks/usePermissionCheck';
 
 interface LeftSidebarProps {
   selectedItem: string;
@@ -36,9 +33,6 @@ const ALL_MENU_ITEMS = [
     },
     { id: 'precision-test', label: '精准测试', icon: Target, color: 'text-gray-600' },
     { id: 'bug-management', label: '缺陷管理', icon: Bug, color: 'text-gray-600' },
-    { id: 'gate-management', label: '发布管理', icon: Key, color: 'text-gray-600' },
-    { id: 'dial-management', label: '拨测管理', icon: PhoneCall, color: 'text-gray-600' },
-    { id: 'task-management', label: '任务中心', icon: LayoutList, color: 'text-gray-600' },
     { id: 'aegis-agent', label: 'AI Agent', icon: Cpu, color: 'text-gray-600' },
     { id: 'setting', label: '系统设置', icon: Settings, color: 'text-gray-600' },
   ];

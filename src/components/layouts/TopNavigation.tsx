@@ -28,8 +28,7 @@ interface TopNavigationProps {
     | 'system-setting'
     | 'aegis-agent'
     | 'dial-management'
-    | 'task-management'
-    | 'gate-management'; // 菜单类型
+    | 'task-management'; // 菜单类型
 }
 
 export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSecondaryMenu = false, menuType = 'test-factory' }: TopNavigationProps) {
@@ -182,7 +181,6 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
 
   // 用例管理的二级菜单项（从 aegis-next-server 迁移）
   const caseManagementNavItems = [
-    { id: 'space', label: '空间' },
     { id: 'feature-case', label: '用例库' },
     { id: 'test-suite', label: '测试套件' },
     { id: 'gate-binding', label: '门禁绑定' },
@@ -222,13 +220,6 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
     { id: 'plan', label: '拨测历史' },
   ];
 
-  // 发布管理顶部二级菜单（发布管理、流水线配置）
-  const gateManagementNavItems = [
-    { id: 'deploy', label: '发布管理' },
-    { id: 'pipeline-config', label: '流水线配置' },
-    { id: 'scan-config', label: '扫描配置' },
-  ];
-
   // 任务中心：拨测任务 + 用例任务 + 用例任务详情 + 系统后台任务
   const taskManagementNavItems = [
     { id: 'tasks', label: '拨测任务' },
@@ -247,8 +238,7 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
               menuType === 'aegis-agent' ? aegisAgentNavItems :
                 menuType === 'dial-management' ? dialManagementNavItems :
                   menuType === 'task-management' ? taskManagementNavItems :
-                    menuType === 'gate-management' ? gateManagementNavItems :
-                      testFactoryNavItems;
+                    testFactoryNavItems;
 
   return (
     <>

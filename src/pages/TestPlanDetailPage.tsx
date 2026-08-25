@@ -16,7 +16,7 @@ import { WorkspaceExecutionPanel } from '@/components/features/test-plan/Workspa
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
     Loader2, Layers3, Target, Activity, ShieldCheck, RefreshCw,
-    GitBranch, BookOpen, FlaskConical, PlayCircle, Sparkles, Settings2,
+    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -322,7 +322,7 @@ export function QualityWorkspaceDetailPage() {
                                         <>
                                             <div className="w-px h-2 bg-slate-200" />
                                             <div className="flex items-center gap-1 text-blue-600">
-                                                <Sparkles className="w-3 h-3" />
+                                                <BookOpen className="w-3 h-3" />
                                                 {ANALYSIS_STATUS_LABEL[stats.analysisStatus] || stats.analysisStatus}
                                             </div>
                                         </>

@@ -232,12 +232,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
-        // metrics dashboard API 代理
-        '/metrics/dashboard': {
-          target: AEGIS_BACKEND_URL,
-          changeOrigin: true,
-          secure: false,
-        },
         // metrics efficiency API 代理（数据监控大盘 - Aegis 后端）
         '/metrics/efficiency': {
           target: AEGIS_BACKEND_URL,
@@ -246,12 +240,6 @@ export default defineConfig(({ mode }) => {
         },
         // 需求质量视图 API 代理
         '/metrics/requirement-quality': {
-          target: AEGIS_BACKEND_URL,
-          changeOrigin: true,
-          secure: false,
-        },
-        // functional case metrics API 代理
-        '/functional/case/metrics': {
           target: AEGIS_BACKEND_URL,
           changeOrigin: true,
           secure: false,

@@ -9,7 +9,7 @@ import { LogTable } from './LogTable';
 import { VirtualizedLogTable } from './VirtualizedLogTable';
 import { useLogQuery } from '@/hooks/log/useLogQuery';
 import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
-import { usePermissionCheck } from '@/components/features/efficiency-dashboard/hooks/usePermissionCheck';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Lock } from 'lucide-react';
 import type { LogFilters } from '@/types/log';

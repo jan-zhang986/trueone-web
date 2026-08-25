@@ -17,6 +17,7 @@ export interface SortOption {
 interface UseCaseListOptions {
   projectId: string;
   spaceId?: string;
+  repositoryId?: string;
   selectedModuleId: string;
   /** 当前选中模块的所有子孙节点 ID，用于包含下级模块用例（参考 aegis-next-server） */
   offspringIds?: string[];
@@ -28,6 +29,8 @@ interface UseCaseListOptions {
   sort?: SortOption | null;
   /** 列头快速筛选（多选）{ dataIndex: 选中值数组 } */
   columnFilter?: Record<string, string[]>;
+  /** 版本基线/分支 ID */
+  versionId?: string;
   onFetchSuccess?: () => void;
   /** 初始页码（从 URL 恢复，返回列表时保留用户之前选的页） */
   initialCurrentPage?: number;
@@ -131,6 +134,7 @@ function columnFilterToFilter(columnFilter?: Record<string, string[]>): Record<s
 export function useCaseList({
   projectId,
   spaceId,
+  repositoryId,
   selectedModuleId,
   offspringIds = [],
   searchKeyword,
@@ -139,6 +143,7 @@ export function useCaseList({
   filter,
   sort,
   columnFilter,
+  versionId,
   onFetchSuccess,
   initialCurrentPage,
   initialPageSize,
@@ -161,18 +166,20 @@ export function useCaseList({
       const params: Record<string, unknown> = {
         projectId,
         ...(spaceId ? { spaceId } : {}),
+        ...(repositoryId ? { repositoryId, repository: repositoryId } : {}),
         current: currentPage,
         pageSize: clampPageSize(pageSize),
         moduleIds:
           (flatParams.moduleIds as string[]) ??
           (selectedModuleId !== 'all' ? [selectedModuleId, ...offspringIds] : []),
       };
-      /** 版本只属于 legacy 用例库；Space 统一 Case 资产始终按当前态查询。 */
+      /** 版本透传：选中的版本/分支 ID */
       const filterVersionId =
         filter && typeof filter === 'object' && 'versionId' in filter
           ? String((filter as { versionId?: string }).versionId || '').trim()
           : '';
-      if (!spaceId && filterVersionId) params.versionId = filterVersionId;
+      const activeVersion = versionId || filterVersionId;
+      if (activeVersion) params.versionId = activeVersion;
       const kw = searchKeyword?.trim() || (flatParams.keyword as string);
       if (kw) params.keyword = kw;
       if (viewId === 'my_create') params.createByMe = 'true';
@@ -194,6 +201,10 @@ export function useCaseList({
           ? { ...(tableFilter ?? {}), ...(advanceFilter ?? {}) }
           : undefined;
       if (mergedFilter && Object.keys(mergedFilter).length > 0) params.filter = mergedFilter;
+
+      // 判断选中的是否为新建/自定义用例库（非示例用例库）
+      const isCustomRepo = repositoryId && repositoryId !== '示例用例库' && !repositoryId.includes('demo');
+
       let result: any;
       try {
         result = await caseManagementService.getUnifiedCaseList(params);
@@ -203,46 +214,55 @@ export function useCaseList({
           || (Array.isArray(result?.data) && result.data.length > 0)
           || (Array.isArray(result?.records) && result.records.length > 0);
 
-        if (!hasData && !spaceId) {
+        if (!hasData && !spaceId && !isCustomRepo) {
           console.log('统一 Case 列表为空，尝试从 legacy 列表接口获取数据');
           result = await caseManagementService.getCaseList(params);
         }
       } catch (unifiedError) {
-        if (spaceId) {
-          throw unifiedError;
+        if (spaceId || isCustomRepo) {
+          result = [];
+        } else {
+          console.warn('统一 Case 列表获取失败，回退到 legacy 列表接口', unifiedError);
+          result = await caseManagementService.getCaseList(params);
         }
-        console.warn('统一 Case 列表获取失败，回退到 legacy 列表接口', unifiedError);
-        result = await caseManagementService.getCaseList(params);
       }
       let rawList: any[] = [];
       if (Array.isArray(result)) rawList = result;
       else if (Array.isArray(result?.list)) rawList = result.list;
       else if (Array.isArray(result?.data)) rawList = result.data;
       else if (Array.isArray(result?.records)) rawList = result.records;
-      // 统一 aiCreate；并确保 caseLevel 可从 customFields/functionalPriority 解析，便于表格展示（原项目列表可能不返 caseLevel，需从 customFields 解析）
-      const list: CaseItem[] = rawList.map((item: any) => {
-        const meta = item.metadata && typeof item.metadata === 'object' ? item.metadata : null;
-        const normalizedItem = {
-          ...item,
-          id: item.id ?? item.caseId,
-          caseId: item.caseId ?? item.id,
-          name: item.name ?? item.title,
-          aiCreate: item.aiCreate ?? item.ai_create ?? false,
-          customFields: item.customFields ?? item.customFieldList ?? item.custom_fields,
-          reviewStatus: item.reviewStatus ?? item.lifecycleStatus,
-          lastExecuteResult: item.lastExecuteResult ?? item.lastRunStatus ?? meta?.lastExecuteResult,
-          moduleName: item.moduleName ?? item.modulePath,
-        };
-        const parsed = getCaseLevel(normalizedItem);
-        const level = normalizedItem.name ? (item.caseLevel ?? item.functionalPriority ?? parsed) : '-';
-        const caseLevelVal = level !== '-' ? level : (parsed !== '-' ? parsed : undefined);
-        return {
-          ...normalizedItem,
-          caseLevel: caseLevelVal ?? item.caseLevel ?? item.functionalPriority,
-        };
-      });
+
+      // 统一 aiCreate；并确保 caseLevel 可从 customFields/functionalPriority 解析
+      const list: CaseItem[] = rawList
+        .filter((item: any) => {
+          if (!isCustomRepo) return true;
+          const repoTag = item.repositoryId || item.repositoryName || item.repository;
+          return repoTag === repositoryId;
+        })
+        .map((item: any) => {
+          const meta = item.metadata && typeof item.metadata === 'object' ? item.metadata : null;
+          const normalizedItem = {
+            ...item,
+            id: item.id ?? item.caseId,
+            caseId: item.caseId ?? item.id,
+            name: item.name ?? item.title,
+            aiCreate: item.aiCreate ?? item.ai_create ?? false,
+            customFields: item.customFields ?? item.customFieldList ?? item.custom_fields,
+            reviewStatus: item.reviewStatus ?? item.lifecycleStatus,
+            lastExecuteResult: item.lastExecuteResult ?? item.lastRunStatus ?? meta?.lastExecuteResult,
+            moduleName: item.moduleName ?? item.modulePath,
+          };
+          const parsed = getCaseLevel(normalizedItem);
+          const level = normalizedItem.name ? (item.caseLevel ?? item.functionalPriority ?? parsed) : '-';
+          const caseLevelVal = level !== '-' ? level : (parsed !== '-' ? parsed : undefined);
+          return {
+            ...normalizedItem,
+            caseLevel: caseLevelVal ?? item.caseLevel ?? item.functionalPriority,
+          };
+        });
+
       setCaseList(list);
-      const apiTotal = result?.total ?? result?.totalCount ?? result?.totalElements;
+      const apiTotal = isCustomRepo ? list.length : (result?.total ?? result?.totalCount ?? result?.totalElements);
       const fallbackTotal =
         selectedModuleId === 'all' ? modulesCount['all'] ?? modulesCount['ALL'] : undefined;
       setTotal(apiTotal ?? (typeof fallbackTotal === 'number' && fallbackTotal > 0 ? fallbackTotal : list.length));
@@ -255,7 +275,7 @@ export function useCaseList({
       setLoading(false);
     }
     // 不将 modulesCount、onFetchSuccess 放入依赖，避免循环：onFetchSuccess 会更新 modulesCount，导致 fetchCaseList 重建并再次触发
-  }, [projectId, spaceId, currentPage, pageSize, searchKeyword, selectedModuleId, offspringIds, viewId, filter, sort, columnFilter]);
+  }, [projectId, spaceId, repositoryId, currentPage, pageSize, searchKeyword, selectedModuleId, offspringIds, viewId, filter, sort, columnFilter, versionId]);
 
   useEffect(() => {
     fetchCaseList();

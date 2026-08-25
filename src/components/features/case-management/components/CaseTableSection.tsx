@@ -153,11 +153,11 @@ function getExecuteResultColor(result?: string) {
 function getCoverageBadgeClass(status?: string) {
   switch (status) {
     case 'AUTOMATED_ONLY':
-      return 'bg-emerald-100 text-emerald-700';
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-semibold';
     case 'PARTIAL':
-      return 'bg-blue-100 text-blue-700';
+      return 'bg-blue-50 text-blue-700 border border-blue-200/80 font-semibold';
     default:
-      return 'bg-gray-100 text-gray-600';
+      return 'bg-slate-50 text-slate-600 border border-slate-200/60 font-medium';
   }
 }
 function getCoverageLabel(status?: string) {
@@ -169,6 +169,22 @@ function getCoverageLabel(status?: string) {
     default:
       return '';
   }
+}
+
+function getCaseTypeBadge(item?: any) {
+  const rawType = String(item?.type || item?.caseType || '').toUpperCase();
+  const covered = Array.isArray(item?.realizationSummary?.coveredTypes) ? item.realizationSummary.coveredTypes : [];
+  
+  if (rawType === 'API' || covered.includes('API')) {
+    return { label: 'API 接口', color: 'bg-purple-50 text-purple-700 border-purple-200/80 font-bold' };
+  }
+  if (rawType === 'UI_AUTOMATION' || rawType === 'UI' || covered.includes('UI_AUTOMATION')) {
+    return { label: 'UI 自动化', color: 'bg-sky-50 text-sky-700 border-sky-200/80 font-bold' };
+  }
+  if (rawType === 'PERF' || rawType === 'PERFORMANCE' || covered.includes('PERF')) {
+    return { label: '性能用例', color: 'bg-amber-50 text-amber-700 border-amber-200/80 font-bold' };
+  }
+  return { label: '功能用例', color: 'bg-slate-100 text-slate-700 border-slate-200/80 font-medium' };
 }
 
 /** 可排序列头（筛选支持多选：filterValue 为数组，点击选项为切换选中） */
@@ -783,6 +799,17 @@ export function CaseTableSection({
                                   {item.name || '-'}
                                 </button>
                               )}
+                              {(() => {
+                                const typeMeta = getCaseTypeBadge(item);
+                                return (
+                                  <span
+                                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] shrink-0 border ${typeMeta.color}`}
+                                    title={`用例类型：${typeMeta.label}`}
+                                  >
+                                    {typeMeta.label}
+                                  </span>
+                                );
+                              })()}
                               {item.realizationSummary?.automationCoverageStatus && getCoverageLabel(item.realizationSummary.automationCoverageStatus) && (
                                 <span
                                   className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs shrink-0 ${getCoverageBadgeClass(item.realizationSummary.automationCoverageStatus)}`}
@@ -836,6 +863,16 @@ export function CaseTableSection({
                           </TableCell>
                           {orderedOptionalCols.map((key) => {
                             switch (key) {
+                              case 'caseType': {
+                                const typeMeta = getCaseTypeBadge(item);
+                                return (
+                                  <TableCell key={`${item.id}-${key}`}>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs border ${typeMeta.color}`}>
+                                      {typeMeta.label}
+                                    </span>
+                                  </TableCell>
+                                );
+                              }
                               case 'reviewStatus':
                                 return (
                                   <TableCell key={`${item.id}-${key}`}>
