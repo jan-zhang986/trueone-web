@@ -190,9 +190,9 @@ export function ApiTestLayout() {
     params.delete('kbId');
 
     if (item === 'quality-workspace') {
-      params.set('tab', 'requirements');
+      params.set('tab', 'workspace');
     } else if (item === 'test-plan') {
-      params.set('tab', 'requirements');
+      params.set('tab', 'workspace');
     } else if (item === 'test-factory') {
       params.set('tab', 'api');
     } else if (item === 'project-management') {
@@ -364,14 +364,14 @@ export function ApiTestLayout() {
     navigate(`${getCanonicalPathForMenu('test-case')}?${params.toString()}`, { replace: true });
   }, [selectedMenuItem, searchParams.get('tab')]);
 
-  // 质量工作台下：tab 仅支持 requirements / workspace / test-report，无效时修正为 requirements（详情页不重定向，保留 pathname）
+  // 质量工作台下：tab 仅支持 workspace / test-report，无效时修正为 workspace（详情页不重定向，保留 pathname）
   useEffect(() => {
     if (selectedMenuItem !== 'quality-workspace') return;
     if (isQualityWorkspaceDetailPath) return; // 详情页不强制改 tab，避免覆盖为列表页
     const tab = searchParams.get('tab');
-    if (tab === 'requirements' || tab === 'workspace' || tab === 'test-report') return;
+    if (tab === 'workspace' || tab === 'test-report') return;
     const params = new URLSearchParams(searchParams);
-    params.set('tab', 'requirements');
+    params.set('tab', 'workspace');
     navigate(`${getCanonicalPathForMenu('quality-workspace')}?${params.toString()}`, { replace: true });
   }, [selectedMenuItem, searchParams.get('tab'), isQualityWorkspaceDetailPath]);
 
@@ -456,10 +456,8 @@ export function ApiTestLayout() {
               )
             ) : isQualityWorkspaceDetailPath ? (
               <QualityWorkspaceDetailPage />
-            ) : selectedTopMenu === 'workspace' ? (
-              <QualityWorkspacePage />
             ) : (
-              <RequirementQualityPage />
+              <QualityWorkspacePage />
             )}
           </div>
         ) : selectedMenuItem === 'test-case' || selectedMenuItem === 'case-management' ? (

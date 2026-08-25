@@ -280,7 +280,7 @@ export const FRONTEND_ROUTES = {
   BUG_MANAGEMENT: '/bug-management',
   
   // @deprecated 旧测试计划入口已下线，保留常量只为旧调用点跳转到需求质量主路径
-  TEST_PLAN: '/quality-workspace?menu=quality-workspace&tab=requirements',
+  TEST_PLAN: '/quality-workspace?menu=quality-workspace&tab=workspace',
   
   // 用例管理
   CASE_MANAGEMENT: '/case-management',

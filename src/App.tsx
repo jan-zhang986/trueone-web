@@ -110,7 +110,7 @@ function AppContent() {
       />
       <Route
         path="/test-plan/*"
-        element={<Navigate to="/quality-workspace?menu=quality-workspace&tab=requirements" replace />}
+        element={<Navigate to="/quality-workspace?menu=quality-workspace&tab=workspace" replace />}
       />
       <Route
         path="/*"

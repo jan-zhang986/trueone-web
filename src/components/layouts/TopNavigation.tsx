@@ -190,7 +190,6 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
 
   // 质量工作台的二级菜单项
   const qualityWorkspaceNavItems = [
-    { id: 'requirements', label: '需求列表' },
     { id: 'workspace', label: '工作台' },
     { id: 'test-report', label: '报告中心' },
   ];
