@@ -134,6 +134,7 @@ export function QualityWorkspaceDetailPage() {
     const [activeStep, setActiveStep] = useState<WorkspaceStep>('document');
     const [demoPreview, setDemoPreview] = useState(() => resolveWorkspaceDocumentDemoEnabled(window.location.search));
     const [isAiNativeMode, setIsAiNativeMode] = useState(() => searchParams.get('mode') === 'ai-native');
+    const [isPageIndexMode, setIsPageIndexMode] = useState(() => searchParams.get('mode') === 'pageindex');
     const demoInitRef = useRef(false);
 
     useEffect(() => {
