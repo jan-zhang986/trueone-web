@@ -13,10 +13,11 @@ import {
 } from '@/components/features/test-plan/workspace-document-mock';
 import { WorkspaceTestCasesPanel } from '@/components/features/test-plan/WorkspaceTestCasesPanel';
 import { WorkspaceExecutionPanel } from '@/components/features/test-plan/WorkspaceExecutionPanel';
+import { AiNativeWorkspaceView } from '@/components/features/quality-workspace/AiNativeWorkspaceView';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
     Loader2, Layers3, Target, Activity, ShieldCheck, RefreshCw,
-    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2,
+    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -131,6 +132,7 @@ export function QualityWorkspaceDetailPage() {
     const [editSheetOpen, setEditSheetOpen] = useState(false);
     const [activeStep, setActiveStep] = useState<WorkspaceStep>('document');
     const [demoPreview, setDemoPreview] = useState(() => resolveWorkspaceDocumentDemoEnabled(window.location.search));
+    const [isAiNativeMode, setIsAiNativeMode] = useState(() => searchParams.get('mode') === 'ai-native');
     const demoInitRef = useRef(false);
 
     useEffect(() => {
@@ -283,10 +285,28 @@ export function QualityWorkspaceDetailPage() {
         </div>
     );
 
+    if (isAiNativeMode) {
+        return (
+            <AiNativeWorkspaceView
+                workspaceName={detail?.name || '用户登录改造 质量工作台'}
+                onBack={() => setIsAiNativeMode(false)}
+            />
+        );
+    }
+
     return (
         <TooltipProvider>
             <div className="flex-1 flex flex-col h-full bg-[#F8FAFC] w-full overflow-hidden">
                 <div className="bg-white px-8 py-2 flex items-center justify-end gap-2 border-b border-slate-100 shrink-0">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        className="h-7 text-xs rounded-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold shadow-md shadow-blue-500/20 gap-1.5"
+                        onClick={() => setIsAiNativeMode(true)}
+                    >
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                        <span>体验 AI Native 智能工作台模式</span>
+                    </Button>
                     <Button
                         variant={demoPreview ? 'default' : 'outline'}
                         size="sm"
