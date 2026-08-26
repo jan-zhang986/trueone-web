@@ -14,10 +14,11 @@ import {
 import { WorkspaceTestCasesPanel } from '@/components/features/test-plan/WorkspaceTestCasesPanel';
 import { WorkspaceExecutionPanel } from '@/components/features/test-plan/WorkspaceExecutionPanel';
 import { AiNativeWorkspaceView } from '@/components/features/quality-workspace/AiNativeWorkspaceView';
+import { PageIndexWorkspaceDemo } from '@/components/features/quality-workspace/PageIndexWorkspaceDemo';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
     Loader2, Layers3, Target, Activity, ShieldCheck, RefreshCw,
-    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2, Sparkles,
+    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2, Sparkles, FolderTree,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -229,23 +230,6 @@ export function QualityWorkspaceDetailPage() {
         setDemoPreview(resolveWorkspaceDocumentDemoEnabled(location.search));
     }, [location.search]);
 
-    useEffect(() => {
-        if (demoInitRef.current || !import.meta.env.DEV) return;
-        if (searchParams.get('demo') === '0') return;
-        if (searchParams.get('demo') === '1' || searchParams.get('mock') === '1') return;
-        demoInitRef.current = true;
-        setDemoPreview(true);
-        const params = new URLSearchParams(searchParams);
-        params.set('demo', '1');
-        if (!params.get('detailTab')) params.set('detailTab', 'document');
-        navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-    }, [location.pathname, navigate, searchParams]);
-
-    const demoReferenceBundle = useMemo(() => {
-        if (!demoPreview || !detail?.id) return referenceBundle;
-        return buildWorkspaceDocumentMock(detail.id, detail.projectId).referenceBundle;
-    }, [demoPreview, detail?.id, detail?.projectId, referenceBundle]);
-
     const toggleDemoMode = () => {
         const next = !demoPreview;
         setDemoPreview(next);
@@ -285,6 +269,14 @@ export function QualityWorkspaceDetailPage() {
         </div>
     );
 
+    if (isPageIndexMode) {
+        return (
+            <PageIndexWorkspaceDemo
+                onBack={() => setIsPageIndexMode(false)}
+            />
+        );
+    }
+
     if (isAiNativeMode) {
         return (
             <AiNativeWorkspaceView
@@ -301,11 +293,20 @@ export function QualityWorkspaceDetailPage() {
                     <Button
                         variant="default"
                         size="sm"
-                        className="h-7 text-xs rounded-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold shadow-md shadow-blue-500/20 gap-1.5"
+                        className="h-7 text-xs rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-md shadow-emerald-500/20 gap-1.5"
+                        onClick={() => setIsPageIndexMode(true)}
+                    >
+                        <FolderTree className="w-3.5 h-3.5" />
+                        <span>体验 PageIndex 需求与用例闭环模式</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs rounded-lg border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium gap-1.5"
                         onClick={() => setIsAiNativeMode(true)}
                     >
-                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                        <span>体验 AI Native 智能工作台模式</span>
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                        <span>AI Native 全景导图模式</span>
                     </Button>
                     <Button
                         variant={demoPreview ? 'default' : 'outline'}
