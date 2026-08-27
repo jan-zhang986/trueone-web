@@ -29,6 +29,12 @@ import {
   Layers,
   ArrowRight,
   Clock,
+  History,
+  Boxes,
+  Cpu,
+  Lock,
+  Eye,
+  CheckCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,10 +46,18 @@ export interface DocumentItem {
   id: string;
   number: string;
   name: string;
-  coverage: number; // 0 ~ 100
+  coverage: number;
   uncoveredCount: number;
   content: string;
   reqItems: { reqId: string; title: string; text: string; isCovered: boolean }[];
+}
+
+export interface ScriptVersionSnapshot {
+  version: string;
+  timestamp: string;
+  author: string;
+  summary: string;
+  code: string;
 }
 
 export interface TestCaseItem {
@@ -57,14 +71,24 @@ export interface TestCaseItem {
   scriptLanguage: 'python' | 'typescript';
   scriptContent: string;
   scriptVersion: string;
+  injectedGlobals: string[]; // 依赖注入的全局公共库列表
+  historySnapshots: ScriptVersionSnapshot[]; // 历史快照版本
   lastExecutionTime?: string;
   executionDuration?: string;
+}
+
+export interface GlobalUtilityScript {
+  id: string;
+  name: string;
+  description: string;
+  language: string;
+  code: string;
 }
 
 export interface LogEntry {
   id: string;
   time: string;
-  type: 'info' | 'success' | 'warn' | 'error';
+  type: 'info' | 'success' | 'warn' | 'error' | 'sandbox';
   tag: string;
   text: string;
 }
@@ -143,42 +167,27 @@ const INITIAL_DOCS: DocumentItem[] = [
       { reqId: 'REQ-224', title: '【⚠️ 未覆盖】单IP防刷限流', text: '系统需限制单 IP 单日短信发送上限 20 次，超出返回 429。', isCovered: false },
     ],
   },
-  {
-    id: 'doc-3-1',
-    number: '3.1',
-    name: '3.1 密码输错阶梯锁定',
-    coverage: 100,
-    uncoveredCount: 0,
-    content: `### 3.1 密码输错阶梯风控策略
+];
 
-#### 3.1.1 错误计数与锁定规则
-- **输错 1~4 次**：页面友好提示“密码错误，还可尝试 N 次”；
-- **输错第 5 次**：系统立即触发风控锁定，锁定账号登录权限 **15 分钟**；
-- 锁定期内输入正确密码亦必须返回 HTTP 403 锁定中。`,
-    reqItems: [
-      { reqId: 'REQ-311', title: '输错提示剩余次数', text: '密码输错 1~4 次，提示剩余重试次数。', isCovered: true },
-      { reqId: 'REQ-312', title: '输错5次锁定15分钟', text: '连续输错 5 次，锁定该账号登录权限 15 分钟。', isCovered: true },
-    ],
+// 1. 公共脚本工具库定义 (Global Fixtures & Utilities)
+const INITIAL_GLOBAL_SCRIPTS: GlobalUtilityScript[] = [
+  {
+    id: 'util-crypto',
+    name: 'crypto_util.py (动态加盐加密)',
+    description: '提供标准的 SHA-256 + 动态 Salt 密码加密工具',
+    language: 'python',
+    code: `import hashlib\nimport time\n\ndef encrypt_pwd(raw_password: str, salt: str = "AEGIS_QA_2026") -> str:\n    """平台公共加解密工具，统一注入到用例 ctx 中"""\n    salted = f"{raw_password}_{salt}_{int(time.time() // 3600)}"\n    return hashlib.sha256(salted.encode()).hexdigest()`,
   },
   {
-    id: 'doc-3-2',
-    number: '3.2',
-    name: '3.2 单点登录与异地互踢',
-    coverage: 0,
-    uncoveredCount: 1,
-    content: `### 3.2 单点登录与异地登录互踢
-
-#### 3.2.1 在线设备互斥规则
-- 同一账号同一时刻只允许在 1 台移动设备和 1 个网页端同时在线；
-- 当账号在异地新设备成功登录时，服务端通过 WebSocket 向旧设备推送下线广播；
-- 旧设备前端弹出下线提示并强制销毁 Token。`,
-    reqItems: [
-      { reqId: 'REQ-321', title: '【⚠️ 未覆盖】异地互踢下线', text: '新设备登录成功后通过 WebSocket 下线旧设备并使 Token 失效。', isCovered: false },
-    ],
+    id: 'util-auth',
+    name: 'auth_fixtures.py (鉴权免登脚手架)',
+    description: '提供自动生成和刷新 Admin/Test Token 的公共夹具',
+    language: 'python',
+    code: `def get_authenticated_headers(client, account="admin") -> dict:\n    """获取已鉴权 Header，避免每个脚本重复调用登录"""\n    token = client.cached_tokens.get(account, "Bearer mock_jwt_token_sample")\n    return {"Authorization": token, "X-Tenant-Id": "vanguard_main"}`,
   },
 ];
 
-// 模拟用例
+// 模拟用例（带历史版本快照与公共注入依赖）
 const INITIAL_CASES: TestCaseItem[] = [
   {
     id: 'c-1',
@@ -190,10 +199,13 @@ const INITIAL_CASES: TestCaseItem[] = [
     reqSource: 'REQ-101: 采用双 Token 架构',
     scriptLanguage: 'python',
     scriptVersion: 'v1.2',
+    injectedGlobals: ['crypto_util', 'auth_fixtures'],
     executionDuration: '112ms',
     scriptContent: `# [TC-AUTH-001] 双 Token 颁发验证脚本
+# 平台已安全注入公共依赖: ctx.encrypt_pwd(), auth_fixtures, client, redis
+
 def run_test(client, redis, ctx):
-    payload = {"account": "admin_user", "password": ctx.encrypt("Pass123!")}
+    payload = {"account": "admin_user", "password": ctx.encrypt_pwd("Pass123!")}
     resp = client.post("/api/v1/auth/login", json=payload)
     
     assert resp.status_code == 200, f"接口异常: {resp.text}"
@@ -204,6 +216,22 @@ def run_test(client, redis, ctx):
     assert data.get("expiresIn") == 7200, "accessToken 有效期必须为 2 小时"
     
     return {"passed": True, "token": data["accessToken"][:12] + "..."}`,
+    historySnapshots: [
+      {
+        version: 'v1.2',
+        timestamp: '2026-08-27 14:15:30',
+        author: '张建 (QA Lead)',
+        summary: '优化 Token 过期时间为 7200s 精确断言',
+        code: `# [TC-AUTH-001] 双 Token 颁发验证脚本\ndef run_test(client, redis, ctx):\n    payload = {"account": "admin_user", "password": ctx.encrypt_pwd("Pass123!")}\n    resp = client.post("/api/v1/auth/login", json=payload)\n    assert resp.status_code == 200\n    data = resp.json().get("data", {})\n    assert data.get("expiresIn") == 7200\n    return {"passed": True}`,
+      },
+      {
+        version: 'v1.0',
+        timestamp: '2026-08-27 10:00:12',
+        author: 'AI Agent (Auto)',
+        summary: '初始 AI 依据 PRD 自动生成',
+        code: `# [TC-AUTH-001] 初始脚本\ndef run_test(client, redis, ctx):\n    resp = client.post("/api/v1/auth/login", json={"account": "admin"})\n    assert resp.status_code == 200`,
+      },
+    ],
   },
   {
     id: 'c-3',
@@ -215,8 +243,11 @@ def run_test(client, redis, ctx):
     reqSource: 'REQ-221: 发送验证码与 60s 倒计时',
     scriptLanguage: 'python',
     scriptVersion: 'v1.0',
+    injectedGlobals: ['crypto_util'],
     executionDuration: '142ms',
     scriptContent: `# [TC-SMS-001] 获取短信验证码正常流
+# 平台已安全注入公共依赖: client, redis, ctx
+
 def run_test(client, redis, ctx):
     phone = "13800138000"
     
@@ -230,32 +261,15 @@ def run_test(client, redis, ctx):
     assert len(code) == 6 and code.isdigit(), f"验证码格式不正确: {code}"
     
     return {"passed": True, "smsCode": code}`,
-  },
-  {
-    id: 'c-4',
-    code: 'TC-SMS-002',
-    title: '验证码超时 (>5分钟) 提交 ➔ 明确提示“已失效”',
-    priority: 'P1',
-    status: 'passed',
-    docId: 'doc-2-2',
-    reqSource: 'REQ-222: 验证码 5 分钟有效',
-    scriptLanguage: 'python',
-    scriptVersion: 'v1.0',
-    executionDuration: '88ms',
-    scriptContent: `# [TC-SMS-002] 验证码超时失效校验
-import time
-
-def run_test(client, redis, ctx):
-    phone = "13800138001"
-    # 写入一个已过期的验证码
-    redis.setex(f"sms:code:{phone}", 1, "999999")
-    time.sleep(1.1)
-    
-    resp = client.post("/api/v1/sms/verify", json={"phone": phone, "code": "999999"})
-    assert resp.status_code == 400, "过期验证码应返回 400 校验失败"
-    assert "已失效" in resp.json().get("message", ""), "提示语必须包含'已失效'"
-    
-    return {"passed": True, "msg": "拦截符合预期"}`,
+    historySnapshots: [
+      {
+        version: 'v1.0',
+        timestamp: '2026-08-27 11:20:00',
+        author: 'AI Agent (Auto)',
+        summary: '初始 AI 根据 PRD 生成 Redis 校验流',
+        code: `# [TC-SMS-001] 初始脚本`,
+      },
+    ],
   },
 ];
 
@@ -263,16 +277,21 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
   // 数据与状态
   const [docs, setDocs] = useState<DocumentItem[]>(INITIAL_DOCS);
   const [cases, setCases] = useState<TestCaseItem[]>(INITIAL_CASES);
+  const [globalScripts, setGlobalScripts] = useState<GlobalUtilityScript[]>(INITIAL_GLOBAL_SCRIPTS);
   const [selectedDocId, setSelectedDocId] = useState<string>('doc-2-2');
 
-  // 布局与编辑器状态
+  // 布局
   const [splitMode, setSplitMode] = useState<'split' | 'single'>('split');
   const [caseCodeBuffer, setCaseCodeBuffer] = useState<{ [key: string]: string }>({});
+
+  // 模态弹窗控制
+  const [globalScriptsDrawerOpen, setGlobalScriptsDrawerOpen] = useState(false);
+  const [historyDrawerCaseId, setHistoryDrawerCaseId] = useState<string | null>(null);
 
   // 底部控制台
   const [isConsoleOpen, setIsConsoleOpen] = useState(true);
   const [logs, setLogs] = useState<LogEntry[]>([
-    { id: 'l1', time: '14:20:00', type: 'info', tag: 'AegisQA', text: '质量工作台已就绪 · Serverless 脚本沙箱环境准备完毕' },
+    { id: 'l1', time: '14:20:00', type: 'info', tag: 'AegisQA', text: '质量工作台已就绪 · Runner 子进程沙箱保护已激活 (PID Isolation & 30s Timeout Guard)' },
     { id: 'l2', time: '14:20:02', type: 'warn', tag: 'RiskRadar', text: '章节 [2.2 手机验证码登录] 存在 1 处未覆盖的防刷资损规则 (REQ-224)' },
   ]);
 
@@ -289,6 +308,11 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
   const currentCases = useMemo(() => {
     return cases.filter((c) => c.docId === selectedDocId);
   }, [cases, selectedDocId]);
+
+  // 查看历史快照的目标用例
+  const historyTargetCase = useMemo(() => {
+    return cases.find((c) => c.id === historyDrawerCaseId) || null;
+  }, [cases, historyDrawerCaseId]);
 
   // 全局覆盖率
   const globalStats = useMemo(() => {
@@ -333,19 +357,21 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
     if (!targetText) return;
     setSelectionPos(null);
 
-    toast.info(`🤖 AI 正在对规则「${targetText.slice(0, 14)}...」编写独立测试脚本...`);
+    toast.info(`🤖 AI 正在为「${targetText.slice(0, 14)}...」编写独立测试脚本...`);
 
     setTimeout(() => {
       const generatedCode = `# [TC-AUTO-001] 溯源需求: REQ-224 单 IP 短信防刷限流
+# 平台注入公共依赖: client, redis, ctx, crypto_util
+
 def run_test(client, redis, ctx):
     """
     自动推导脚本: 校验 1 秒内高频连击触发 Redis 429 限流拦截
     """
     phone = "13800138999"
-    # 模拟连续并发请求
+    # 1. 模拟连续并发请求 10 次
     responses = [client.post("/api/v1/sms/send", json={"phone": phone}) for _ in range(10)]
     
-    # 断言首个成功，后续 9 次被 429 限流拦截
+    # 2. 断言首个成功，后续 9 次被 429 限流拦截
     assert responses[0].status_code == 200, "首次发送应正常成功"
     for idx, resp in enumerate(responses[1:], start=2):
         assert resp.status_code == 429, f"第 {idx} 次请求应触发限流返回 429"
@@ -362,7 +388,17 @@ def run_test(client, redis, ctx):
         reqSource: 'REQ-224: 单 IP 短信防刷限流',
         scriptLanguage: 'python',
         scriptVersion: 'v1.0',
+        injectedGlobals: ['crypto_util'],
         scriptContent: generatedCode,
+        historySnapshots: [
+          {
+            version: 'v1.0',
+            timestamp: new Date().toLocaleDateString() + ' ' + new Date().toTimeString().slice(0, 8),
+            author: 'AI Agent (Auto)',
+            summary: '初始 AI 依据 PRD 规则自动生成',
+            code: generatedCode,
+          },
+        ],
       };
 
       setCases((prev) => [...prev, newCase]);
@@ -374,7 +410,7 @@ def run_test(client, redis, ctx):
           time: new Date().toTimeString().slice(0, 8),
           type: 'success',
           tag: 'AICopilot',
-          text: `✅ 已为 [REQ-224] 编写独立 Python 脚本 [${newCase.code}]，支持随时一键沙箱调试`,
+          text: `✅ 已为 [REQ-224] 编写独立 Python 脚本 [${newCase.code}] (已生成 v1.0 初始快照)`,
         },
       ]);
 
@@ -382,25 +418,32 @@ def run_test(client, redis, ctx):
     }, 800);
   };
 
-  // 单点调试运行脚本
+  // 3. Runner 子进程沙箱隔离执行 (Subprocess Sandbox Execution)
   const handleDebugRun = (c: TestCaseItem) => {
     setIsConsoleOpen(true);
-    toast.info(`正在执行 [${c.code}] 脚本...`);
+    const pid = Math.floor(Math.random() * 20000 + 40000);
 
     setLogs((prev) => [
       ...prev,
       {
-        id: `run-${Date.now()}`,
+        id: `sb-1`,
         time: new Date().toTimeString().slice(0, 8),
-        type: 'info',
-        tag: 'RunnerSandbox',
-        text: `⚡ 下发用例 [${c.code}] 脚本至 Python 动态沙箱执行...`,
+        type: 'sandbox',
+        tag: 'SandboxGuard',
+        text: `🛡️ [1/4 启动沙箱子进程] Process Spawn PID=${pid}, 内存硬限制=256MB, 超时熔断=30s`,
+      },
+      {
+        id: `sb-2`,
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'sandbox',
+        tag: 'FixtureInject',
+        text: `📦 [2/4 注入公共上下文] 成功注入公共库 [${c.injectedGlobals.join(', ')}] 与 client, redis 隔离沙箱环境`,
       },
     ]);
 
     setTimeout(() => {
       setCases((prev) =>
-        prev.map((item) => (item.id === c.id ? { ...item, status: 'passed', lastExecutionTime: new Date().toTimeString().slice(0, 8), executionDuration: '124ms' } : item))
+        prev.map((item) => (item.id === c.id ? { ...item, status: 'passed', lastExecutionTime: new Date().toTimeString().slice(0, 8), executionDuration: '118ms' } : item))
       );
 
       // 如果跑的是 REQ-224，把当前文档覆盖率刷满 100%
@@ -421,50 +464,79 @@ def run_test(client, redis, ctx):
       setLogs((prev) => [
         ...prev,
         {
-          id: `res-1`,
+          id: `sb-3`,
           time: new Date().toTimeString().slice(0, 8),
           type: 'success',
-          tag: 'RunnerOutput',
-          text: `[${c.code}] 执行通过: 断言命中 100% (HTTP 200 / 429 拦截符合预期)，耗时 124ms`,
+          tag: 'SubprocessExec',
+          text: `⚡ [3/4 执行输出] 用例 [${c.code}] 断言 100% 命中 (HTTP 200 / 429 拦截符合预期)，耗时 118ms`,
         },
         {
-          id: `res-2`,
+          id: `sb-4`,
           time: new Date().toTimeString().slice(0, 8),
-          type: 'success',
-          tag: 'AegisQA',
-          text: `🎯 关联需求 [${c.reqSource}] 状态回写为 100% 覆盖 🟢`,
+          type: 'sandbox',
+          tag: 'SandboxClean',
+          text: `🧹 [4/4 沙箱安全回收] 子进程 PID=${pid} 正常退出 (Exit Code 0)，0 内存残留泄漏`,
         },
       ]);
-      toast.success(`用例 [${c.code}] 脚本执行通过！`);
+      toast.success(`用例 [${c.code}] 在子进程沙箱中执行通过！`);
     }, 600);
   };
 
-  // 保存脚本大字段
+  // 2. 保存代码并生成新的快照版本 (Script Snapshot)
   const handleSaveCode = (caseId: string) => {
     const updatedCode = caseCodeBuffer[caseId];
-    if (!updatedCode) {
-      toast.info('脚本代码未发生变更');
-      return;
-    }
+    const targetCase = cases.find((c) => c.id === caseId);
+    if (!targetCase) return;
+
+    const codeToSave = updatedCode !== undefined ? updatedCode : targetCase.scriptContent;
+    const nextVerNum = (parseFloat(targetCase.scriptVersion.replace('v', '')) + 0.1).toFixed(1);
+    const nextVer = `v${nextVerNum}`;
+
+    const newSnapshot: ScriptVersionSnapshot = {
+      version: nextVer,
+      timestamp: new Date().toLocaleDateString() + ' ' + new Date().toTimeString().slice(0, 8),
+      author: '张建 (QA Lead)',
+      summary: `工程师手动更新代码，生成 ${nextVer} 快照`,
+      code: codeToSave,
+    };
 
     setCases((prev) =>
       prev.map((item) =>
         item.id === caseId
           ? {
               ...item,
-              scriptContent: updatedCode,
-              scriptVersion: `v${(parseFloat(item.scriptVersion.replace('v', '')) + 0.1).toFixed(1)}`,
+              scriptContent: codeToSave,
+              scriptVersion: nextVer,
+              historySnapshots: [newSnapshot, ...item.historySnapshots],
             }
           : item
       )
     );
 
-    toast.success('脚本已保存至平台大字段 (script_content) 并记录新版本快照！');
+    toast.success(`脚本已保存入库，并自动生成快照版本 ${nextVer}！`);
+  };
+
+  // 2. 回滚到某个历史版本 (Rollback)
+  const handleRollbackVersion = (caseId: string, snapshot: ScriptVersionSnapshot) => {
+    setCases((prev) =>
+      prev.map((item) =>
+        item.id === caseId
+          ? {
+              ...item,
+              scriptContent: snapshot.code,
+              scriptVersion: `${snapshot.version}-rollback`,
+            }
+          : item
+      )
+    );
+    setCaseCodeBuffer((prev) => ({ ...prev, [caseId]: snapshot.code }));
+    setHistoryDrawerCaseId(null);
+    toast.success(`已成功回滚到历史版本 ${snapshot.version}！`);
   };
 
   return (
     <div className="flex flex-col h-full w-full bg-[#F8FAFC] text-slate-800 overflow-hidden font-sans select-none antialiased">
-      {/* ================= 1. 顶部 Header (精致通透风格) ================= */}
+      {/* ================= 1. 顶部 Header ================= */}
       <header className="h-13 shrink-0 bg-white border-b border-slate-200/80 px-5 flex items-center justify-between z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">
@@ -477,7 +549,7 @@ def run_test(client, redis, ctx):
                 <span className="text-slate-300 text-xs">/</span>
                 <span className="text-slate-600 text-xs font-medium">用户登录改造</span>
                 <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-700 font-medium">
-                  Script Studio
+                  Script Studio (Sandboxed)
                 </Badge>
               </div>
             </div>
@@ -507,8 +579,19 @@ def run_test(client, redis, ctx):
           </div>
         </div>
 
-        {/* 顶部右侧布局与动作 */}
-        <div className="flex items-center gap-2">
+        {/* 顶部右侧：公共库管理 + 布局切换 */}
+        <div className="flex items-center gap-2.5">
+          {/* 1. 公共脚本库入口 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setGlobalScriptsDrawerOpen(true)}
+            className="h-8 text-xs text-indigo-700 border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 rounded-lg px-2.5 gap-1.5 font-medium"
+          >
+            <Boxes className="w-3.5 h-3.5 text-indigo-600" />
+            <span>公共函数与依赖库 ({globalScripts.length})</span>
+          </Button>
+
           {/* 分屏布局切换 */}
           <div className="flex items-center bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/70">
             <button
@@ -552,7 +635,7 @@ def run_test(client, redis, ctx):
 
       {/* ================= 2. 主工作区 ================= */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* 左栏：📑 PageIndex 目录树 (240px，清爽大纲) */}
+        {/* 左栏：📑 PageIndex 目录树 */}
         <div className="w-60 xl:w-64 shrink-0 bg-white border-r border-slate-200/70 flex flex-col min-h-0 z-10">
           <div className="h-9 px-4 border-b border-slate-100 flex items-center justify-between font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
             <div className="flex items-center gap-1.5">
@@ -605,7 +688,6 @@ def run_test(client, redis, ctx):
               splitMode === 'split' ? 'w-1/2 border-r border-slate-200/70' : 'w-full'
             } flex flex-col min-h-0 bg-white relative`}
           >
-            {/* PRD 标题栏 */}
             <div className="h-9 px-5 bg-slate-50/60 border-b border-slate-200/60 flex items-center justify-between text-xs text-slate-500 shrink-0">
               <span className="font-semibold text-slate-800 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-blue-600" />
@@ -614,14 +696,11 @@ def run_test(client, redis, ctx):
               <span className="text-[11px] text-slate-400">划选任意段落可由 AI 直接编写脚本</span>
             </div>
 
-            {/* PRD 正文滚动区 */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5 text-slate-700 text-xs leading-relaxed">
-              {/* 正文容器 */}
               <div className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/60 whitespace-pre-line leading-7 text-slate-800 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                 {currentDoc.content}
               </div>
 
-              {/* 拆解出的需求规则条目列表 */}
               <div className="space-y-2.5 pt-2">
                 <div className="font-semibold text-slate-800 text-xs flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
@@ -673,7 +752,7 @@ def run_test(client, redis, ctx):
               </div>
             </div>
 
-            {/* 划词浮动灵动岛 (毛玻璃质感) */}
+            {/* 划词浮动灵动岛 */}
             {selectionPos && selectedText && (
               <div
                 style={{
@@ -698,7 +777,7 @@ def run_test(client, redis, ctx):
             )}
           </div>
 
-          {/* 右栏：💻 用例与独立脚本 Studio (精致现代代码卡片) */}
+          {/* 右栏：💻 用例与独立脚本 Studio */}
           {splitMode === 'split' && (
             <div className="w-1/2 flex flex-col min-h-0 bg-[#FAFAFC]">
               <div className="h-9 px-5 bg-white border-b border-slate-200/70 flex items-center justify-between text-xs text-slate-500 shrink-0">
@@ -730,7 +809,7 @@ def run_test(client, redis, ctx):
                         {/* 用例头部 */}
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-mono text-blue-600 font-bold text-xs bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/60">
                                 {c.code}
                               </span>
@@ -743,9 +822,19 @@ def run_test(client, redis, ctx):
                               <h4 className="font-bold text-slate-900 text-xs truncate">{c.title}</h4>
                             </div>
 
-                            <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 pl-0.5">
-                              <Link2 className="w-2.5 h-2.5 text-blue-500 shrink-0" />
-                              <span>{c.reqSource}</span>
+                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-mono">
+                              <div className="flex items-center gap-1 truncate">
+                                <Link2 className="w-2.5 h-2.5 text-blue-500 shrink-0" />
+                                <span>{c.reqSource}</span>
+                              </div>
+
+                              {/* 1. 注入的公共依赖标签 */}
+                              {c.injectedGlobals.length > 0 && (
+                                <div className="flex items-center gap-1 text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100">
+                                  <Boxes className="w-2.5 h-2.5" />
+                                  <span>注入: {c.injectedGlobals.join(', ')}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -760,39 +849,51 @@ def run_test(client, redis, ctx):
                               </Badge>
                             )}
 
-                            {/* 调试运行 */}
+                            {/* 3. 调试运行 (触发沙箱) */}
                             <Button
                               size="sm"
                               onClick={() => handleDebugRun(c)}
                               className="h-7 text-[11px] bg-slate-900 hover:bg-slate-800 text-white px-3 rounded-lg gap-1 font-medium shadow-sm"
                             >
                               <Play className="w-3 h-3 fill-current" />
-                              <span>调试运行</span>
+                              <span>沙箱调试</span>
                             </Button>
                           </div>
                         </div>
 
-                        {/* 代码编辑器框 (优雅深色 / Monaco 质感) */}
+                        {/* 代码编辑器框 */}
                         <div className="rounded-xl bg-[#0F172A] border border-slate-800 overflow-hidden shadow-inner font-mono text-xs">
-                          {/* 代码框顶部状态条 */}
+                          {/* 顶部工具栏 */}
                           <div className="h-7 px-3 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
                             <div className="flex items-center gap-2 text-slate-300">
                               <Code2 className="w-3 h-3 text-cyan-400" />
-                              <span className="font-semibold text-[10px] text-slate-300">script_content (独立脚本大字段)</span>
+                              <span className="font-semibold text-[10px] text-slate-300">script_content (平台大字段存储)</span>
                             </div>
+
                             <div className="flex items-center gap-3 text-[10px]">
+                              {/* 2. 查看历史快照按钮 */}
+                              <button
+                                onClick={() => setHistoryDrawerCaseId(c.id)}
+                                className="text-slate-400 hover:text-slate-200 flex items-center gap-1 font-medium transition-colors"
+                              >
+                                <History className="w-3 h-3 text-amber-400" />
+                                <span>历史快照 ({c.historySnapshots.length})</span>
+                              </button>
+
                               {c.executionDuration && (
                                 <span className="text-slate-400 flex items-center gap-1">
                                   <Clock className="w-2.5 h-2.5 text-emerald-400" />
-                                  <span>耗时 {c.executionDuration}</span>
+                                  <span>{c.executionDuration}</span>
                                 </span>
                               )}
+
+                              {/* 2. 保存新版本快照按钮 */}
                               <button
                                 onClick={() => handleSaveCode(c.id)}
-                                className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition-colors"
+                                className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold transition-colors bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30"
                               >
                                 <Save className="w-3 h-3" />
-                                <span>保存代码</span>
+                                <span>保存快照</span>
                               </button>
                             </div>
                           </div>
@@ -820,17 +921,19 @@ def run_test(client, redis, ctx):
         </div>
       </div>
 
-      {/* ================= 3. 底部 Runner 沙箱执行终端 (极简现代终端) ================= */}
+      {/* ================= 3. 底部 Runner 子进程沙箱执行终端 ================= */}
       <div
-        style={{ height: isConsoleOpen ? '150px' : '32px' }}
+        style={{ height: isConsoleOpen ? '160px' : '32px' }}
         className="shrink-0 bg-[#0B0F17] border-t border-slate-800/80 flex flex-col z-20 transition-all duration-150 relative text-slate-300"
       >
         <div className="h-8 bg-[#0F172A] border-b border-slate-800/80 px-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 font-mono text-[11px]">
             <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-semibold text-slate-200">Runner 动态沙箱执行日志</span>
-            <span className="text-slate-500">|</span>
-            <span className="text-slate-400 text-[10px]">Live Streaming</span>
+            <span className="font-semibold text-slate-200">Runner Subprocess 隔离沙箱终端</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-emerald-400 text-[10px] flex items-center gap-1 font-medium">
+              <Cpu className="w-3 h-3" /> 256MB Hard Limit · 30s Timeout Guard Active
+            </span>
           </div>
 
           <button
@@ -850,6 +953,8 @@ def run_test(client, redis, ctx):
                   className={`shrink-0 font-bold ${
                     log.type === 'success'
                       ? 'text-emerald-400'
+                      : log.type === 'sandbox'
+                      ? 'text-indigo-400'
                       : log.type === 'warn'
                       ? 'text-amber-400'
                       : 'text-cyan-400'
@@ -857,7 +962,15 @@ def run_test(client, redis, ctx):
                 >
                   [{log.tag}]
                 </span>
-                <span className={log.type === 'success' ? 'text-emerald-300' : 'text-slate-200'}>
+                <span
+                  className={
+                    log.type === 'success'
+                      ? 'text-emerald-300'
+                      : log.type === 'sandbox'
+                      ? 'text-indigo-200'
+                      : 'text-slate-200'
+                  }
+                >
                   {log.text}
                 </span>
               </div>
@@ -865,6 +978,126 @@ def run_test(client, redis, ctx):
           </div>
         )}
       </div>
+
+      {/* ================= 4. 模态抽屉 1: 🌐 公共脚本与依赖工具库 ================= */}
+      {globalScriptsDrawerOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex justify-end animate-in fade-in">
+          <div className="w-[540px] bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Boxes className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-slate-900 text-sm">全局公共函数与夹具库 (Global Fixtures)</h3>
+              </div>
+              <button
+                onClick={() => setGlobalScriptsDrawerOpen(false)}
+                className="text-slate-400 hover:text-slate-700 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              存放所有用例共享的加解密算法、Token 脚手架等公共逻辑，Runner 在沙箱执行时会自动将它们注入到用例的 `ctx` 上下文中，彻底消除代码重复（DRY 原则）。
+            </p>
+
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {globalScripts.map((g) => (
+                <div key={g.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-xs text-indigo-950">{g.name}</span>
+                    <Badge variant="outline" className="text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                      {g.language}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-slate-600">{g.description}</p>
+                  <pre className="p-2.5 rounded-lg bg-[#0F172A] text-slate-200 text-[11px] font-mono overflow-x-auto leading-relaxed">
+                    {g.code}
+                  </pre>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setGlobalScriptsDrawerOpen(false)}
+                className="text-xs"
+              >
+                关闭
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= 5. 模态抽屉 2: 🕒 脚本历史快照版本与一键回滚 ================= */}
+      {historyDrawerCaseId && historyTargetCase && (
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex justify-end animate-in fade-in">
+          <div className="w-[600px] bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-amber-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    [{historyTargetCase.code}] 脚本历史快照版本
+                  </h3>
+                  <span className="text-[11px] text-slate-400">支持对比与一键版本回滚 (Version Rollback)</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setHistoryDrawerCaseId(null)}
+                className="text-slate-400 hover:text-slate-700 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {historyTargetCase.historySnapshots.map((snap, idx) => (
+                <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge className="font-mono text-xs bg-slate-900 text-white">{snap.version}</Badge>
+                      <span className="text-xs font-semibold text-slate-800">{snap.summary}</span>
+                    </div>
+
+                    {/* 回滚按钮 */}
+                    <Button
+                      size="sm"
+                      onClick={() => handleRollbackVersion(historyTargetCase.id, snap)}
+                      className="h-6 text-[11px] bg-amber-600 hover:bg-amber-500 text-white rounded-md gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>回滚至此版本</span>
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                    <span>提交人: {snap.author}</span>
+                    <span>{snap.timestamp}</span>
+                  </div>
+
+                  <pre className="p-2.5 rounded-lg bg-[#0F172A] text-slate-200 text-[11px] font-mono overflow-x-auto leading-relaxed">
+                    {snap.code}
+                  </pre>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setHistoryDrawerCaseId(null)}
+                className="text-xs"
+              >
+                关闭
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
