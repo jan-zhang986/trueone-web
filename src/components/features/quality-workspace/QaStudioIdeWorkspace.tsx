@@ -1,10 +1,9 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   FileText,
   FileCheck2,
   CheckCircle2,
   AlertTriangle,
-  AlertCircle,
   Play,
   Columns2,
   Maximize2,
@@ -17,25 +16,23 @@ import {
   X,
   Bot,
   Terminal,
-  Activity,
-  GitBranch,
   ShieldCheck,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
-  RotateCcw,
-  Plus,
   SlidersHorizontal,
   Code2,
+  Save,
+  RotateCcw,
+  History,
+  Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
-// 数据模型定义
+// 数据模型
 export interface DocumentItem {
   id: string;
   number: string;
@@ -54,17 +51,10 @@ export interface TestCaseItem {
   status: 'passed' | 'failed' | 'ready';
   docId: string;
   reqSource: string;
-  steps: { step: string; expected: string }[];
-  boundApi?: { method: 'GET' | 'POST' | 'PUT' | 'DELETE'; path: string };
-}
-
-export interface ReportItem {
-  id: string;
-  title: string;
-  date: string;
-  status: 'pass' | 'conditional' | 'blocked';
-  passRate: string;
-  score: number;
+  scriptLanguage: 'python' | 'typescript';
+  scriptContent: string; // 平台大字段保存的独立测试代码
+  scriptVersion: string; // 如 v1.0
+  lastExecutionTime?: string;
 }
 
 export interface LogEntry {
@@ -140,7 +130,7 @@ const INITIAL_DOCS: DocumentItem[] = [
 - 若手机号在系统中已存在，直接完成登录并返回用户 Token；
 - 若手机号为首次登录，系统自动在后台创建新用户记录并分配基础权限。
 
-#### 2.2.3 异常与防刷限流 (重要)
+#### 2.2.3 异常与防刷限流 (重要漏洞点)
 - 为防止短信接口被恶意刷量导致企业资损，系统需限制 **单 IP 单日请求上限 20 次**，超出触发滑块验证码或 429 拦截。`,
     reqItems: [
       { reqId: 'REQ-221', text: '输入合规手机号，点击发送验证码，启动 60 秒倒计时防重。', isCovered: true },
@@ -184,7 +174,7 @@ const INITIAL_DOCS: DocumentItem[] = [
   },
 ];
 
-// 模拟用例
+// 模拟用例（每条用例包含独立的 scriptContent 脚本大字段）
 const INITIAL_CASES: TestCaseItem[] = [
   {
     id: 'c-1',
@@ -194,19 +184,24 @@ const INITIAL_CASES: TestCaseItem[] = [
     status: 'passed',
     docId: 'doc-1',
     reqSource: 'REQ-101: 采用双 Token 架构',
-    boundApi: { method: 'POST', path: '/api/v1/auth/login' },
-    steps: [{ step: '发送鉴权请求并校验返回体', expected: '包含 accessToken (2h有效) 与 refreshToken (7d有效)' }],
-  },
-  {
-    id: 'c-2',
-    code: 'TC-PWD-001',
-    title: '正确账号密码登录 ➔ 成功颁发凭证',
-    priority: 'P0',
-    status: 'passed',
-    docId: 'doc-2-1',
-    reqSource: 'REQ-211: 支持手机号/邮箱/用户名',
-    boundApi: { method: 'POST', path: '/api/v1/auth/login' },
-    steps: [{ step: '输入正确的用户名和密码', expected: '返回 HTTP 200，成功获取用户信息' }],
+    scriptLanguage: 'python',
+    scriptVersion: 'v1.2',
+    scriptContent: `# [TC-AUTH-001] 双 Token 颁发测试脚本
+def run_test(client, redis, ctx):
+    """
+    测试目标: 校验鉴权成功后返回 accessToken (2h) 与 refreshToken (7d)
+    """
+    payload = {"account": "test_user", "password": ctx.encrypt_pwd("Valid123!")}
+    resp = client.post("/api/v1/auth/login", json=payload)
+    
+    assert resp.status_code == 200, f"登录接口异常: {resp.text}"
+    data = resp.json().get("data", {})
+    
+    assert "accessToken" in data, "返回体必须包含 accessToken"
+    assert "refreshToken" in data, "返回体必须包含 refreshToken"
+    assert data.get("expiresIn") == 7200, "accessToken 有效期应为 2 小时 (7200s)"
+    
+    return {"passed": True, "token": data["accessToken"][:10] + "..."}`,
   },
   {
     id: 'c-3',
@@ -216,8 +211,22 @@ const INITIAL_CASES: TestCaseItem[] = [
     status: 'passed',
     docId: 'doc-2-2',
     reqSource: 'REQ-221: 发送验证码与 60s 倒计时',
-    boundApi: { method: 'POST', path: '/api/v1/sms/send' },
-    steps: [{ step: '输入 13800000000 点击获取验证码', expected: '收到 6 位验证码，按钮置灰倒计时 60s' }],
+    scriptLanguage: 'python',
+    scriptVersion: 'v1.0',
+    scriptContent: `# [TC-SMS-001] 获取短信验证码正常流
+def run_test(client, redis, ctx):
+    phone = "13800138000"
+    
+    # 步骤 1: 触发获取短信验证码接口
+    resp = client.post("/api/v1/sms/send", json={"phone": phone, "scene": "login"})
+    assert resp.status_code == 200, f"发送短信失败: {resp.text}"
+    
+    # 步骤 2: 校验 Redis 中生成的 6 位验证码
+    code = redis.get(f"sms:code:{phone}")
+    assert code is not None, "Redis 中应缓存有验证码"
+    assert len(code) == 6 and code.isdigit(), f"验证码格式错误: {code}"
+    
+    return {"passed": True, "smsCode": code}`,
   },
   {
     id: 'c-4',
@@ -227,83 +236,67 @@ const INITIAL_CASES: TestCaseItem[] = [
     status: 'passed',
     docId: 'doc-2-2',
     reqSource: 'REQ-222: 验证码 5 分钟有效',
-    boundApi: { method: 'POST', path: '/api/v1/sms/verify' },
-    steps: [{ step: '获取验证码后等待 5 分钟再提交', expected: '提示“验证码已过期，请重新获取”' }],
-  },
-  {
-    id: 'c-5',
-    code: 'TC-SMS-003',
-    title: '全新未注册手机号 ➔ 验证码校验后自动建号',
-    priority: 'P0',
-    status: 'passed',
-    docId: 'doc-2-2',
-    reqSource: 'REQ-223: 未注册手机号自动建号',
-    boundApi: { method: 'POST', path: '/api/v1/sms/verify' },
-    steps: [{ step: '使用新手机号完成验证码登录', expected: '用户表新增记录，成功进入新人引导页' }],
-  },
-  {
-    id: 'c-6',
-    code: 'TC-SEC-001',
-    title: '连续输错 5 次 ➔ 账号强制锁定 15 分钟',
-    priority: 'P0',
-    status: 'passed',
-    docId: 'doc-3-1',
-    reqSource: 'REQ-312: 输错 5 次锁定 15 分钟',
-    boundApi: { method: 'POST', path: '/api/v1/auth/lock-check' },
-    steps: [{ step: '连续 5 次发送错误密码，第 6 次发送正确密码', expected: '第 6 次依旧返回 403 账号已被临时锁定' }],
-  },
-];
+    scriptLanguage: 'python',
+    scriptVersion: 'v1.0',
+    scriptContent: `# [TC-SMS-002] 验证码超时失效校验
+import time
 
-// 模拟报告
-const INITIAL_REPORTS: ReportItem[] = [
-  { id: 'rep-1', title: '用户登录改造阶段质量准出报告', date: '2026-08-26 18:30', status: 'conditional', passRate: '91%', score: 92 },
-  { id: 'rep-2', title: '冒烟测试执行报告 - Build #104', date: '2026-08-25 14:10', status: 'pass', passRate: '100%', score: 98 },
+def run_test(client, redis, ctx):
+    phone = "13800138001"
+    # 模拟写入一个 5 分钟前已过期的验证码
+    redis.setex(f"sms:code:{phone}", 1, "888888")
+    time.sleep(1.2) # 等待键过期
+    
+    resp = client.post("/api/v1/sms/verify", json={"phone": phone, "code": "888888"})
+    assert resp.status_code == 400, "过期验证码应返回 400 校验失败"
+    assert "已失效" in resp.json().get("message", ""), "错误提示语应包含'已失效'"
+    
+    return {"passed": True, "msg": "过期拦截符合预期"}`,
+  },
 ];
 
 export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
-  // 左侧主导航分类：'docs' (需求文档) | 'cases' (测试用例) | 'reports' (准出报告) | 'apis' (接口契约)
-  const [navCategory, setNavCategory] = useState<'docs' | 'cases' | 'reports' | 'apis'>('docs');
+  // 导航大纲
+  const [navCategory, setNavCategory] = useState<'docs' | 'cases'>('docs');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // 顶部打开的 Tab 页签
-  const [openTabs, setOpenTabs] = useState<Array<{ id: string; title: string; type: 'doc' | 'cases' | 'report' }>>([
-    { id: 'doc-2-2', title: '2.2 手机验证码登录', type: 'doc' },
-  ]);
-  const [activeTabId, setActiveTabId] = useState<string>('doc-2-2');
-
-  // 多屏分屏布局：'split' (并排双屏：左文档 + 右用例) | 'single' (单屏聚焦)
+  // 布局模式
   const [splitMode, setSplitMode] = useState<'split' | 'single'>('split');
 
-  // 状态数据
+  // 数据状态
   const [docs, setDocs] = useState<DocumentItem[]>(INITIAL_DOCS);
   const [cases, setCases] = useState<TestCaseItem[]>(INITIAL_CASES);
   const [selectedDocId, setSelectedDocId] = useState<string>('doc-2-2');
 
-  // 底部控制台 (Console & AI Co-pilot)
+  // 当前展开正在编辑代码的用例 ID
+  const [editingCaseId, setEditingCaseId] = useState<string>('c-3');
+  const [caseCodeBuffer, setCaseCodeBuffer] = useState<{ [key: string]: string }>({});
+
+  // 底部控制台
   const [isConsoleOpen, setIsConsoleOpen] = useState(true);
-  const [consoleTab, setConsoleTab] = useState<'ai' | 'terminal' | 'problems'>('ai');
-  const [aiInput, setAiInput] = useState('');
+  const [consoleTab, setConsoleTab] = useState<'terminal' | 'ai'>('terminal');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiInput, setAiInput] = useState('');
   const [logs, setLogs] = useState<LogEntry[]>([
-    { id: 'l1', time: '14:20:00', type: 'info', tag: 'AegisQA', text: '工作台索引初始化完成，已解析 5 个章节与 11 条需求规则' },
+    { id: 'l1', time: '14:20:00', type: 'info', tag: 'AegisQA', text: '质量工作台已就绪，已加载 Serverless 脚本动态沙箱' },
     { id: 'l2', time: '14:20:02', type: 'warn', tag: 'RiskRadar', text: '章节 [2.2 手机验证码登录] 存在 1 处未覆盖的防刷资损规则 (REQ-224)' },
   ]);
 
-  // 划词浮动操作项
+  // 划词浮动胶囊
   const [selectedText, setSelectedText] = useState('');
   const [selectionPos, setSelectionPos] = useState<{ x: number; y: number } | null>(null);
 
-  // 当前激活文档
+  // 当前选中文档
   const currentDoc = useMemo(() => {
     return docs.find((d) => d.id === selectedDocId) || docs[0];
   }, [docs, selectedDocId]);
 
-  // 当前激活文档下的用例
+  // 当前文档下的用例
   const currentCases = useMemo(() => {
     return cases.filter((c) => c.docId === selectedDocId);
   }, [cases, selectedDocId]);
 
-  // 全局覆盖率
+  // 覆盖率统计
   const globalStats = useMemo(() => {
     let totalReqs = 0;
     let coveredReqs = 0;
@@ -317,25 +310,6 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
     const uncovered = totalReqs - coveredReqs;
     return { totalReqs, coveredReqs, rate, uncovered, totalCases: cases.length };
   }, [docs, cases]);
-
-  // 打开文档 Tab
-  const handleSelectDoc = (doc: DocumentItem) => {
-    setSelectedDocId(doc.id);
-    if (!openTabs.some((t) => t.id === doc.id)) {
-      setOpenTabs((prev) => [...prev, { id: doc.id, title: doc.name, type: 'doc' }]);
-    }
-    setActiveTabId(doc.id);
-  };
-
-  // 关闭 Tab
-  const handleCloseTab = (tabId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const remaining = openTabs.filter((t) => t.id !== tabId);
-    setOpenTabs(remaining);
-    if (activeTabId === tabId && remaining.length > 0) {
-      setActiveTabId(remaining[remaining.length - 1].id);
-    }
-  };
 
   // 划词检测
   const handleMouseUp = () => {
@@ -359,28 +333,47 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
     });
   };
 
-  // 从划选文字快速生成用例
-  const handleCreateCaseFromSelection = () => {
+  // 划选 PRD 文字 ➔ 由 AI 直接生成独立 Python 脚本用例
+  const handleGenerateScriptFromSelection = () => {
     if (!selectedText) return;
     setSelectionPos(null);
     setIsAiLoading(true);
 
-    toast.info(`正在为划选文本「${selectedText.slice(0, 15)}...」推导测试用例...`);
+    toast.info(`🤖 AI 正在为「${selectedText.slice(0, 15)}...」编写独立 Python 测试脚本...`);
 
     setTimeout(() => {
+      const generatedCode = `# [TC-AUTO-001] 溯源: ${selectedText.slice(0, 25)}
+def run_test(client, redis, ctx):
+    """
+    自动推导脚本: 针对「${selectedText.slice(0, 20)}」的限流断言
+    """
+    phone = "13800138999"
+    # 模拟 1 秒内发起高频请求
+    responses = [client.post("/api/v1/sms/send", json={"phone": phone}) for _ in range(10)]
+    
+    # 断言首个成功，后续被 429 拦截
+    assert responses[0].status_code == 200, "首次发送应正常成功"
+    for idx, resp in enumerate(responses[1:], start=2):
+        assert resp.status_code == 429, f"第 {idx} 次请求应触发限流返回 429"
+        
+    return {"passed": True, "interceptedCount": 9}`;
+
       const newCase: TestCaseItem = {
         id: `TC-${Date.now()}`,
-        code: `TC-NEW-00${Math.floor(Math.random() * 90 + 10)}`,
-        title: `【划词推导】针对「${selectedText.slice(0, 16)}」的测试场景`,
+        code: `TC-AUTO-001`,
+        title: '高频并发连击请求 ➔ IP 与设备指纹限流拦截 (HTTP 429)',
         priority: 'P0',
-        status: 'passed',
+        status: 'ready',
         docId: currentDoc.id,
-        reqSource: `PRD 划词锚定: ${selectedText.slice(0, 20)}...`,
-        boundApi: { method: 'POST', path: '/api/v1/auth/custom-verify' },
-        steps: [{ step: `执行与「${selectedText.slice(0, 12)}」相关的校验动作`, expected: '断言符合 PRD 规则，HTTP 200' }],
+        reqSource: 'REQ-224: 单 IP 短信防刷限流',
+        scriptLanguage: 'python',
+        scriptVersion: 'v1.0',
+        scriptContent: generatedCode,
       };
 
       setCases((prev) => [...prev, newCase]);
+      setEditingCaseId(newCase.id);
+
       setLogs((prev) => [
         ...prev,
         {
@@ -388,80 +381,20 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
           time: new Date().toTimeString().slice(0, 8),
           type: 'success',
           tag: 'AICopilot',
-          text: `已为当前章节生成 1:1 用例 [${newCase.code}]`,
-        },
-      ]);
-      setIsAiLoading(false);
-      toast.success('已成功生成 1:1 落地测试用例！');
-    }, 800);
-  };
-
-  // AI 指令执行
-  const handleSendAiCommand = (customCmd?: string) => {
-    const cmd = customCmd || aiInput.trim();
-    if (!cmd) return;
-
-    setAiInput('');
-    setIsAiLoading(true);
-
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: `cmd-${Date.now()}`,
-        time: new Date().toTimeString().slice(0, 8),
-        type: 'info',
-        tag: 'UserCommand',
-        text: `> ${cmd}`,
-      },
-    ]);
-
-    setTimeout(() => {
-      const autoCase: TestCaseItem = {
-        id: `TC-AUTO-${Date.now()}`,
-        code: `TC-AUTO-001`,
-        title: '高频并发连击请求 ➔ IP 与设备指纹限流拦截 (HTTP 429)',
-        priority: 'P0',
-        status: 'passed',
-        docId: 'doc-2-2',
-        reqSource: 'REQ-224: 单 IP 短信防刷限流',
-        boundApi: { method: 'POST', path: '/api/v1/sms/send' },
-        steps: [{ step: '1秒内并发发送 10 次获取验证码请求', expected: '第 2 次起被 Redis 限流拦截，返回 HTTP 429' }],
-      };
-
-      setDocs((prev) =>
-        prev.map((d) => {
-          if (d.id !== 'doc-2-2') return d;
-          return {
-            ...d,
-            coverage: 100,
-            uncoveredCount: 0,
-            reqItems: d.reqItems.map((r) => ({ ...r, isCovered: true })),
-          };
-        })
-      );
-
-      setCases((prev) => (prev.some((c) => c.code === autoCase.code) ? prev : [...prev, autoCase]));
-
-      setLogs((prev) => [
-        ...prev,
-        {
-          id: `done-${Date.now()}`,
-          time: new Date().toTimeString().slice(0, 8),
-          type: 'success',
-          tag: 'AICopilot',
-          text: `✅ 已为当前章节补齐 1 条 P0 用例 [${autoCase.code}]，覆盖率提升至 100%！`,
+          text: `✅ 已为 PRD 规则生成独立 Python 脚本 [${newCase.code}]，已就绪可随时单点调试`,
         },
       ]);
 
       setIsAiLoading(false);
-      toast.success('AI 指挥执行完毕：已补齐用例并建立 1:1 双向锚定！');
-    }, 1000);
+      toast.success('AI 已成功生成独立 Python 测试脚本！');
+    }, 900);
   };
 
-  // 调度全量自动化
-  const handleRunPipeline = () => {
-    setConsoleTab('terminal');
+  // 单点调试运行某个脚本
+  const handleDebugRunCase = (c: TestCaseItem) => {
     setIsConsoleOpen(true);
+    setConsoleTab('terminal');
+    const codeToRun = caseCodeBuffer[c.id] || c.scriptContent;
 
     setLogs((prev) => [
       ...prev,
@@ -469,26 +402,78 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
         id: `run-${Date.now()}`,
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
-        tag: 'Runner',
-        text: `🚀 开始并发调度执行【${currentDoc.name}】下的所有关联 API 用例...`,
+        tag: 'RunnerSandbox',
+        text: `⚡ 下发用例 [${c.code}] 脚本至 Runner Python 隔离沙箱动态执行...`,
       },
     ]);
 
     setTimeout(() => {
-      setCases((prev) => prev.map((c) => (c.docId === currentDoc.id ? { ...c, status: 'passed' } : c)));
+      setCases((prev) =>
+        prev.map((item) => (item.id === c.id ? { ...item, status: 'passed', lastExecutionTime: new Date().toTimeString().slice(0, 8) } : item))
+      );
+
+      // 如果跑的是 REQ-224，把当前文档覆盖率刷满 100%
+      if (c.reqSource.includes('REQ-224')) {
+        setDocs((prev) =>
+          prev.map((d) => {
+            if (d.id !== 'doc-2-2') return d;
+            return {
+              ...d,
+              coverage: 100,
+              uncoveredCount: 0,
+              reqItems: d.reqItems.map((r) => ({ ...r, isCovered: true })),
+            };
+          })
+        );
+      }
+
       setLogs((prev) => [
         ...prev,
-        { id: `p1`, time: new Date().toTimeString().slice(0, 8), type: 'success', tag: 'Runner', text: 'POST /api/v1/sms/send ➔ 200 OK (142ms)' },
-        { id: `p2`, time: new Date().toTimeString().slice(0, 8), type: 'success', tag: 'Runner', text: 'POST /api/v1/sms/verify ➔ 200 OK (89ms)' },
-        { id: `pend`, time: new Date().toTimeString().slice(0, 8), type: 'success', tag: 'Runner', text: '全量用例执行通过，准出指标满足要求！' },
+        {
+          id: `res-1`,
+          time: new Date().toTimeString().slice(0, 8),
+          type: 'success',
+          tag: 'RunnerOutput',
+          text: `[${c.code}] 执行通过: 断言全部命中 (HTTP 200 / 429 拦截符合预期)，耗时 128ms`,
+        },
+        {
+          id: `res-2`,
+          time: new Date().toTimeString().slice(0, 8),
+          type: 'success',
+          tag: 'AegisQA',
+          text: `🎯 关联 PRD 规则 [${c.reqSource}] 状态回写为 100% 覆盖 🟢`,
+        },
       ]);
-      toast.success('自动化流水线执行全部通过！');
-    }, 1000);
+      toast.success(`用例 [${c.code}] 脚本沙箱执行通过！`);
+    }, 600);
+  };
+
+  // 保存脚本到平台大字段
+  const handleSaveScript = (caseId: string) => {
+    const updatedCode = caseCodeBuffer[caseId];
+    if (!updatedCode) {
+      toast.info('代码未发生改动');
+      return;
+    }
+
+    setCases((prev) =>
+      prev.map((item) =>
+        item.id === caseId
+          ? {
+              ...item,
+              scriptContent: updatedCode,
+              scriptVersion: `v${(parseFloat(item.scriptVersion.replace('v', '')) + 0.1).toFixed(1)}`,
+            }
+          : item
+      )
+    );
+
+    toast.success('脚本已保存至平台大字段 (script_content) 并生成新版本快照！');
   };
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-100 text-slate-800 overflow-hidden font-sans select-none">
-      {/* ================= 1. 顶部工作台标题与状态栏 ================= */}
+      {/* ================= 1. 顶部 Header ================= */}
       <header className="h-12 shrink-0 bg-white border-b border-slate-200 px-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -496,22 +481,22 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
               Q
             </div>
             <span className="font-bold text-sm text-slate-900">质量工作台</span>
-            <span className="text-slate-400 text-xs font-mono">/ 用户登录改造</span>
+            <span className="text-slate-400 text-xs font-mono">/ 用户登录改造 (Script-Driven Mode)</span>
           </div>
 
           <div className="h-4 w-px bg-slate-200" />
 
-          {/* 全局覆盖率指示 */}
+          {/* 全局覆盖率 */}
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1">
-              <span className="text-slate-500">需求覆盖率:</span>
+              <span className="text-slate-500">PRD 覆盖率:</span>
               <span className="font-bold font-mono text-emerald-600">{globalStats.rate}%</span>
               <span className="text-slate-400 text-[11px]">({globalStats.coveredReqs}/{globalStats.totalReqs})</span>
             </div>
 
             {globalStats.uncovered > 0 && (
               <Badge variant="outline" className="h-5 text-[10px] text-amber-700 bg-amber-50 border-amber-200 font-medium">
-                {globalStats.uncovered} 处待覆盖
+                {globalStats.uncovered} 处待覆盖脚本
               </Badge>
             )}
           </div>
@@ -519,11 +504,11 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
 
         {/* 顶部右侧控制 */}
         <div className="flex items-center gap-2">
-          {/* 分屏模式切换 */}
+          {/* 分屏切换 */}
           <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
             <button
               onClick={() => setSplitMode('split')}
-              title="双屏并排 (PRD + 测试用例)"
+              title="双屏并排 (左 PRD + 右脚本代码)"
               className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
                 splitMode === 'split' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -533,7 +518,7 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
             </button>
             <button
               onClick={() => setSplitMode('single')}
-              title="单屏聚焦"
+              title="单屏全屏"
               className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
                 splitMode === 'single' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -542,15 +527,6 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
               <span>单屏聚焦</span>
             </button>
           </div>
-
-          <Button
-            size="sm"
-            onClick={handleRunPipeline}
-            className="h-7 text-xs bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg px-3 gap-1.5"
-          >
-            <Play className="w-3 h-3 fill-current" />
-            <span>执行自动化</span>
-          </Button>
 
           {onBack && (
             <Button
@@ -565,9 +541,9 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
         </div>
       </header>
 
-      {/* ================= 2. 主体工作区 (左侧大纲树 + 中屏PRD + 右屏用例) ================= */}
+      {/* ================= 2. 主体工作区 ================= */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* 左侧活动图标栏 (44px) */}
+        {/* 左侧活动栏 */}
         <div className="w-11 shrink-0 bg-white border-r border-slate-200 flex flex-col items-center py-2 justify-between z-10">
           <div className="flex flex-col items-center gap-2">
             <button
@@ -575,7 +551,7 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
                 setNavCategory('docs');
                 setIsSidebarCollapsed(false);
               }}
-              title="需求文档目录 (PageIndex)"
+              title="需求文档目录"
               className={`p-2 rounded-lg transition-colors ${
                 navCategory === 'docs' && !isSidebarCollapsed
                   ? 'bg-blue-50 text-blue-600'
@@ -590,39 +566,9 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
                 setNavCategory('cases');
                 setIsSidebarCollapsed(false);
               }}
-              title="测试用例资产"
+              title="用例脚本库"
               className={`p-2 rounded-lg transition-colors ${
                 navCategory === 'cases' && !isSidebarCollapsed
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-              }`}
-            >
-              <FileCheck2 className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => {
-                setNavCategory('reports');
-                setIsSidebarCollapsed(false);
-              }}
-              title="准出报告"
-              className={`p-2 rounded-lg transition-colors ${
-                navCategory === 'reports' && !isSidebarCollapsed
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => {
-                setNavCategory('apis');
-                setIsSidebarCollapsed(false);
-              }}
-              title="接口资产"
-              className={`p-2 rounded-lg transition-colors ${
-                navCategory === 'apis' && !isSidebarCollapsed
                   ? 'bg-blue-50 text-blue-600'
                   : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
               }`}
@@ -640,255 +586,176 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
           </button>
         </div>
 
-        {/* 左侧大纲资源树 (240px，可折叠) */}
+        {/* 侧栏大纲树 */}
         {!isSidebarCollapsed && (
           <div className="w-60 xl:w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col min-h-0 z-10 text-xs">
             <div className="h-8 px-3 border-b border-slate-100 flex items-center justify-between font-semibold text-slate-600 text-[11px]">
-              <span>
-                {navCategory === 'docs'
-                  ? '需求文档大纲 (PAGEINDEX)'
-                  : navCategory === 'cases'
-                  ? '测试用例资产'
-                  : navCategory === 'reports'
-                  ? '准出报告库'
-                  : '接口资产'}
-              </span>
+              <span>{navCategory === 'docs' ? '需求目录 (PAGEINDEX)' : '用例与脚本大纲'}</span>
               <button onClick={() => setIsSidebarCollapsed(true)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {navCategory === 'docs' && (
-                <div className="space-y-1">
-                  {docs.map((doc) => {
-                    const isSelected = doc.id === currentDoc.id;
-                    const isFull = doc.coverage === 100;
-                    return (
-                      <div
-                        key={doc.id}
-                        onClick={() => handleSelectDoc(doc)}
-                        className={`cursor-pointer rounded-lg px-2.5 py-2 flex items-center justify-between text-xs transition-colors ${
-                          isSelected
-                            ? 'bg-blue-50 text-blue-900 font-semibold border border-blue-100'
-                            : 'text-slate-700 hover:bg-slate-50 border border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
-                          <span className="truncate">{doc.name}</span>
-                        </div>
-
-                        {isFull ? (
-                          <span className="text-[10px] text-emerald-600 font-mono shrink-0">100%</span>
-                        ) : (
-                          <span className="text-[10px] text-amber-600 font-mono font-bold shrink-0">
-                            {doc.coverage}%
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {navCategory === 'cases' && (
-                <div className="space-y-1">
-                  {cases.map((c) => (
-                    <div
-                      key={c.id}
-                      className="cursor-pointer rounded-lg px-2.5 py-1.5 flex items-center justify-between text-xs text-slate-700 hover:bg-slate-50"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <FileCheck2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                        <span className="truncate">{c.code} {c.title}</span>
-                      </div>
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 border-slate-200 text-slate-500">
-                        {c.priority}
-                      </Badge>
+              {docs.map((doc) => {
+                const isSelected = doc.id === currentDoc.id;
+                const isFull = doc.coverage === 100;
+                return (
+                  <div
+                    key={doc.id}
+                    onClick={() => setSelectedDocId(doc.id)}
+                    className={`cursor-pointer rounded-lg px-2.5 py-2 flex items-center justify-between text-xs transition-colors ${
+                      isSelected
+                        ? 'bg-blue-50 text-blue-900 font-semibold border border-blue-100'
+                        : 'text-slate-700 hover:bg-slate-50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
+                      <span className="truncate">{doc.name}</span>
                     </div>
-                  ))}
-                </div>
-              )}
 
-              {navCategory === 'reports' && (
-                <div className="space-y-2 p-1">
-                  {INITIAL_REPORTS.map((rep) => (
-                    <div
-                      key={rep.id}
-                      className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1 cursor-pointer hover:border-blue-400 transition-colors"
-                    >
-                      <div className="font-semibold text-slate-800 text-[11px] truncate">{rep.title}</div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-500">
-                        <span>通过率: {rep.passRate}</span>
-                        <span>{rep.date}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {navCategory === 'apis' && (
-                <div className="space-y-1">
-                  {['POST /api/v1/auth/login', 'POST /api/v1/auth/verify', 'POST /api/v1/sms/send', 'POST /api/v1/sms/verify'].map((api, idx) => (
-                    <div key={idx} className="px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-700 hover:bg-slate-50 cursor-pointer flex items-center gap-2 truncate">
-                      <span className="text-blue-600 font-bold shrink-0 text-[10px]">API</span>
-                      <span className="truncate">{api}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    {isFull ? (
+                      <span className="text-[10px] text-emerald-600 font-mono shrink-0">100%</span>
+                    ) : (
+                      <span className="text-[10px] text-amber-600 font-mono font-bold shrink-0">
+                        {doc.coverage}%
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* 主编辑区 (Tab 栏 + 多屏并排) */}
-        <div className="flex-1 flex flex-col min-h-0 bg-slate-50 relative">
-          {/* 顶部 Tab 页签栏 */}
-          <div className="h-8 bg-white flex items-center overflow-x-auto border-b border-slate-200 shrink-0 px-2 gap-1">
-            {openTabs.map((tab) => {
-              const isActive = tab.id === activeTabId;
-              return (
-                <div
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTabId(tab.id);
-                    if (tab.id.startsWith('doc-')) setSelectedDocId(tab.id);
-                  }}
-                  className={`group h-7 px-3 flex items-center gap-2 text-xs rounded-t-lg border-t border-x cursor-pointer transition-colors ${
-                    isActive
-                      ? 'bg-slate-50 text-slate-900 border-slate-200 font-semibold'
-                      : 'bg-white text-slate-500 border-transparent hover:text-slate-800'
-                  }`}
-                >
-                  <FileText className="w-3 h-3 text-blue-600" />
-                  <span>{tab.title}</span>
-                  <button
-                    onClick={(e) => handleCloseTab(tab.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 分屏内容展示区 */}
-          <div className="flex-1 flex min-h-0 overflow-hidden relative">
-            {/* 左屏：沉浸式 PRD 正文 */}
-            <div
-              onMouseUp={handleMouseUp}
-              className={`${
-                splitMode === 'split' ? 'w-1/2 border-r border-slate-200' : 'w-full'
-              } flex flex-col min-h-0 bg-white relative`}
-            >
-              <div className="h-8 px-4 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
-                <span className="font-semibold text-slate-800">{currentDoc.name}</span>
-                <span className="text-[10px] text-slate-400">划选任意段落可快速生成用例</span>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 text-slate-700 text-xs leading-relaxed">
-                {/* PRD 正文块 */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 whitespace-pre-line leading-6 text-slate-800">
-                  {currentDoc.content}
-                </div>
-
-                {/* 需求条目与 1:1 状态 */}
-                <div className="space-y-2 pt-2">
-                  <div className="font-semibold text-slate-800 text-xs flex items-center justify-between">
-                    <span>本节需求规则条目 ({currentDoc.reqItems.length})</span>
-                    <span className="text-slate-500 font-mono text-[11px]">
-                      覆盖率: {currentDoc.coverage}%
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {currentDoc.reqItems.map((r) => (
-                      <div
-                        key={r.reqId}
-                        className={`p-2.5 rounded-lg border flex items-start justify-between gap-2 text-xs ${
-                          r.isCovered
-                            ? 'bg-slate-50/50 border-slate-200 text-slate-700'
-                            : 'bg-amber-50/50 border-amber-200 text-amber-900'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <span className="font-mono font-bold text-blue-600 text-[11px] shrink-0">
-                            [{r.reqId}]
-                          </span>
-                          <span className="text-[11px]">{r.text}</span>
-                        </div>
-
-                        {r.isCovered ? (
-                          <Badge variant="outline" className="text-[9px] text-emerald-700 bg-emerald-50 border-emerald-200 shrink-0">
-                            已覆盖
-                          </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => handleSendAiCommand(`为 [${r.reqId}] 补齐测试用例`)}
-                            className="h-5 text-[10px] bg-amber-600 hover:bg-amber-500 text-white px-2 rounded shrink-0 gap-1"
-                          >
-                            <Sparkles className="w-2.5 h-2.5" />
-                            <span>AI 补齐</span>
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 划词浮动胶囊 */}
-              {selectionPos && selectedText && (
-                <div
-                  style={{
-                    position: 'fixed',
-                    left: `${selectionPos.x}px`,
-                    top: `${selectionPos.y}px`,
-                    transform: 'translate(-50%, -100%)',
-                  }}
-                  className="z-50 bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2 text-xs"
-                >
-                  <span className="text-slate-300 max-w-[120px] truncate">"{selectedText}"</span>
-                  <div className="h-3 w-px bg-slate-700" />
-                  <button
-                    onClick={handleCreateCaseFromSelection}
-                    className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-2 py-0.5 rounded text-[11px] flex items-center gap-1 transition-colors"
-                  >
-                    <Wand2 className="w-3 h-3" />
-                    <span>生成 1:1 用例</span>
-                  </button>
-                </div>
-              )}
+        {/* 主体分屏 */}
+        <div className="flex-1 flex min-h-0 overflow-hidden relative">
+          {/* 左屏：沉浸式 PRD 正文 */}
+          <div
+            onMouseUp={handleMouseUp}
+            className={`${
+              splitMode === 'split' ? 'w-1/2 border-r border-slate-200' : 'w-full'
+            } flex flex-col min-h-0 bg-white relative`}
+          >
+            <div className="h-8 px-4 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
+              <span className="font-semibold text-slate-800">{currentDoc.name}</span>
+              <span className="text-[10px] text-slate-400">划选任意规则文字由 AI 自动编写脚本</span>
             </div>
 
-            {/* 右屏：1:1 落地测试用例集 */}
-            {splitMode === 'split' && (
-              <div className="w-1/2 flex flex-col min-h-0 bg-slate-50">
-                <div className="h-8 px-4 bg-white border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
-                  <span className="font-semibold text-slate-800">
-                    落地测试用例集 ({currentCases.length} 条)
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 text-slate-700 text-xs leading-relaxed">
+              {/* PRD 正文 */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 whitespace-pre-line leading-6 text-slate-800">
+                {currentDoc.content}
+              </div>
+
+              {/* 需求条目与脚本覆盖状态 */}
+              <div className="space-y-2 pt-2">
+                <div className="font-semibold text-slate-800 text-xs flex items-center justify-between">
+                  <span>本节需求规则条目 ({currentDoc.reqItems.length})</span>
+                  <span className="text-slate-500 font-mono text-[11px]">
+                    脚本覆盖率: {currentDoc.coverage}%
                   </span>
-                  <span className="text-[11px] text-emerald-600 font-medium">1:1 双向锚定</span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {currentCases.length === 0 ? (
-                    <div className="h-48 flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-300 rounded-xl space-y-2 bg-white">
-                      <AlertTriangle className="w-6 h-6 text-amber-500" />
-                      <div className="text-xs font-semibold text-slate-700">当前章节暂无用例</div>
-                      <p className="text-[11px] text-slate-400">
-                        请划选左侧 PRD 或在底部控制台下达 AI 指令自动生成
-                      </p>
+                <div className="space-y-1.5">
+                  {currentDoc.reqItems.map((r) => (
+                    <div
+                      key={r.reqId}
+                      className={`p-2.5 rounded-lg border flex items-start justify-between gap-2 text-xs ${
+                        r.isCovered
+                          ? 'bg-slate-50/50 border-slate-200 text-slate-700'
+                          : 'bg-amber-50/50 border-amber-200 text-amber-900'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="font-mono font-bold text-blue-600 text-[11px] shrink-0">
+                          [{r.reqId}]
+                        </span>
+                        <span className="text-[11px]">{r.text}</span>
+                      </div>
+
+                      {r.isCovered ? (
+                        <Badge variant="outline" className="text-[9px] text-emerald-700 bg-emerald-50 border-emerald-200 shrink-0">
+                          已覆脚本
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedText(r.text);
+                            handleGenerateScriptFromSelection();
+                          }}
+                          className="h-5 text-[10px] bg-amber-600 hover:bg-amber-500 text-white px-2 rounded shrink-0 gap-1"
+                        >
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>AI 写脚本</span>
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    currentCases.map((c) => (
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 划词浮动胶囊 */}
+            {selectionPos && selectedText && (
+              <div
+                style={{
+                  position: 'fixed',
+                  left: `${selectionPos.x}px`,
+                  top: `${selectionPos.y}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+                className="z-50 bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2 text-xs"
+              >
+                <span className="text-slate-300 max-w-[140px] truncate">"{selectedText}"</span>
+                <div className="h-3 w-px bg-slate-700" />
+                <button
+                  onClick={handleGenerateScriptFromSelection}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-2 py-0.5 rounded text-[11px] flex items-center gap-1 transition-colors"
+                >
+                  <Wand2 className="w-3 h-3" />
+                  <span>AI 生成独立脚本</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 右屏：用例独立脚本编辑器 (Case & Script Studio) */}
+          {splitMode === 'split' && (
+            <div className="w-1/2 flex flex-col min-h-0 bg-slate-50">
+              <div className="h-8 px-4 bg-white border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 shrink-0">
+                <span className="font-semibold text-slate-800">
+                  落地脚本列表 ({currentCases.length} 条)
+                </span>
+                <span className="text-[11px] text-emerald-600 font-medium font-mono">Serverless Micro-Scripts</span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {currentCases.length === 0 ? (
+                  <div className="h-48 flex flex-col items-center justify-center text-center p-6 border border-dashed border-slate-300 rounded-xl space-y-2 bg-white">
+                    <AlertTriangle className="w-6 h-6 text-amber-500" />
+                    <div className="text-xs font-semibold text-slate-700">当前章节暂无脚本</div>
+                    <p className="text-[11px] text-slate-400">
+                      请划选左侧 PRD 文字，让 AI 自动为您编写独立的 Python 测试脚本
+                    </p>
+                  </div>
+                ) : (
+                  currentCases.map((c) => {
+                    const isEditing = editingCaseId === c.id;
+                    const code = caseCodeBuffer[c.id] !== undefined ? caseCodeBuffer[c.id] : c.scriptContent;
+
+                    return (
                       <Card
                         key={c.id}
-                        className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-2.5 shadow-none hover:border-slate-300 transition-colors"
+                        className={`rounded-xl border transition-all ${
+                          isEditing
+                            ? 'border-blue-300 bg-white ring-1 ring-blue-100 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        } p-3.5 space-y-3`}
                       >
+                        {/* 头部元数据 */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-1 flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -896,11 +763,14 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
                               <Badge variant="outline" className="text-[9px] px-1 py-0 border-slate-200 text-slate-600">
                                 {c.priority}
                               </Badge>
+                              <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-slate-100 text-slate-600 font-mono">
+                                {c.scriptLanguage} · {c.scriptVersion}
+                              </Badge>
                               <span className="font-semibold text-slate-800 truncate text-xs">{c.title}</span>
                             </div>
                             <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
                               <Link2 className="w-2.5 h-2.5 text-blue-500 shrink-0" />
-                              <span className="truncate">{c.reqSource}</span>
+                              <span>{c.reqSource}</span>
                             </div>
                           </div>
 
@@ -914,213 +784,109 @@ export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
                                 READY
                               </Badge>
                             )}
+
+                            {/* 调试执行按钮 */}
                             <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => {
-                                toast.info(`正在执行用例 [${c.code}]...`);
-                                setTimeout(() => {
-                                  setCases((prev) => prev.map((item) => (item.id === c.id ? { ...item, status: 'passed' } : item)));
-                                  toast.success(`用例 [${c.code}] 执行通过！`);
-                                }, 400);
-                              }}
-                              className="h-6 w-6 text-slate-500 hover:text-blue-600 rounded"
+                              size="sm"
+                              onClick={() => handleDebugRunCase(c)}
+                              className="h-6 text-[11px] bg-slate-900 hover:bg-slate-800 text-white px-2.5 rounded gap-1"
                             >
-                              <Play className="w-3 h-3" />
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>调试运行</span>
                             </Button>
                           </div>
                         </div>
 
-                        {c.boundApi && (
-                          <div className="flex items-center gap-2 p-1.5 rounded bg-slate-50 border border-slate-100 text-[10px] font-mono">
-                            <Badge variant="outline" className="text-[9px] border-blue-200 bg-blue-50 text-blue-700">
-                              {c.boundApi.method}
-                            </Badge>
-                            <span className="text-slate-600 truncate">{c.boundApi.path}</span>
-                          </div>
-                        )}
-
-                        <div className="space-y-1 text-[11px] text-slate-600 pt-1 border-t border-slate-100">
-                          {c.steps.map((s, idx) => (
-                            <div key={idx} className="space-y-0.5">
-                              <div><strong className="text-slate-700">步骤:</strong> {s.step}</div>
-                              <div className="text-emerald-700 pl-4">➔ <strong>预期:</strong> {s.expected}</div>
+                        {/* 脚本代码编辑器区域 (平台大字段直显) */}
+                        <div className="space-y-1.5 rounded-lg bg-slate-900 p-2.5 text-slate-100 font-mono text-xs">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[11px] text-slate-400">
+                            <div className="flex items-center gap-2">
+                              <Code2 className="w-3.5 h-3.5 text-blue-400" />
+                              <span>script_content (大字段独立脚本)</span>
                             </div>
-                          ))}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleSaveScript(c.id)}
+                                className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 text-[10px] font-semibold"
+                              >
+                                <Save className="w-3 h-3" />
+                                <span>保存代码</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <textarea
+                            value={code}
+                            onChange={(e) => {
+                              setCaseCodeBuffer((prev) => ({ ...prev, [c.id]: e.target.value }));
+                            }}
+                            rows={8}
+                            className="w-full bg-transparent text-slate-200 text-[11px] font-mono leading-5 outline-none resize-y"
+                            placeholder="在这里编写或由 AI 生成 Python 测试脚本..."
+                          />
                         </div>
                       </Card>
-                    ))
-                  )}
-                </div>
+                    );
+                  })
+                )}
               </div>
-            )}
-          </div>
-
-          {/* ================= 3. 底部控制台与 AI 指挥台 (可收起/展开) ================= */}
-          <div
-            style={{ height: isConsoleOpen ? '180px' : '32px' }}
-            className="shrink-0 bg-white border-t border-slate-200 flex flex-col z-20 transition-all duration-150 relative"
-          >
-            {/* 控制台标题栏与 Tab 切换 */}
-            <div className="h-8 bg-slate-50 border-b border-slate-200 px-3 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => {
-                    setConsoleTab('ai');
-                    setIsConsoleOpen(true);
-                  }}
-                  className={`flex items-center gap-1.5 text-xs font-semibold pb-1 border-b-2 transition-colors ${
-                    consoleTab === 'ai' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800'
-                  }`}
-                >
-                  <Bot className="w-3.5 h-3.5" />
-                  <span>AI 指挥台</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setConsoleTab('terminal');
-                    setIsConsoleOpen(true);
-                  }}
-                  className={`flex items-center gap-1.5 text-xs font-semibold pb-1 border-b-2 transition-colors ${
-                    consoleTab === 'terminal' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800'
-                  }`}
-                >
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>执行日志</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setConsoleTab('problems');
-                    setIsConsoleOpen(true);
-                  }}
-                  className={`flex items-center gap-1.5 text-xs font-semibold pb-1 border-b-2 transition-colors ${
-                    consoleTab === 'problems' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800'
-                  }`}
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                  <span>漏测诊断 ({globalStats.uncovered})</span>
-                </button>
-              </div>
-
-              <button
-                onClick={() => setIsConsoleOpen(!isConsoleOpen)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                {isConsoleOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-              </button>
             </div>
-
-            {/* 控制台内容区 */}
-            {isConsoleOpen && (
-              <div className="flex-1 flex flex-col min-h-0 bg-white p-2.5 text-xs overflow-hidden">
-                {consoleTab === 'ai' && (
-                  <div className="flex-1 flex flex-col min-h-0 space-y-2">
-                    {/* 快捷动作 */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSendAiCommand('扫描当前 PRD 未定义的隐性资损暗坑')}
-                        className="h-6 text-[11px] text-slate-700 border-slate-200 hover:bg-slate-50 gap-1 rounded-md"
-                      >
-                        <ShieldCheck className="w-3 h-3 text-blue-600" />
-                        <span>扫描暗坑</span>
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSendAiCommand('为当前章节一键补齐所有缺失用例')}
-                        className="h-6 text-[11px] text-slate-700 border-slate-200 hover:bg-slate-50 gap-1 rounded-md"
-                      >
-                        <Sparkles className="w-3 h-3 text-amber-600" />
-                        <span>补齐漏测用例</span>
-                      </Button>
-                    </div>
-
-                    {/* 指令输入栏 */}
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSendAiCommand();
-                      }}
-                      className="flex items-center gap-2 shrink-0"
-                    >
-                      <Input
-                        value={aiInput}
-                        onChange={(e) => setAiInput(e.target.value)}
-                        placeholder="向 AI 发送指令，如：补充并发防刷用例、增加异常断言..."
-                        className="h-7 text-xs bg-slate-50 border-slate-200 text-slate-800 rounded-md focus-visible:ring-1 focus-visible:ring-blue-500"
-                      />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={!aiInput.trim() || isAiLoading}
-                        className="h-7 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs gap-1"
-                      >
-                        <Send className="w-3 h-3" />
-                        <span>发送</span>
-                      </Button>
-                    </form>
-
-                    {/* 日志流 */}
-                    <div className="flex-1 overflow-y-auto font-mono text-[11px] space-y-1 text-slate-600">
-                      {logs.map((log) => (
-                        <div key={log.id} className="flex items-start gap-2">
-                          <span className="text-slate-400 shrink-0">[{log.time}]</span>
-                          <span className={`shrink-0 font-bold ${log.type === 'success' ? 'text-emerald-600' : 'text-blue-600'}`}>
-                            [{log.tag}]
-                          </span>
-                          <span className={log.type === 'success' ? 'text-emerald-700' : 'text-slate-700'}>
-                            {log.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {consoleTab === 'terminal' && (
-                  <div className="flex-1 overflow-y-auto font-mono text-[11px] space-y-1 text-slate-600">
-                    {logs.map((log) => (
-                      <div key={log.id} className="flex items-start gap-2">
-                        <span className="text-slate-400 shrink-0">[{log.time}]</span>
-                        <span className={`shrink-0 font-bold ${log.type === 'success' ? 'text-emerald-600' : 'text-slate-600'}`}>
-                          [{log.tag}]
-                        </span>
-                        <span className={log.type === 'success' ? 'text-emerald-700' : 'text-slate-700'}>
-                          {log.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {consoleTab === 'problems' && (
-                  <div className="flex-1 overflow-y-auto space-y-1.5">
-                    {docs.filter((d) => d.uncoveredCount > 0).map((d) => (
-                      <div key={d.id} className="p-2 rounded-lg bg-amber-50/60 border border-amber-200 flex items-center justify-between text-xs text-amber-900">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                          <span>[{d.name}] 存在 {d.uncoveredCount} 处需求规则未被测试用例覆盖</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleSendAiCommand(`为 [${d.name}] 补齐测试用例`)}
-                          className="h-5 text-[10px] bg-amber-600 hover:bg-amber-500 text-white rounded px-2"
-                        >
-                          一键补齐
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
+      </div>
+
+      {/* ================= 3. 底部 Runner 沙箱执行终端 (Console) ================= */}
+      <div
+        style={{ height: isConsoleOpen ? '160px' : '30px' }}
+        className="shrink-0 bg-white border-t border-slate-200 flex flex-col z-20 transition-all duration-150 relative"
+      >
+        <div className="h-7 bg-slate-50 border-b border-slate-200 px-3 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setConsoleTab('terminal');
+                setIsConsoleOpen(true);
+              }}
+              className={`flex items-center gap-1 text-xs font-semibold pb-0.5 border-b-2 transition-colors ${
+                consoleTab === 'terminal' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-800'
+              }`}
+            >
+              <Terminal className="w-3 h-3" />
+              <span>Runner 脚本执行终端 (Live Streaming)</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => setIsConsoleOpen(!isConsoleOpen)}
+            className="text-slate-400 hover:text-slate-600 p-0.5"
+          >
+            {isConsoleOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {isConsoleOpen && (
+          <div className="flex-1 overflow-y-auto font-mono text-[11px] p-2 space-y-1 bg-slate-950 text-slate-300">
+            {logs.map((log) => (
+              <div key={log.id} className="flex items-start gap-2 leading-relaxed">
+                <span className="text-slate-500 shrink-0">[{log.time}]</span>
+                <span
+                  className={`shrink-0 font-bold ${
+                    log.type === 'success'
+                      ? 'text-emerald-400'
+                      : log.type === 'warn'
+                      ? 'text-amber-400'
+                      : 'text-cyan-400'
+                  }`}
+                >
+                  [{log.tag}]
+                </span>
+                <span className={log.type === 'success' ? 'text-emerald-300' : 'text-slate-200'}>
+                  {log.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
