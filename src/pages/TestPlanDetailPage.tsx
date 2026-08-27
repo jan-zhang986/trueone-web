@@ -15,10 +15,11 @@ import { WorkspaceTestCasesPanel } from '@/components/features/test-plan/Workspa
 import { WorkspaceExecutionPanel } from '@/components/features/test-plan/WorkspaceExecutionPanel';
 import { AiNativeWorkspaceView } from '@/components/features/quality-workspace/AiNativeWorkspaceView';
 import { PageIndexWorkspaceDemo } from '@/components/features/quality-workspace/PageIndexWorkspaceDemo';
+import { QaStudioIdeWorkspace } from '@/components/features/quality-workspace/QaStudioIdeWorkspace';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import {
     Loader2, Layers3, Target, Activity, ShieldCheck, RefreshCw,
-    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2, Sparkles, FolderTree,
+    GitBranch, BookOpen, FlaskConical, PlayCircle, Settings2, Sparkles, FolderTree, Terminal,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -135,6 +136,7 @@ export function QualityWorkspaceDetailPage() {
     const [demoPreview, setDemoPreview] = useState(() => resolveWorkspaceDocumentDemoEnabled(window.location.search));
     const [isAiNativeMode, setIsAiNativeMode] = useState(() => searchParams.get('mode') === 'ai-native');
     const [isPageIndexMode, setIsPageIndexMode] = useState(() => searchParams.get('mode') === 'pageindex');
+    const [isStudioIdeMode, setIsStudioIdeMode] = useState(() => searchParams.get('mode') === 'ide' || true); // 默认优先提供极致的 QA Studio IDE
     const demoInitRef = useRef(false);
 
     useEffect(() => {
@@ -189,7 +191,6 @@ export function QualityWorkspaceDetailPage() {
             }
         } catch (error) {
             console.error('获取质量工作台详情失败:', error);
-            // 发生异常时也提供保底数据
             setDetail({
                 id,
                 num: id.slice(0, 8),
@@ -277,6 +278,15 @@ export function QualityWorkspaceDetailPage() {
         navigate(`${location.pathname}?${params.toString()}`, { replace: true });
     };
 
+    // 优先渲染 QA Studio IDE 模式
+    if (isStudioIdeMode) {
+        return (
+            <QaStudioIdeWorkspace
+                onBack={() => setIsStudioIdeMode(false)}
+            />
+        );
+    }
+
     // 优先渲染 PageIndex 闭环模式
     if (isPageIndexMode) {
         return (
@@ -319,8 +329,8 @@ export function QualityWorkspaceDetailPage() {
                     该质量工作台可能已被归档或删除，请返回列表重新选择。
                 </p>
                 <div className="flex flex-col gap-2 w-full mt-6">
-                    <Button variant="default" className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 rounded-xl" onClick={() => setIsPageIndexMode(true)}>
-                        进入 PageIndex 需求与用例闭环模式
+                    <Button variant="default" className="w-full h-10 bg-indigo-600 hover:bg-indigo-500 rounded-xl" onClick={() => setIsStudioIdeMode(true)}>
+                        进入 QA Studio IDE 模式
                     </Button>
                     <Button variant="outline" className="w-full h-10 rounded-xl" onClick={() => navigate('/quality-workspace')}>
                         返回质量工作台列表
@@ -337,11 +347,20 @@ export function QualityWorkspaceDetailPage() {
                     <Button
                         variant="default"
                         size="sm"
-                        className="h-7 text-xs rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-md shadow-emerald-500/20 gap-1.5"
+                        className="h-7 text-xs rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-500/20 gap-1.5"
+                        onClick={() => setIsStudioIdeMode(true)}
+                    >
+                        <Terminal className="w-3.5 h-3.5" />
+                        <span>体验 QA Studio IDE 模式 (VS Code 风格)</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs rounded-lg border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-medium gap-1.5"
                         onClick={() => setIsPageIndexMode(true)}
                     >
-                        <FolderTree className="w-3.5 h-3.5" />
-                        <span>体验 PageIndex 需求与用例闭环模式</span>
+                        <FolderTree className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>PageIndex 三栏闭环模式</span>
                     </Button>
                     <Button
                         variant="outline"
