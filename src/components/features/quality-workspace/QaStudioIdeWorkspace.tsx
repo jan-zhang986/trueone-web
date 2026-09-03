@@ -274,6 +274,9 @@ def run_test(client, redis, ctx):
 ];
 
 export function QaStudioIdeWorkspace({ onBack }: { onBack?: () => void }) {
+  // 导航分类 (大纲 vs 公共函数库)
+  const [navCategory, setNavCategory] = useState<'docs' | 'globals'>('docs');
+
   // 数据与状态
   const [docs, setDocs] = useState<DocumentItem[]>(INITIAL_DOCS);
   const [cases, setCases] = useState<TestCaseItem[]>(INITIAL_CASES);
