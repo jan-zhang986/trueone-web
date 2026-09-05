@@ -16,3 +16,4 @@ export { MinderFloatMenu } from './MinderFloatMenu';
 export { MinderDetailSidebar } from './MinderDetailSidebar';
 export { VersionMergeDrawer } from './VersionMergeDrawer';
 export { ProjectVersionSelect } from './ProjectVersionSelect';
+export { RepoCaseExplorer } from './RepoCaseExplorer';

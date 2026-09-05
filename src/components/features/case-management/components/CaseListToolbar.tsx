@@ -3,7 +3,7 @@
  * 围绕统一 Case 资产操作，realization 在用例详情内管理
  */
 
-import { Search, RefreshCw, Plus, Upload, List, Network, Filter, X, Columns3, GitMerge, Sparkles, GitBranch, Loader2 } from 'lucide-react';
+import { Search, RefreshCw, Plus, Upload, List, Network, Filter, X, Columns3, GitMerge, Sparkles, GitBranch, Loader2, FolderGit2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { CaseViewSelect } from './CaseViewSelect';
 import { ProjectVersionSelect } from './ProjectVersionSelect';
@@ -22,7 +22,7 @@ export interface CaseListToolbarProps {
   searchInput: string;
   searchKeyword: string;
   loading: boolean;
-  showType: 'list' | 'minder';
+  showType: 'repo' | 'list' | 'minder';
   viewId?: string;
   customViews?: { id: string; name: string }[];
   hasActiveFilter?: boolean;
@@ -30,7 +30,7 @@ export interface CaseListToolbarProps {
   onSearch: () => void;
   onClearSearch: () => void;
   onRefresh: () => void;
-  onShowTypeChange: (type: 'list' | 'minder') => void;
+  onShowTypeChange: (type: 'repo' | 'list' | 'minder') => void;
   onViewChange?: (id: string) => void;
   onFilterClick?: () => void;
   onClearFilter?: () => void;
@@ -187,16 +187,43 @@ export function CaseListToolbar({
 
         <Tabs
           value={showType}
-          onValueChange={(v) => v && onShowTypeChange(v as 'list' | 'minder')}
+          onValueChange={(v) => v && onShowTypeChange(v as 'repo' | 'list' | 'minder')}
           className="bg-gray-100/80 p-0.5 rounded-md border border-gray-200/50"
         >
           <TabsList className="bg-transparent h-7 p-0">
-            <TabsTrigger value="list" className="h-6 w-7 p-0 data-[state=active]:bg-white">
-              <List className="w-3.5 h-3.5" />
-            </TabsTrigger>
-            <TabsTrigger value="minder" className="h-6 w-7 p-0 data-[state=active]:bg-white">
-              <Network className="w-3.5 h-3.5" />
-            </TabsTrigger>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="repo" className="h-6 px-2 text-[11px] font-medium gap-1 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
+                    <FolderGit2 className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>代码大仓</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>代码大仓工程视图 (Repo Explorer)</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="list" className="h-6 w-7 p-0 data-[state=active]:bg-white data-[state=active]:shadow-xs">
+                    <List className="w-3.5 h-3.5" />
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>传统表格大盘</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="minder" className="h-6 w-7 p-0 data-[state=active]:bg-white data-[state=active]:shadow-xs">
+                    <Network className="w-3.5 h-3.5" />
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>思维导图视图</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </TabsList>
         </Tabs>
 

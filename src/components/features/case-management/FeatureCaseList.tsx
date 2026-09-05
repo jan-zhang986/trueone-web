@@ -17,7 +17,7 @@ import type { CaseItem } from './types';
 import { useModuleTree } from './hooks/useModuleTree';
 import { useCaseList, type SortOption } from './hooks/useCaseList';
 import { useCaseManagementPermission } from './hooks/useCaseManagementPermission';
-import { ModuleTreePanel, CaseListToolbar, CaseTableSection, CaseDetailDrawer, VersionMergeDrawer } from './components';
+import { ModuleTreePanel, CaseListToolbar, CaseTableSection, CaseDetailDrawer, VersionMergeDrawer, RepoCaseExplorer } from './components';
 import { CaseFilterDrawer, loadSavedViews } from './components/CaseFilterDrawer';
 import { CaseExportDrawer, type ExportType } from './components/CaseExportDrawer';
 import { BatchEditModal } from './components/BatchEditModal';
@@ -96,7 +96,7 @@ export function FeatureCaseList({
   const [searchKeyword, setSearchKeyword] = useState(() => urlSearchParams.get('keyword') || '');
   const [selectedModuleId, setSelectedModuleId] = useState<string>(() => (initialSelectedModuleId && initialSelectedModuleId !== 'all' ? initialSelectedModuleId : 'all'));
   const [moduleSearchKeyword, setModuleSearchKeyword] = useState('');
-  const [showType, setShowType] = useState<'list' | 'minder'>('list');
+  const [showType, setShowType] = useState<'repo' | 'list' | 'minder'>('repo');
   const [viewId, setViewId] = useState<string>('all_data');
   const [filter, setFilter] = useState<{ searchMode: 'AND' | 'OR'; conditions: any[] } | undefined>(() => {
     const f = urlSearchParams.get('filter');
@@ -938,6 +938,43 @@ export function FeatureCaseList({
             onSuccess={fetchCaseList}
           />
         )}
+      </div>
+    );
+  }
+
+  if (showType === 'repo') {
+    return (
+      <div className="flex-1 flex flex-col bg-gray-50 min-h-0 overflow-hidden">
+        <CaseListToolbar
+          searchInput={searchInput}
+          searchKeyword={searchKeyword}
+          loading={loading}
+          showType={showType}
+          viewId={viewId}
+          customViews={customViews}
+          hasActiveFilter={!!filter?.conditions?.length}
+          onSearchInputChange={setSearchInput}
+          onSearch={handleSearch}
+          onClearSearch={handleClearSearch}
+          onRefresh={fetchCaseList}
+          onShowTypeChange={setShowType}
+          onColumnSettingsClick={() => setColumnSettingsOpen(true)}
+          onViewChange={(id) => { setViewId(id); resetPage(); }}
+          onFilterClick={() => setFilterDrawerOpen(true)}
+          onClearFilter={() => { setFilter(undefined); setViewId('all_data'); resetPage(); }}
+          onCreateCase={onCreateCase ? () => onCreateCase(selectedModuleId) : undefined}
+          onImportOpen={() => setImportOpen(true)}
+          onAiGenerate={onAiGenerate}
+          projectId={projectId}
+          showVersionControls={showLegacyVersionControls}
+          versionId={versionId}
+          onVersionChange={setVersionId}
+          onVersionSelect={setCurrentVersion}
+          onMergeClick={() => setMergeDrawerOpen(true)}
+        />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <RepoCaseExplorer />
+        </div>
       </div>
     );
   }
