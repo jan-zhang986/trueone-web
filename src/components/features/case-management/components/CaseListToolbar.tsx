@@ -187,10 +187,22 @@ export function CaseListToolbar({
 
         <Tabs
           value={showType}
-          onValueChange={(v) => v && onShowTypeChange(v as 'repo' | 'list' | 'minder')}
+          onValueChange={(v) => v && onShowTypeChange(v as 'list' | 'repo' | 'minder')}
           className="bg-gray-100/80 p-0.5 rounded-md border border-gray-200/50"
         >
           <TabsList className="bg-transparent h-7 p-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="list" className="h-6 px-2 text-[11px] font-medium gap-1 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
+                    <List className="w-3.5 h-3.5" />
+                    <span>用例列表</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent>经典表格列表视图</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -200,17 +212,6 @@ export function CaseListToolbar({
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent>代码大仓工程视图 (Repo Explorer)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger value="list" className="h-6 w-7 p-0 data-[state=active]:bg-white data-[state=active]:shadow-xs">
-                    <List className="w-3.5 h-3.5" />
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent>传统表格大盘</TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
