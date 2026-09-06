@@ -179,13 +179,9 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
     { id: 'test-factory', label: '数据监控大盘' },
   ];
 
-  // 用例管理的二级菜单项（从 aegis-next-server 迁移）
+  // 用例管理的二级菜单项
   const caseManagementNavItems = [
     { id: 'feature-case', label: '用例库' },
-    { id: 'test-suite', label: '测试套件' },
-    { id: 'gate-binding', label: '门禁绑定' },
-    { id: 'case-review', label: '用例评审' },
-    { id: 'case-generation', label: '用例生成' },
   ];
 
   // 质量工作台的二级菜单项

@@ -114,8 +114,7 @@ export function ApiTestLayout() {
                         : menuFromRootTab ?? rawMenu;
   const FEATURE_CASE_TAB = 'feature-case' as const;
   const SPACE_TAB = 'space' as const;
-  const REALIZATION_TAB = 'realization' as const;
-  const CASE_MANAGEMENT_TABS = ['feature-case', 'space', 'test-suite', 'gate-binding', 'case-review', 'case-generation', 'realization'] as const;
+  const CASE_MANAGEMENT_TABS = ['feature-case', 'space', 'realization'] as const;
 
   const rawTopMenu = testFactoryReportPathMatch ? 'test-report' : (searchParams.get('tab') || 'api');
   const normalizedTopMenu = rawTopMenu;
@@ -255,7 +254,7 @@ export function ApiTestLayout() {
     let menu = '';
     if (pathname === '/case-management' || pathname.startsWith('/case-management/')) {
       menu = 'test-case';
-      if (!params.has('tab')) params.set('tab', SPACE_TAB);
+      if (!params.has('tab')) params.set('tab', FEATURE_CASE_TAB);
     } else if (pathname === '/workspace') {
       menu = 'workspace';
       if (!params.has('tab')) params.set('tab', 'requirement-quality');
@@ -354,13 +353,13 @@ export function ApiTestLayout() {
     navigate(`${getCanonicalPathForMenu('aegis-agent')}?${params.toString()}`, { replace: true });
   }, [selectedMenuItem, searchParams.get('tab'), isAgentSettingsAllowed]);
 
-  // 测试用例下：tab 仅支持 feature-case / case-review / case-generation，无效时修正为 feature-case
+  // 测试用例下：tab 仅支持 feature-case / space / realization，无效时修正为 feature-case
   useEffect(() => {
     if (selectedMenuItem !== 'test-case') return;
     const tab = searchParams.get('tab');
     if (tab && CASE_MANAGEMENT_TABS.includes(tab as (typeof CASE_MANAGEMENT_TABS)[number])) return;
     const params = new URLSearchParams(searchParams);
-    params.set('tab', SPACE_TAB);
+    params.set('tab', FEATURE_CASE_TAB);
     navigate(`${getCanonicalPathForMenu('test-case')}?${params.toString()}`, { replace: true });
   }, [selectedMenuItem, searchParams.get('tab')]);
 
