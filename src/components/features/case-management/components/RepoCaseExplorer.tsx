@@ -5,8 +5,8 @@ import {
   GitCommit,
   FileCode2,
   FolderOpen,
+  Folder,
   Play,
-  SplitSquareVertical,
   ListOrdered,
   Code2,
   Link2,
@@ -34,6 +34,8 @@ import {
   X,
   Eye,
   ShieldCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,6 +76,7 @@ export interface UnifiedTestCaseItem {
   priority: 'P0' | 'P1' | 'P2';
   status: 'passed' | 'failed' | 'ready';
   fileId: string;
+  folderId: string;
   reqSource: string;
   module: string;
   design: {
@@ -103,6 +106,61 @@ export interface LogEntry {
   text: string;
 }
 
+// 模拟 Git 代码工程目录树
+const REPO_TREE_DATA: RepoFileNode[] = [
+  {
+    id: 'dir-tests',
+    name: 'tests',
+    path: 'tests',
+    type: 'folder',
+    caseCount: 6,
+    children: [
+      {
+        id: 'dir-auth',
+        name: 'auth (用户中心认证)',
+        path: 'tests/auth',
+        type: 'folder',
+        caseCount: 5,
+        children: [
+          {
+            id: 'file-test-sms',
+            name: 'test_sms_login.py',
+            path: 'tests/auth/test_sms_login.py',
+            type: 'file',
+            caseCount: 3,
+            passRate: 100,
+          },
+          {
+            id: 'file-test-pwd',
+            name: 'test_password_login.py',
+            path: 'tests/auth/test_password_login.py',
+            type: 'file',
+            caseCount: 2,
+            passRate: 50,
+          },
+        ],
+      },
+      {
+        id: 'dir-risk',
+        name: 'risk (智能风控规则)',
+        path: 'tests/risk',
+        type: 'folder',
+        caseCount: 1,
+        children: [
+          {
+            id: 'file-test-rate',
+            name: 'test_ip_rate_limit.py',
+            path: 'tests/risk/test_ip_rate_limit.py',
+            type: 'file',
+            caseCount: 1,
+            passRate: 100,
+          },
+        ],
+      },
+    ],
+  },
+];
+
 // 模拟全仓用例数据集
 const INITIAL_ALL_CASES: UnifiedTestCaseItem[] = [
   {
@@ -112,6 +170,7 @@ const INITIAL_ALL_CASES: UnifiedTestCaseItem[] = [
     priority: 'P0',
     status: 'passed',
     fileId: 'file-test-sms',
+    folderId: 'dir-auth',
     module: 'auth (用户中心认证)',
     reqSource: 'REQ-221',
     design: {
@@ -175,6 +234,7 @@ def test_sms_normal_flow(api_client, redis_client):
     priority: 'P1',
     status: 'passed',
     fileId: 'file-test-sms',
+    folderId: 'dir-auth',
     module: 'auth (用户中心认证)',
     reqSource: 'REQ-222',
     design: {
@@ -236,6 +296,7 @@ def test_sms_expired_token(api_client, redis_client):
     priority: 'P0',
     status: 'passed',
     fileId: 'file-test-sms',
+    folderId: 'dir-auth',
     module: 'auth (用户中心认证)',
     reqSource: 'REQ-224',
     design: {
@@ -307,6 +368,7 @@ def test_sms_rate_limit(api_client, redis_client):
     priority: 'P0',
     status: 'passed',
     fileId: 'file-test-pwd',
+    folderId: 'dir-auth',
     module: 'auth (用户中心认证)',
     reqSource: 'REQ-101',
     design: {
@@ -349,6 +411,7 @@ def test_sms_rate_limit(api_client, redis_client):
     priority: 'P1',
     status: 'ready',
     fileId: 'file-test-pwd',
+    folderId: 'dir-auth',
     module: 'auth (用户中心认证)',
     reqSource: 'REQ-105',
     design: {
@@ -389,6 +452,7 @@ def test_sms_rate_limit(api_client, redis_client):
     priority: 'P0',
     status: 'passed',
     fileId: 'file-test-rate',
+    folderId: 'dir-risk',
     module: 'risk (智能风控规则)',
     reqSource: 'REQ-301',
     design: {
@@ -426,69 +490,15 @@ def test_sms_rate_limit(api_client, redis_client):
   },
 ];
 
-// 模拟 Git 目录树
-const REPO_TREE_DATA: RepoFileNode[] = [
-  {
-    id: 'dir-tests',
-    name: 'tests',
-    path: 'tests',
-    type: 'folder',
-    children: [
-      {
-        id: 'dir-auth',
-        name: 'auth (用户中心认证)',
-        path: 'tests/auth',
-        type: 'folder',
-        children: [
-          {
-            id: 'file-test-sms',
-            name: 'test_sms_login.py',
-            path: 'tests/auth/test_sms_login.py',
-            type: 'file',
-            caseCount: 3,
-            passRate: 100,
-          },
-          {
-            id: 'file-test-pwd',
-            name: 'test_password_login.py',
-            path: 'tests/auth/test_password_login.py',
-            type: 'file',
-            caseCount: 2,
-            passRate: 50,
-          },
-        ],
-      },
-      {
-        id: 'dir-risk',
-        name: 'risk (智能风控规则)',
-        path: 'tests/risk',
-        type: 'folder',
-        children: [
-          {
-            id: 'file-test-rate',
-            name: 'test_ip_rate_limit.py',
-            path: 'tests/risk/test_ip_rate_limit.py',
-            type: 'file',
-            caseCount: 1,
-            passRate: 100,
-          },
-        ],
-      },
-    ],
-  },
-];
-
 export function RepoCaseExplorer() {
   // 当前选中的 Git 仓库
   const [selectedRepo, setSelectedRepo] = useState('auth-tests.git');
   // 当前选中的 Git 分支
   const [selectedBranch, setSelectedBranch] = useState('main');
 
-  // 顶层双重视角: 'table' (用例列表表格，默认) | 'tree' (仓库文件树套件)
-  const [explorerMode, setExplorerMode] = useState<'table' | 'tree'>('table');
-
-  // 选中的文件 (在 tree 模式下使用)
-  const [selectedFileId, setSelectedFileId] = useState('file-test-sms');
+  // 左侧目录树选中节点: 'all' (全部) | folderId ('dir-auth') | fileId ('file-test-sms')
+  const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<string>('all');
+  const [isLeftTreeOpen, setIsLeftTreeOpen] = useState(true);
 
   // 搜索关键字
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -509,13 +519,20 @@ export function RepoCaseExplorer() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([
     { id: 'l1', time: '14:20:00', type: 'info', tag: 'RepoEngine', text: 'Git 仓库已挂载: gitlab.company.com/qa/auth-tests.git (branch: main)' },
-    { id: 'l2', time: '14:20:01', type: 'success', tag: 'ASTIndex', text: 'AST 解析完成，成功索引 6 条统一用例，支持高密度列表与全仓执行' },
+    { id: 'l2', time: '14:20:01', type: 'success', tag: 'ASTIndex', text: 'AST 解析完成，成功索引 6 条统一用例，左侧目录树与右侧表格已就绪' },
   ]);
 
-  // 过滤后的用例列表
-  const filteredCases = useMemo(() => {
-    return cases.filter((c) => {
-      // 搜索过滤
+  // 根据左侧目录树选择过滤用例
+  const treeFilteredCases = useMemo(() => {
+    if (selectedTreeNodeId === 'all') return cases;
+    return cases.filter(
+      (c) => c.folderId === selectedTreeNodeId || c.fileId === selectedTreeNodeId
+    );
+  }, [cases, selectedTreeNodeId]);
+
+  // 根据搜索与优先级二次过滤
+  const finalFilteredCases = useMemo(() => {
+    return treeFilteredCases.filter((c) => {
       if (searchKeyword) {
         const kw = searchKeyword.toLowerCase();
         const matchCode = c.code.toLowerCase().includes(kw);
@@ -525,19 +542,18 @@ export function RepoCaseExplorer() {
         const matchFile = c.implementation.gitFilePath.toLowerCase().includes(kw);
         if (!matchCode && !matchTitle && !matchReq && !matchFunc && !matchFile) return false;
       }
-      // 优先级过滤
       if (priorityFilter !== 'ALL' && c.priority !== priorityFilter) return false;
       return true;
     });
-  }, [cases, searchKeyword, priorityFilter]);
+  }, [treeFilteredCases, searchKeyword, priorityFilter]);
 
   // 全选/反选
-  const isAllSelected = filteredCases.length > 0 && selectedCaseIds.length === filteredCases.length;
+  const isAllSelected = finalFilteredCases.length > 0 && selectedCaseIds.length === finalFilteredCases.length;
   const toggleSelectAll = () => {
     if (isAllSelected) {
       setSelectedCaseIds([]);
     } else {
-      setSelectedCaseIds(filteredCases.map((c) => c.id));
+      setSelectedCaseIds(finalFilteredCases.map((c) => c.id));
     }
   };
 
@@ -552,7 +568,6 @@ export function RepoCaseExplorer() {
     setIsConsoleOpen(true);
     toast.info(`正在调试执行 [${caseItem.code}]...`);
 
-    // 设置执行中
     setCases((prev) =>
       prev.map((item) =>
         item.id === caseItem.id ? { ...item, status: 'ready', executionDuration: '执行中...' } : item
@@ -606,9 +621,8 @@ export function RepoCaseExplorer() {
     }
 
     setIsConsoleOpen(true);
-    toast.info(`开始批量执行选中的 ${selectedCaseIds.length} 条测试工程用例...`);
+    toast.info(`开始批量执行选中的 ${selectedCaseIds.length} 条用例...`);
 
-    // 全部标为执行中
     setCases((prev) =>
       prev.map((item) =>
         selectedCaseIds.includes(item.id)
@@ -628,11 +642,10 @@ export function RepoCaseExplorer() {
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
         tag: 'BatchPytest',
-        text: `🚀 触发全仓批量执行任务 (${selectedCaseIds.length} 项):\npytest ${targets.slice(0, 2).join(' ')} ...`,
+        text: `🚀 触发批量执行 (${selectedCaseIds.length} 项): pytest ${targets.slice(0, 2).join(' ')} ...`,
       },
     ]);
 
-    // 模拟逐个返回成功
     setTimeout(() => {
       setCases((prev) =>
         prev.map((item) => {
@@ -657,11 +670,11 @@ export function RepoCaseExplorer() {
           text: `🎉 批量执行全部完成！通过率 100% (${selectedCaseIds.length}/${selectedCaseIds.length}) 🟢`,
         },
       ]);
-      toast.success(`批量执行完成，选中的 ${selectedCaseIds.length} 条用例全部通过！`);
+      toast.success(`选中的 ${selectedCaseIds.length} 条用例已全部执行完成并通过！`);
     }, 700);
   };
 
-  // 提交修改到 Git 仓库
+  // 提交修改到 Git
   const handleCommitToGit = (caseItem: UnifiedTestCaseItem) => {
     const updatedCode = codeEditBuffer[caseItem.id] || caseItem.implementation.codeContent;
     const fakeCommitHash = Math.random().toString(16).substring(2, 9);
@@ -705,7 +718,7 @@ export function RepoCaseExplorer() {
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
         tag: 'GitLabAPI',
-        text: `🚀 [Git Commit] 成功推送用例改动至 ${caseItem.implementation.gitBranch} (${fakeCommitHash}): ${caseItem.implementation.gitFilePath}`,
+        text: `🚀 [Git Commit] 成功推送代码改动至 ${caseItem.implementation.gitBranch} (${fakeCommitHash}): ${caseItem.implementation.gitFilePath}`,
       },
     ]);
 
@@ -714,7 +727,7 @@ export function RepoCaseExplorer() {
 
   return (
     <div className="flex flex-col h-full w-full bg-[#F8FAFC] text-slate-800 overflow-hidden font-sans select-none antialiased">
-      {/* ================= 1. 顶部 Header (大仓与分支中枢 + 模式切换) ================= */}
+      {/* ================= 1. 顶部 Header (大仓与分支中枢 + 批量操作) ================= */}
       <div className="h-13 shrink-0 bg-white border-b border-slate-200/80 px-5 flex items-center justify-between z-20 shadow-2xs">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -737,34 +750,25 @@ export function RepoCaseExplorer() {
           </div>
         </div>
 
-        {/* 顶部右侧: 双重视角切换器 (用例列表 vs 仓库文件树) */}
+        {/* 顶部右侧: 左栏目录展开/收起 + 批量执行 */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-100/90 p-0.5 rounded-lg border border-slate-200/80 text-xs font-medium">
-            <button
-              onClick={() => setExplorerMode('table')}
-              className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                explorerMode === 'table'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <TableProperties className="w-3.5 h-3.5 text-blue-600" />
-              <span>📋 统一用例列表 (Table)</span>
-            </button>
-            <button
-              onClick={() => setExplorerMode('tree')}
-              className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                explorerMode === 'tree'
-                  ? 'bg-white text-indigo-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <FolderTree className="w-3.5 h-3.5 text-indigo-600" />
-              <span>📦 仓库文件树 (Tree)</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsLeftTreeOpen(!isLeftTreeOpen)}
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-1 rounded-lg border border-slate-200/80 transition-colors font-medium"
+          >
+            {isLeftTreeOpen ? (
+              <>
+                <PanelLeftClose className="w-3.5 h-3.5" />
+                <span>收起目录树</span>
+              </>
+            ) : (
+              <>
+                <PanelLeftOpen className="w-3.5 h-3.5 text-blue-600" />
+                <span>展开目录树</span>
+              </>
+            )}
+          </button>
 
-          {/* 批量执行操作 */}
           <Button
             size="sm"
             onClick={handleBatchExecute}
@@ -783,54 +787,142 @@ export function RepoCaseExplorer() {
         </div>
       </div>
 
-      {/* ================= 2. 筛选过滤工具栏 (Search & Filters) ================= */}
-      <div className="h-11 shrink-0 bg-white border-b border-slate-200/60 px-5 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-3 flex-1 max-w-xl">
-          <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-            <Input
-              placeholder="快速搜索用例编号、用例名称、关联需求、函数名或文件路径..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              className="h-8 pl-8.5 text-xs bg-slate-50 border-slate-200 rounded-lg"
-            />
-          </div>
+      {/* ================= 2. 主体工作区 (左侧目录树 + 右侧用例表格) ================= */}
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
+        {/* 左侧：📁 Git 仓库目录树 (Repo Tree) */}
+        {isLeftTreeOpen && (
+          <div className="w-64 xl:w-72 shrink-0 bg-white border-r border-slate-200/80 flex flex-col min-h-0 z-10 animate-in slide-in-from-left-2 duration-150">
+            <div className="h-10 px-4 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
+              <div className="flex items-center gap-1.5">
+                <FolderTree className="w-3.5 h-3.5 text-blue-600" />
+                <span>工程测试目录 (tests/)</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">AST Live</span>
+            </div>
 
-          {/* 优先级过滤 */}
-          <div className="flex items-center gap-1 text-slate-500">
-            <span className="text-[11px]">优先级:</span>
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px]">
-              {['ALL', 'P0', 'P1'].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPriorityFilter(p)}
-                  className={`px-2 py-0.5 rounded ${
-                    priorityFilter === p
-                      ? 'bg-white font-bold text-slate-900 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
+              {/* 全部用例根节点 */}
+              <div
+                onClick={() => setSelectedTreeNodeId('all')}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
+                  selectedTreeNodeId === 'all'
+                    ? 'bg-blue-50 text-blue-900 font-bold border border-blue-200 shadow-2xs'
+                    : 'text-slate-700 hover:bg-slate-100/70'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FolderGit2 className={`w-3.5 h-3.5 ${selectedTreeNodeId === 'all' ? 'text-blue-600' : 'text-slate-500'}`} />
+                  <span>全部测试用例</span>
+                </div>
+                <Badge variant="outline" className="text-[10px] font-mono bg-white">
+                  {cases.length}
+                </Badge>
+              </div>
+
+              {/* 树形子目录与文件 */}
+              <div className="pt-2 space-y-1">
+                {REPO_TREE_DATA[0]?.children?.map((folder) => {
+                  const isFolderActive = selectedTreeNodeId === folder.id;
+                  return (
+                    <div key={folder.id} className="space-y-0.5">
+                      {/* 模块文件夹 */}
+                      <div
+                        onClick={() => setSelectedTreeNodeId(folder.id)}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
+                          isFolderActive
+                            ? 'bg-blue-50 text-blue-900 font-bold border border-blue-200'
+                            : 'text-slate-700 hover:bg-slate-100/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <FolderOpen className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <span className="truncate font-semibold">{folder.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {folder.caseCount}
+                        </span>
+                      </div>
+
+                      {/* 文件子节点 */}
+                      <div className="pl-4 space-y-0.5">
+                        {folder.children?.map((file) => {
+                          const isFileActive = selectedTreeNodeId === file.id;
+                          return (
+                            <div
+                              key={file.id}
+                              onClick={() => setSelectedTreeNodeId(file.id)}
+                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
+                                isFileActive
+                                  ? 'bg-blue-50/80 text-blue-900 font-semibold border border-blue-200/80 shadow-2xs'
+                                  : 'text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <FileCode2 className={`w-3.5 h-3.5 shrink-0 ${isFileActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                                <span className="truncate">{file.name}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {file.caseCount}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex items-center gap-3 text-slate-400 text-[11px] font-mono">
-          <span>共找到 {filteredCases.length} 条用例</span>
-          <span>·</span>
-          <span>已勾选 {selectedCaseIds.length} 项</span>
-        </div>
-      </div>
+        {/* 右侧：📋 统一用例列表大表格 (Table View) */}
+        <div className="flex-1 flex flex-col min-h-0 bg-white">
+          {/* 筛选与状态条 */}
+          <div className="h-11 shrink-0 bg-slate-50/70 border-b border-slate-200/70 px-4 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3 flex-1 max-w-lg">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <Input
+                  placeholder="搜索用例编号、标题、关联需求、函数名..."
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  className="h-7.5 pl-8 text-xs bg-white border-slate-200 rounded-lg"
+                />
+              </div>
 
-      {/* ================= 3. 主体内容区 (Table View vs Tree View) ================= */}
-      <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {explorerMode === 'table' ? (
-          /* ------------------- 📋 核心：高密度统一用例列表表格 ------------------- */
-          <div className="flex-1 flex flex-col min-h-0 bg-white overflow-y-auto">
+              {/* 优先级过滤 */}
+              <div className="flex items-center gap-1 text-slate-500">
+                <span className="text-[11px]">优先级:</span>
+                <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-[11px]">
+                  {['ALL', 'P0', 'P1'].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPriorityFilter(p)}
+                      className={`px-2 py-0.5 rounded ${
+                        priorityFilter === p
+                          ? 'bg-slate-100 font-bold text-slate-900 shadow-2xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-slate-400 text-[11px] font-mono">
+              <span>当前目录下共 {finalFilteredCases.length} 条用例</span>
+              <span>·</span>
+              <span className="text-blue-600 font-semibold">已勾选 {selectedCaseIds.length} 项</span>
+            </div>
+          </div>
+
+          {/* 表格主体 */}
+          <div className="flex-1 overflow-y-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 bg-slate-50/90 backdrop-blur-xs border-b border-slate-200 z-10 font-semibold text-slate-600">
+              <thead className="sticky top-0 bg-white border-b border-slate-200 z-10 font-semibold text-slate-600 shadow-2xs">
                 <tr>
                   <th className="w-10 px-3 py-2.5 text-center">
                     <button onClick={toggleSelectAll} className="p-0.5 hover:text-blue-600">
@@ -845,14 +937,14 @@ export function RepoCaseExplorer() {
                   <th className="px-3 py-2.5 min-w-[260px]">用例名称 (Docstring)</th>
                   <th className="w-24 px-3 py-2.5">关联需求</th>
                   <th className="w-16 px-3 py-2.5 text-center">优先级</th>
-                  <th className="px-3 py-2.5 min-w-[280px]">代码目标 (文件与函数)</th>
+                  <th className="px-3 py-2.5 min-w-[260px]">代码目标 (文件与函数)</th>
                   <th className="w-24 px-3 py-2.5">最近状态</th>
                   <th className="w-20 px-3 py-2.5">耗时</th>
                   <th className="w-28 px-3 py-2.5 text-center">快捷操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredCases.map((c) => {
+                {finalFilteredCases.map((c) => {
                   const isChecked = selectedCaseIds.includes(c.id);
                   return (
                     <tr
@@ -980,77 +1072,10 @@ export function RepoCaseExplorer() {
               </tbody>
             </table>
           </div>
-        ) : (
-          /* ------------------- 📦 仓库文件树套件视窗 ------------------- */
-          <div className="flex-1 flex min-h-0">
-            <div className="w-72 shrink-0 bg-white border-r border-slate-200/70 p-3 space-y-2 overflow-y-auto">
-              <div className="text-xs font-semibold text-slate-500 px-2 pb-1">工程文件结构 (tests/)</div>
-              {REPO_TREE_DATA[0]?.children?.map((child) => (
-                <div key={child.id} className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 px-2 py-1">
-                    <FolderOpen className="w-3.5 h-3.5 text-blue-500" />
-                    <span>{child.name}</span>
-                  </div>
-                  {child.children?.map((file) => (
-                    <div
-                      key={file.id}
-                      onClick={() => setSelectedFileId(file.id)}
-                      className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
-                        selectedFileId === file.id
-                          ? 'bg-blue-50 text-blue-900 font-semibold border border-blue-200'
-                          : 'text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <FileCode2 className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="truncate">{file.name}</span>
-                      </div>
-                      <Badge variant="outline" className="text-[9px] font-mono">
-                        {file.caseCount} cases
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#FAFAFC]">
-              <div className="font-semibold text-slate-800 text-xs flex items-center justify-between">
-                <span>tests/auth/test_sms_login.py 中的统一用例套件</span>
-                <span className="text-slate-400 text-[11px] font-mono">Git Commit: 4f9c2d1</span>
-              </div>
-              {filteredCases
-                .filter((c) => c.fileId === selectedFileId)
-                .map((c) => (
-                  <Card key={c.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-blue-600 font-mono text-xs">{c.code}</span>
-                        <h4 className="font-bold text-slate-900 text-xs">{c.title}</h4>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleExecuteSingleCase(c)}
-                        className="h-7 text-xs bg-slate-900 text-white rounded-lg px-2.5"
-                      >
-                        <Play className="w-3 h-3 fill-current mr-1" /> 调试
-                      </Button>
-                    </div>
-                    <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg">
-                      {c.design.steps.map((st) => (
-                        <div key={st.stepNumber} className="py-0.5">
-                          步骤 {st.stepNumber}: {st.name} ➔ 预期: {st.expected}
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* ================= 4. 底部执行打屏终端 (Streaming Terminal) ================= */}
+      {/* ================= 3. 底部执行打屏终端 (Streaming Terminal) ================= */}
       <div
         style={{ height: isConsoleOpen ? '150px' : '30px' }}
         className="shrink-0 bg-[#0B0F17] border-t border-slate-800 flex flex-col z-20 transition-all duration-150 relative text-slate-300"
@@ -1061,7 +1086,7 @@ export function RepoCaseExplorer() {
             <span className="font-semibold text-slate-200">测试工程运行终端 (Pytest Worker Stream)</span>
             <span className="text-slate-600">|</span>
             <span className="text-emerald-400 text-[10px] flex items-center gap-1 font-medium">
-              <Cpu className="w-3 h-3" /> 本地工程目录上下文挂载完毕 · 支持单点与批量调度
+              <Cpu className="w-3 h-3" /> 本地测试工程目录就绪 · 支持单点与批量调度打屏
             </span>
           </div>
 
@@ -1108,7 +1133,7 @@ export function RepoCaseExplorer() {
         )}
       </div>
 
-      {/* ================= 5. 统一用例双面抽屉 (Drawer) ================= */}
+      {/* ================= 4. 统一用例双面抽屉 (Drawer) ================= */}
       <Sheet open={!!activeDrawerCase} onOpenChange={(open) => !open && setActiveDrawerCase(null)}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 z-50">
           {activeDrawerCase && (
