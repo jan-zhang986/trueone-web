@@ -96,7 +96,7 @@ export function FeatureCaseList({
   const [searchKeyword, setSearchKeyword] = useState(() => urlSearchParams.get('keyword') || '');
   const [selectedModuleId, setSelectedModuleId] = useState<string>(() => (initialSelectedModuleId && initialSelectedModuleId !== 'all' ? initialSelectedModuleId : 'all'));
   const [moduleSearchKeyword, setModuleSearchKeyword] = useState('');
-  const [showType, setShowType] = useState<'list' | 'repo' | 'minder'>('list');
+  const [showType, setShowType] = useState<'repo' | 'list' | 'minder'>('repo');
   const [viewId, setViewId] = useState<string>('all_data');
   const [filter, setFilter] = useState<{ searchMode: 'AND' | 'OR'; conditions: any[] } | undefined>(() => {
     const f = urlSearchParams.get('filter');

@@ -194,24 +194,24 @@ export function CaseListToolbar({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="list" className="h-6 px-2 text-[11px] font-medium gap-1 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
-                    <List className="w-3.5 h-3.5" />
-                    <span>用例列表</span>
+                  <TabsTrigger value="repo" className="h-6 px-2 text-[11px] font-medium gap-1.5 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
+                    <FolderGit2 className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>代码仓库用例</span>
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent>经典表格列表视图</TooltipContent>
+                <TooltipContent>基于代码仓库的统一用例 (支持列表表格与文件树)</TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="repo" className="h-6 px-2 text-[11px] font-medium gap-1 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
-                    <FolderGit2 className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>代码大仓</span>
+                  <TabsTrigger value="list" className="h-6 px-2 text-[11px] font-medium gap-1.5 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
+                    <List className="w-3.5 h-3.5 text-blue-600" />
+                    <span>传统模块列表</span>
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent>代码大仓工程视图 (Repo Explorer)</TooltipContent>
+                <TooltipContent>传统模块树与表格列表</TooltipContent>
               </Tooltip>
             </TooltipProvider>
 

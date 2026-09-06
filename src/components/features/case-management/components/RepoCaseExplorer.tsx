@@ -4,9 +4,7 @@ import {
   GitBranch,
   GitCommit,
   FileCode2,
-  Folder,
   FolderOpen,
-  FileText,
   Play,
   SplitSquareVertical,
   ListOrdered,
@@ -27,11 +25,26 @@ import {
   RotateCcw,
   Search,
   ExternalLink,
+  TableProperties,
+  FolderTree,
+  SlidersHorizontal,
+  CheckSquare,
+  Square,
+  FileText,
+  X,
+  Eye,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { toast } from 'sonner';
 
 // ================= 数据模型 =================
@@ -62,6 +75,7 @@ export interface UnifiedTestCaseItem {
   status: 'passed' | 'failed' | 'ready';
   fileId: string;
   reqSource: string;
+  module: string;
   design: {
     precondition: string;
     steps: TestCaseStep[];
@@ -75,6 +89,7 @@ export interface UnifiedTestCaseItem {
     codeContent: string;
     lastCommitHash: string;
     lastCommitTime: string;
+    author: string;
   };
   lastExecutionTime?: string;
   executionDuration?: string;
@@ -88,96 +103,8 @@ export interface LogEntry {
   text: string;
 }
 
-// 模拟 Git 仓库树
-const REPO_TREE_DATA: RepoFileNode[] = [
-  {
-    id: 'f-conftest',
-    name: 'conftest.py',
-    path: 'conftest.py',
-    type: 'file',
-  },
-  {
-    id: 'f-pytest-ini',
-    name: 'pytest.ini',
-    path: 'pytest.ini',
-    type: 'file',
-  },
-  {
-    id: 'f-reqs',
-    name: 'requirements.txt',
-    path: 'requirements.txt',
-    type: 'file',
-  },
-  {
-    id: 'dir-tests',
-    name: 'tests',
-    path: 'tests',
-    type: 'folder',
-    children: [
-      {
-        id: 'dir-common',
-        name: 'common',
-        path: 'tests/common',
-        type: 'folder',
-        children: [
-          { id: 'f-crypto', name: 'crypto.py', path: 'tests/common/crypto.py', type: 'file' },
-          { id: 'f-fixtures', name: 'fixtures.py', path: 'tests/common/fixtures.py', type: 'file' },
-        ],
-      },
-      {
-        id: 'dir-auth',
-        name: 'auth (用户中心认证)',
-        path: 'tests/auth',
-        type: 'folder',
-        children: [
-          {
-            id: 'file-test-sms',
-            name: 'test_sms_login.py',
-            path: 'tests/auth/test_sms_login.py',
-            type: 'file',
-            caseCount: 3,
-            passRate: 100,
-          },
-          {
-            id: 'file-test-pwd',
-            name: 'test_password_login.py',
-            path: 'tests/auth/test_password_login.py',
-            type: 'file',
-            caseCount: 2,
-            passRate: 100,
-          },
-          {
-            id: 'file-test-token',
-            name: 'test_token_refresh.py',
-            path: 'tests/auth/test_token_refresh.py',
-            type: 'file',
-            caseCount: 2,
-            passRate: 100,
-          },
-        ],
-      },
-      {
-        id: 'dir-risk',
-        name: 'risk (智能风控规则)',
-        path: 'tests/risk',
-        type: 'folder',
-        children: [
-          {
-            id: 'file-test-rate',
-            name: 'test_ip_rate_limit.py',
-            path: 'tests/risk/test_ip_rate_limit.py',
-            type: 'file',
-            caseCount: 1,
-            passRate: 100,
-          },
-        ],
-      },
-    ],
-  },
-];
-
-// 模拟仓库内的统一用例
-const INITIAL_CASES_DATA: UnifiedTestCaseItem[] = [
+// 模拟全仓用例数据集
+const INITIAL_ALL_CASES: UnifiedTestCaseItem[] = [
   {
     id: 'c-sms-1',
     code: 'TC-SMS-001',
@@ -185,7 +112,8 @@ const INITIAL_CASES_DATA: UnifiedTestCaseItem[] = [
     priority: 'P0',
     status: 'passed',
     fileId: 'file-test-sms',
-    reqSource: 'REQ-221: 发送验证码与 60s 倒计时',
+    module: 'auth (用户中心认证)',
+    reqSource: 'REQ-221',
     design: {
       precondition: '目标手机号处于正常通信状态，Redis 验证码键不存在残留',
       steps: [
@@ -213,6 +141,7 @@ const INITIAL_CASES_DATA: UnifiedTestCaseItem[] = [
       scriptLanguage: 'python',
       lastCommitHash: '4f9c2d1',
       lastCommitTime: '2 小时前',
+      author: '张建 (QA Lead)',
       codeContent: `# tests/auth/test_sms_login.py
 import pytest
 from aegis import aegis
@@ -246,7 +175,8 @@ def test_sms_normal_flow(api_client, redis_client):
     priority: 'P1',
     status: 'passed',
     fileId: 'file-test-sms',
-    reqSource: 'REQ-222: 验证码 5 分钟有效',
+    module: 'auth (用户中心认证)',
+    reqSource: 'REQ-222',
     design: {
       precondition: '在 Redis 中预埋一个已超时的过期短信验证码',
       steps: [
@@ -274,6 +204,7 @@ def test_sms_normal_flow(api_client, redis_client):
       scriptLanguage: 'python',
       lastCommitHash: '4f9c2d1',
       lastCommitTime: '2 小时前',
+      author: '张建 (QA Lead)',
       codeContent: `# tests/auth/test_sms_login.py
 import pytest
 from aegis import aegis
@@ -305,7 +236,8 @@ def test_sms_expired_token(api_client, redis_client):
     priority: 'P0',
     status: 'passed',
     fileId: 'file-test-sms',
-    reqSource: 'REQ-224: 单 IP 短信防刷限流',
+    module: 'auth (用户中心认证)',
+    reqSource: 'REQ-224',
     design: {
       precondition: '当前 IP 无白名单豁免，Redis 防刷计数器就绪',
       steps: [
@@ -340,6 +272,7 @@ def test_sms_expired_token(api_client, redis_client):
       scriptLanguage: 'python',
       lastCommitHash: '8e2a1b9',
       lastCommitTime: '1 小时前',
+      author: '张建 (QA Lead)',
       codeContent: `# tests/auth/test_sms_login.py
 import pytest
 from aegis import aegis
@@ -367,6 +300,182 @@ def test_sms_rate_limit(api_client, redis_client):
     lastExecutionTime: '14:25:00',
     executionDuration: '68ms',
   },
+  {
+    id: 'c-auth-1',
+    code: 'TC-AUTH-001',
+    title: '正确颁发双 Token 架构 (Access 2h & Refresh 7d)',
+    priority: 'P0',
+    status: 'passed',
+    fileId: 'file-test-pwd',
+    module: 'auth (用户中心认证)',
+    reqSource: 'REQ-101',
+    design: {
+      precondition: '测试账号处于启用状态，密码未被风控锁定',
+      steps: [
+        {
+          stepNumber: 1,
+          name: '携带动态加盐密码发起登录请求',
+          expected: '服务端成功鉴权返回 HTTP 200',
+          status: 'passed',
+          durationMs: 25,
+        },
+        {
+          stepNumber: 2,
+          name: '断言返回体必须同时包含 accessToken 与 refreshToken',
+          expected: 'accessToken 有效期为 7200s，refreshToken 为 7 天',
+          status: 'passed',
+          durationMs: 10,
+        },
+      ],
+    },
+    implementation: {
+      gitRepo: 'gitlab.company.com/qa/auth-tests.git',
+      gitBranch: 'main',
+      gitFilePath: 'tests/auth/test_password_login.py',
+      functionName: 'test_token_issuance',
+      scriptLanguage: 'python',
+      lastCommitHash: '9c1f2b4',
+      lastCommitTime: '昨天',
+      author: '李工 (Senior SDET)',
+      codeContent: `# tests/auth/test_password_login.py\nimport pytest\nfrom aegis import aegis\n\n@aegis.case(id="TC-AUTH-001", req="REQ-101", title="双 Token 颁发验证")\ndef test_token_issuance(api_client):\n    resp = api_client.post("/api/v1/auth/login", json={"account": "test", "password": "pwd"})\n    assert resp.status_code == 200`,
+    },
+    lastExecutionTime: '13:50:12',
+    executionDuration: '35ms',
+  },
+  {
+    id: 'c-auth-2',
+    code: 'TC-AUTH-002',
+    title: '密码连续错误 5 次触发账号 15 分钟阶梯锁定保护',
+    priority: 'P1',
+    status: 'ready',
+    fileId: 'file-test-pwd',
+    module: 'auth (用户中心认证)',
+    reqSource: 'REQ-105',
+    design: {
+      precondition: '测试账号当前未被锁定',
+      steps: [
+        {
+          stepNumber: 1,
+          name: '连续发送 5 次错误密码登录请求',
+          expected: '前 4 次返回密码错误，第 5 次触发风控锁定',
+          status: 'ready',
+        },
+        {
+          stepNumber: 2,
+          name: '第 6 次使用正确密码发起登录',
+          expected: '返回 HTTP 403 明确提示“账号已被锁定 15 分钟”',
+          status: 'ready',
+        },
+      ],
+    },
+    implementation: {
+      gitRepo: 'gitlab.company.com/qa/auth-tests.git',
+      gitBranch: 'main',
+      gitFilePath: 'tests/auth/test_password_login.py',
+      functionName: 'test_password_lockout',
+      scriptLanguage: 'python',
+      lastCommitHash: '9c1f2b4',
+      lastCommitTime: '昨天',
+      author: '李工 (Senior SDET)',
+      codeContent: `# tests/auth/test_password_login.py\nimport pytest\nfrom aegis import aegis\n\n@aegis.case(id="TC-AUTH-002", req="REQ-105", title="密码错误阶梯锁定")\ndef test_password_lockout(api_client):\n    pass`,
+    },
+    lastExecutionTime: '--',
+    executionDuration: '--',
+  },
+  {
+    id: 'c-risk-1',
+    code: 'TC-RISK-001',
+    title: '异地异构新设备登录 ➔ 触发设备指纹风险二次验证',
+    priority: 'P0',
+    status: 'passed',
+    fileId: 'file-test-rate',
+    module: 'risk (智能风控规则)',
+    reqSource: 'REQ-301',
+    design: {
+      precondition: '用户开启了高危异地登录风控开关',
+      steps: [
+        {
+          stepNumber: 1,
+          name: '模拟异地 IP 和未绑定设备指纹发起登录请求',
+          expected: '触发设备指纹碰撞检测',
+          status: 'passed',
+          durationMs: 40,
+        },
+        {
+          stepNumber: 2,
+          name: '断言接口返回需要短信二次验证拦截凭证',
+          expected: '返回 HTTP 200，action="REQUIRE_2FA"',
+          status: 'passed',
+          durationMs: 15,
+        },
+      ],
+    },
+    implementation: {
+      gitRepo: 'gitlab.company.com/qa/auth-tests.git',
+      gitBranch: 'main',
+      gitFilePath: 'tests/risk/test_ip_rate_limit.py',
+      functionName: 'test_device_fingerprint',
+      scriptLanguage: 'python',
+      lastCommitHash: '2b4e8a1',
+      lastCommitTime: '3 天前',
+      author: '王测开',
+      codeContent: `# tests/risk/test_ip_rate_limit.py\nimport pytest\nfrom aegis import aegis\n\n@aegis.case(id="TC-RISK-001", req="REQ-301", title="设备指纹风控")\ndef test_device_fingerprint(api_client):\n    pass`,
+    },
+    lastExecutionTime: '12:10:00',
+    executionDuration: '55ms',
+  },
+];
+
+// 模拟 Git 目录树
+const REPO_TREE_DATA: RepoFileNode[] = [
+  {
+    id: 'dir-tests',
+    name: 'tests',
+    path: 'tests',
+    type: 'folder',
+    children: [
+      {
+        id: 'dir-auth',
+        name: 'auth (用户中心认证)',
+        path: 'tests/auth',
+        type: 'folder',
+        children: [
+          {
+            id: 'file-test-sms',
+            name: 'test_sms_login.py',
+            path: 'tests/auth/test_sms_login.py',
+            type: 'file',
+            caseCount: 3,
+            passRate: 100,
+          },
+          {
+            id: 'file-test-pwd',
+            name: 'test_password_login.py',
+            path: 'tests/auth/test_password_login.py',
+            type: 'file',
+            caseCount: 2,
+            passRate: 50,
+          },
+        ],
+      },
+      {
+        id: 'dir-risk',
+        name: 'risk (智能风控规则)',
+        path: 'tests/risk',
+        type: 'folder',
+        children: [
+          {
+            id: 'file-test-rate',
+            name: 'test_ip_rate_limit.py',
+            path: 'tests/risk/test_ip_rate_limit.py',
+            type: 'file',
+            caseCount: 1,
+            passRate: 100,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 export function RepoCaseExplorer() {
@@ -374,54 +483,79 @@ export function RepoCaseExplorer() {
   const [selectedRepo, setSelectedRepo] = useState('auth-tests.git');
   // 当前选中的 Git 分支
   const [selectedBranch, setSelectedBranch] = useState('main');
-  // 当前选中的测试文件
+
+  // 顶层双重视角: 'table' (用例列表表格，默认) | 'tree' (仓库文件树套件)
+  const [explorerMode, setExplorerMode] = useState<'table' | 'tree'>('table');
+
+  // 选中的文件 (在 tree 模式下使用)
   const [selectedFileId, setSelectedFileId] = useState('file-test-sms');
+
   // 搜索关键字
   const [searchKeyword, setSearchKeyword] = useState('');
+  // 优先级筛选
+  const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
 
-  // 展开折叠的代码抽屉
-  const [expandedCodeCaseIds, setExpandedCodeCaseIds] = useState<{ [key: string]: boolean }>({
-    'c-sms-1': false,
-    'c-sms-3': true,
-  });
+  // 表格多选复选框 (选中用例 ID 集合)
+  const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
 
-  // 三重视图模式: unified (统一双面) | design (业务步骤) | code (纯代码)
-  const [caseViewMode, setCaseViewMode] = useState<'unified' | 'design' | 'code'>('unified');
+  // 当前打开详情抽屉的用例
+  const [activeDrawerCase, setActiveDrawerCase] = useState<UnifiedTestCaseItem | null>(null);
 
   // 用例数据
-  const [cases, setCases] = useState<UnifiedTestCaseItem[]>(INITIAL_CASES_DATA);
+  const [cases, setCases] = useState<UnifiedTestCaseItem[]>(INITIAL_ALL_CASES);
   const [codeEditBuffer, setCodeEditBuffer] = useState<{ [key: string]: string }>({});
 
   // 底部控制台
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([
-    { id: 'l1', time: '14:20:00', type: 'info', tag: 'RepoExplorer', text: '已挂载代码工程仓库: gitlab.company.com/qa/auth-tests.git (branch: main)' },
-    { id: 'l2', time: '14:20:01', type: 'success', tag: 'ASTIndex', text: 'AST 语法解析完成，全仓共索引 3 个测试套件文件，7 条统一用例' },
+    { id: 'l1', time: '14:20:00', type: 'info', tag: 'RepoEngine', text: 'Git 仓库已挂载: gitlab.company.com/qa/auth-tests.git (branch: main)' },
+    { id: 'l2', time: '14:20:01', type: 'success', tag: 'ASTIndex', text: 'AST 解析完成，成功索引 6 条统一用例，支持高密度列表与全仓执行' },
   ]);
 
-  // 当前选中文件的用例列表
-  const currentFileCases = useMemo(() => {
-    return cases.filter((c) => c.fileId === selectedFileId);
-  }, [cases, selectedFileId]);
+  // 过滤后的用例列表
+  const filteredCases = useMemo(() => {
+    return cases.filter((c) => {
+      // 搜索过滤
+      if (searchKeyword) {
+        const kw = searchKeyword.toLowerCase();
+        const matchCode = c.code.toLowerCase().includes(kw);
+        const matchTitle = c.title.toLowerCase().includes(kw);
+        const matchReq = c.reqSource.toLowerCase().includes(kw);
+        const matchFunc = c.implementation.functionName.toLowerCase().includes(kw);
+        const matchFile = c.implementation.gitFilePath.toLowerCase().includes(kw);
+        if (!matchCode && !matchTitle && !matchReq && !matchFunc && !matchFile) return false;
+      }
+      // 优先级过滤
+      if (priorityFilter !== 'ALL' && c.priority !== priorityFilter) return false;
+      return true;
+    });
+  }, [cases, searchKeyword, priorityFilter]);
 
-  // 单点调试运行用例
-  const handleExecuteCase = (caseItem: UnifiedTestCaseItem) => {
+  // 全选/反选
+  const isAllSelected = filteredCases.length > 0 && selectedCaseIds.length === filteredCases.length;
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedCaseIds([]);
+    } else {
+      setSelectedCaseIds(filteredCases.map((c) => c.id));
+    }
+  };
+
+  const toggleSelectCase = (id: string) => {
+    setSelectedCaseIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  // 单点调试
+  const handleExecuteSingleCase = (caseItem: UnifiedTestCaseItem) => {
     setIsConsoleOpen(true);
-    toast.info(`正在执行测试工程用例 [${caseItem.code}]...`);
+    toast.info(`正在调试执行 [${caseItem.code}]...`);
 
-    // 重置状态为执行中
+    // 设置执行中
     setCases((prev) =>
       prev.map((item) =>
-        item.id === caseItem.id
-          ? {
-              ...item,
-              status: 'ready',
-              design: {
-                ...item.design,
-                steps: item.design.steps.map((s, idx) => (idx === 0 ? { ...s, status: 'running' } : s)),
-              },
-            }
-          : item
+        item.id === caseItem.id ? { ...item, status: 'ready', executionDuration: '执行中...' } : item
       )
     );
 
@@ -432,47 +566,83 @@ export function RepoCaseExplorer() {
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
         tag: 'PytestWorker',
-        text: `⚡ 执行用例: pytest ${caseItem.implementation.gitFilePath}::${caseItem.implementation.functionName}`,
+        text: `⚡ pytest ${caseItem.implementation.gitFilePath}::${caseItem.implementation.functionName}`,
       },
     ]);
 
     setTimeout(() => {
-      // Step 1 完成
       setCases((prev) =>
-        prev.map((item) => {
-          if (item.id !== caseItem.id) return item;
-          const updated = [...item.design.steps];
-          if (updated[0]) updated[0] = { ...updated[0], status: 'passed', durationMs: 32 };
-          if (updated[1]) updated[1] = { ...updated[1], status: 'running' };
-          return { ...item, design: { ...item.design, steps: updated } };
-        })
+        prev.map((item) =>
+          item.id === caseItem.id
+            ? {
+                ...item,
+                status: 'passed',
+                lastExecutionTime: new Date().toTimeString().slice(0, 8),
+                executionDuration: '48ms',
+              }
+            : item
+        )
       );
+
       setLogs((prev) => [
         ...prev,
         {
-          id: `st-1`,
+          id: `end-${Date.now()}`,
           time: new Date().toTimeString().slice(0, 8),
-          type: 'step',
-          tag: 'aegis.step',
-          text: `[${caseItem.code}] ✔ 步骤 1: ${caseItem.design.steps[0]?.name} (PASSED 32ms)`,
+          type: 'success',
+          tag: 'TestReport',
+          text: `🎯 [${caseItem.code}] 测试断言 100% 通过 (48ms) 🟢`,
         },
       ]);
-    }, 280);
+      toast.success(`用例 [${caseItem.code}] 执行通过！`);
+    }, 450);
+  };
 
+  // 批量执行选中的用例
+  const handleBatchExecute = () => {
+    if (selectedCaseIds.length === 0) {
+      toast.error('请先勾选需要批量执行的用例');
+      return;
+    }
+
+    setIsConsoleOpen(true);
+    toast.info(`开始批量执行选中的 ${selectedCaseIds.length} 条测试工程用例...`);
+
+    // 全部标为执行中
+    setCases((prev) =>
+      prev.map((item) =>
+        selectedCaseIds.includes(item.id)
+          ? { ...item, status: 'ready', executionDuration: '执行中...' }
+          : item
+      )
+    );
+
+    const targets = cases
+      .filter((c) => selectedCaseIds.includes(c.id))
+      .map((c) => `${c.implementation.gitFilePath}::${c.implementation.functionName}`);
+
+    setLogs((prev) => [
+      ...prev,
+      {
+        id: `batch-${Date.now()}`,
+        time: new Date().toTimeString().slice(0, 8),
+        type: 'info',
+        tag: 'BatchPytest',
+        text: `🚀 触发全仓批量执行任务 (${selectedCaseIds.length} 项):\npytest ${targets.slice(0, 2).join(' ')} ...`,
+      },
+    ]);
+
+    // 模拟逐个返回成功
     setTimeout(() => {
-      // 全部步骤完成
       setCases((prev) =>
         prev.map((item) => {
-          if (item.id !== caseItem.id) return item;
+          if (!selectedCaseIds.includes(item.id)) return item;
+          const ms = Math.floor(Math.random() * 30 + 20);
           return {
             ...item,
             status: 'passed',
             lastExecutionTime: new Date().toTimeString().slice(0, 8),
-            executionDuration: '58ms',
-            design: {
-              ...item.design,
-              steps: item.design.steps.map((s) => ({ ...s, status: 'passed', durationMs: s.durationMs || 18 })),
-            },
+            executionDuration: `${ms}ms`,
           };
         })
       );
@@ -480,15 +650,15 @@ export function RepoCaseExplorer() {
       setLogs((prev) => [
         ...prev,
         {
-          id: `st-end`,
+          id: `batch-ok-${Date.now()}`,
           time: new Date().toTimeString().slice(0, 8),
           type: 'success',
-          tag: 'TestReport',
-          text: `🎯 [${caseItem.code}] 全部步骤执行通过 (总耗时 58ms)，断言 100% 命中 🟢`,
+          tag: 'BatchPytest',
+          text: `🎉 批量执行全部完成！通过率 100% (${selectedCaseIds.length}/${selectedCaseIds.length}) 🟢`,
         },
       ]);
-      toast.success(`用例 [${caseItem.code}] 执行通过！`);
-    }, 600);
+      toast.success(`批量执行完成，选中的 ${selectedCaseIds.length} 条用例全部通过！`);
+    }, 700);
   };
 
   // 提交修改到 Git 仓库
@@ -512,6 +682,22 @@ export function RepoCaseExplorer() {
       )
     );
 
+    if (activeDrawerCase && activeDrawerCase.id === caseItem.id) {
+      setActiveDrawerCase((prev) =>
+        prev
+          ? {
+              ...prev,
+              implementation: {
+                ...prev.implementation,
+                codeContent: updatedCode,
+                lastCommitHash: fakeCommitHash,
+                lastCommitTime: '刚刚',
+              },
+            }
+          : null
+      );
+    }
+
     setLogs((prev) => [
       ...prev,
       {
@@ -519,406 +705,363 @@ export function RepoCaseExplorer() {
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
         tag: 'GitLabAPI',
-        text: `🚀 [Git Commit] 成功将改动推送至 ${caseItem.implementation.gitBranch} (${fakeCommitHash}): ${caseItem.implementation.gitFilePath}`,
+        text: `🚀 [Git Commit] 成功推送用例改动至 ${caseItem.implementation.gitBranch} (${fakeCommitHash}): ${caseItem.implementation.gitFilePath}`,
       },
     ]);
 
     toast.success(`代码已成功提交至 Git 分支 (${fakeCommitHash})！`);
   };
 
-  // 渲染文件树节点
-  const renderTreeNode = (node: RepoFileNode, depth: number = 0) => {
-    const isFolder = node.type === 'folder';
-    const isSelected = node.id === selectedFileId;
-
-    if (isFolder) {
-      return (
-        <div key={node.id} className="space-y-0.5">
-          <div
-            style={{ paddingLeft: `${depth * 12 + 10}px` }}
-            className="flex items-center gap-1.5 py-1 text-xs font-semibold text-slate-700 select-none hover:bg-slate-100/60 rounded-md cursor-pointer"
-          >
-            <FolderOpen className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-            <span className="truncate">{node.name}</span>
-          </div>
-          {node.children && (
-            <div className="space-y-0.5">
-              {node.children.map((child) => renderTreeNode(child, depth + 1))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <div
-        key={node.id}
-        onClick={() => {
-          if (node.caseCount) setSelectedFileId(node.id);
-        }}
-        style={{ paddingLeft: `${depth * 12 + 10}px` }}
-        className={`group flex items-center justify-between py-1.5 pr-2.5 rounded-lg text-xs cursor-pointer transition-all ${
-          isSelected
-            ? 'bg-blue-50 text-blue-900 font-semibold border border-blue-200/60 shadow-2xs'
-            : 'text-slate-600 hover:bg-slate-100/70 border border-transparent'
-        }`}
-      >
-        <div className="flex items-center gap-2 truncate">
-          <FileCode2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
-          <span className="truncate">{node.name}</span>
-        </div>
-
-        {node.caseCount !== undefined && (
-          <Badge
-            variant="outline"
-            className={`text-[9px] px-1.5 py-0 font-mono ${
-              isSelected ? 'bg-blue-100/80 text-blue-700 border-blue-300' : 'bg-slate-100 text-slate-500 border-slate-200'
-            }`}
-          >
-            {node.caseCount} cases
-          </Badge>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col h-full w-full bg-[#F8FAFC] text-slate-800 overflow-hidden font-sans select-none antialiased">
-      {/* ================= 1. 顶部 Header (大仓与分支选择器) ================= */}
-      <div className="h-12 shrink-0 bg-white border-b border-slate-200/80 px-5 flex items-center justify-between z-20">
+      {/* ================= 1. 顶部 Header (大仓与分支中枢 + 模式切换) ================= */}
+      <div className="h-13 shrink-0 bg-white border-b border-slate-200/80 px-5 flex items-center justify-between z-20 shadow-2xs">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <FolderGit2 className="w-5 h-5 text-indigo-600" />
-            <span className="font-bold text-sm text-slate-900">统一用例仓库 (Test Repo Hub)</span>
+            <span className="font-bold text-sm text-slate-900">代码仓库用例中心</span>
           </div>
 
           <div className="h-4 w-px bg-slate-200" />
 
-          {/* 业务代码仓库选择 */}
+          {/* 仓库与分支选择器 */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">业务仓库:</span>
-            <div className="flex items-center bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/80 text-xs font-mono font-medium text-slate-800 gap-1.5">
+            <div className="flex items-center bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-mono font-medium text-slate-800 gap-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span>{selectedRepo}</span>
             </div>
-          </div>
-
-          {/* Git 分支选择 */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">分支:</span>
-            <div className="flex items-center bg-indigo-50/70 border border-indigo-200 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold text-indigo-700 gap-1">
+            <div className="flex items-center bg-indigo-50/80 border border-indigo-200 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold text-indigo-700 gap-1">
               <GitBranch className="w-3 h-3" />
               <span>{selectedBranch}</span>
             </div>
           </div>
         </div>
 
-        {/* 顶部右侧: 三重视图切换器 */}
+        {/* 顶部右侧: 双重视角切换器 (用例列表 vs 仓库文件树) */}
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-slate-100/90 p-0.5 rounded-lg border border-slate-200/80 text-xs font-medium">
             <button
-              onClick={() => setCaseViewMode('unified')}
-              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                caseViewMode === 'unified'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-800'
+              onClick={() => setExplorerMode('table')}
+              className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                explorerMode === 'table'
+                  ? 'bg-white text-blue-700 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <SplitSquareVertical className="w-3.5 h-3.5 text-blue-600" />
-              <span>统一双面视图</span>
+              <TableProperties className="w-3.5 h-3.5 text-blue-600" />
+              <span>📋 统一用例列表 (Table)</span>
             </button>
             <button
-              onClick={() => setCaseViewMode('design')}
-              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                caseViewMode === 'design'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-800'
+              onClick={() => setExplorerMode('tree')}
+              className={`px-3 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                explorerMode === 'tree'
+                  ? 'bg-white text-indigo-700 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ListOrdered className="w-3.5 h-3.5 text-indigo-600" />
-              <span>业务步骤</span>
-            </button>
-            <button
-              onClick={() => setCaseViewMode('code')}
-              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                caseViewMode === 'code'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <FileCode2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>代码实现</span>
+              <FolderTree className="w-3.5 h-3.5 text-indigo-600" />
+              <span>📦 仓库文件树 (Tree)</span>
             </button>
           </div>
 
+          {/* 批量执行操作 */}
           <Button
             size="sm"
-            onClick={() => {
-              setIsConsoleOpen(true);
-              toast.info('正在批量执行当前测试套件所有用例...');
-            }}
-            className="h-8 text-xs bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-3 gap-1.5 font-medium shadow-sm"
+            onClick={handleBatchExecute}
+            disabled={selectedCaseIds.length === 0}
+            className={`h-8 text-xs rounded-lg px-3.5 gap-1.5 font-medium shadow-sm transition-all ${
+              selectedCaseIds.length > 0
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            <span>运行套件所有用例</span>
+            <span>
+              {selectedCaseIds.length > 0 ? `批量执行选中 (${selectedCaseIds.length})` : '批量执行'}
+            </span>
           </Button>
         </div>
       </div>
 
-      {/* ================= 2. 主体双栏工作区 ================= */}
-      <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        {/* 左侧：📁 Git 仓库与测试套件目录树 (Repo Tree) */}
-        <div className="w-72 shrink-0 bg-white border-r border-slate-200/70 flex flex-col min-h-0 z-10">
-          <div className="h-10 px-4 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
-            <div className="flex items-center gap-1.5">
-              <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
-              <span>工程文件树 (tests/)</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-mono">AST Live</span>
+      {/* ================= 2. 筛选过滤工具栏 (Search & Filters) ================= */}
+      <div className="h-11 shrink-0 bg-white border-b border-slate-200/60 px-5 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-3 flex-1 max-w-xl">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <Input
+              placeholder="快速搜索用例编号、用例名称、关联需求、函数名或文件路径..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="h-8 pl-8.5 text-xs bg-slate-50 border-slate-200 rounded-lg"
+            />
           </div>
 
-          <div className="p-2 border-b border-slate-100">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-              <Input
-                placeholder="搜索测试文件或函数..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-8 pl-8 text-xs bg-slate-50 border-slate-200"
-              />
+          {/* 优先级过滤 */}
+          <div className="flex items-center gap-1 text-slate-500">
+            <span className="text-[11px]">优先级:</span>
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px]">
+              {['ALL', 'P0', 'P1'].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPriorityFilter(p)}
+                  className={`px-2 py-0.5 rounded ${
+                    priorityFilter === p
+                      ? 'bg-white font-bold text-slate-900 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
             </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {REPO_TREE_DATA.map((node) => renderTreeNode(node))}
           </div>
         </div>
 
-        {/* 右侧：🎯 统一测试套件与用例大盘 (Suite View) */}
-        <div className="flex-1 flex flex-col min-h-0 bg-[#FAFAFC]">
-          {/* 测试套件文件头 */}
-          <div className="h-11 px-5 bg-white border-b border-slate-200/70 flex items-center justify-between text-xs text-slate-600 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <FileCode2 className="w-4 h-4 text-indigo-600" />
-                <span className="font-bold text-slate-900 text-xs">tests/auth/test_sms_login.py</span>
-                <Badge variant="outline" className="text-[10px] font-mono bg-blue-50 text-blue-700 border-blue-200">
-                  {currentFileCases.length} 条统一用例
-                </Badge>
-              </div>
-
-              <div className="h-3 w-px bg-slate-200" />
-
-              <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
-                <span>Commit: 4f9c2d1</span>
-                <span>·</span>
-                <span>作者: 张建 (QA Lead)</span>
-                <span>·</span>
-                <span>2 小时前</span>
-              </div>
-            </div>
-
-            <div className="text-[11px] text-slate-400">
-              原生 Pytest 测试套件 · 保持代码工程完整上下文
-            </div>
-          </div>
-
-          {/* 用例列表区 (复用统一双面卡片) */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {currentFileCases.map((c) => {
-              const isCodeExpanded = expandedCodeCaseIds[c.id] ?? false;
-              const code = codeEditBuffer[c.id] !== undefined ? codeEditBuffer[c.id] : c.implementation.codeContent;
-
-              return (
-                <Card
-                  key={c.id}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow"
-                >
-                  {/* 1. 卡片头部元数据 */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-blue-600 font-bold text-xs bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/60">
-                          {c.code}
-                        </span>
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 border-slate-200 text-slate-600 font-bold">
-                          {c.priority}
-                        </Badge>
-                        <h4 className="font-bold text-slate-900 text-xs truncate">{c.title}</h4>
-                      </div>
-
-                      <div className="flex items-center gap-3 text-[10px] text-slate-400 font-mono">
-                        <div className="flex items-center gap-1 truncate text-blue-600">
-                          <Link2 className="w-2.5 h-2.5 shrink-0" />
-                          <span>{c.reqSource}</span>
-                        </div>
-
-                        <span className="text-slate-300">|</span>
-
-                        <div className="flex items-center gap-1 truncate text-slate-500">
-                          <GitBranch className="w-2.5 h-2.5 text-indigo-500 shrink-0" />
-                          <span>{c.implementation.gitFilePath}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {c.status === 'passed' ? (
-                        <Badge variant="outline" className="text-[10px] text-emerald-700 bg-emerald-50 border-emerald-200 gap-1 font-medium">
-                          <Check className="w-2.5 h-2.5" /> PASS
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-200">
-                          READY
-                        </Badge>
-                      )}
-
-                      {/* 调试运行 */}
-                      <Button
-                        size="sm"
-                        onClick={() => handleExecuteCase(c)}
-                        className="h-7 text-[11px] bg-slate-900 hover:bg-slate-800 text-white px-3 rounded-lg gap-1.5 font-medium shadow-sm"
-                      >
-                        <Play className="w-3 h-3 fill-current" />
-                        <span>单点调试</span>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* 2. 业务设计面 (Design View: 步骤列表) */}
-                  {(caseViewMode === 'unified' || caseViewMode === 'design') && (
-                    <div className="space-y-2 p-3 rounded-xl bg-slate-50/80 border border-slate-200/60 text-xs">
-                      <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
-                        <span className="flex items-center gap-1.5">
-                          <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
-                          <span>业务测试步骤 (Design Steps)</span>
-                        </span>
-                        <span className="text-[10px] font-normal text-slate-400">
-                          前置: {c.design.precondition}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1.5 pt-1">
-                        {c.design.steps.map((step) => (
-                          <div
-                            key={step.stepNumber}
-                            className="p-2 rounded-lg bg-white border border-slate-200/80 flex items-start justify-between gap-2 shadow-2xs"
-                          >
-                            <div className="flex items-start gap-2 min-w-0">
-                              <span className="h-4 w-4 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-mono">
-                                {step.stepNumber}
-                              </span>
-                              <div className="space-y-0.5 min-w-0">
-                                <p className="text-[11px] font-medium text-slate-800 truncate">{step.name}</p>
-                                <p className="text-[10px] text-slate-400 truncate">预期: {step.expected}</p>
-                              </div>
-                            </div>
-
-                            <div className="shrink-0 flex items-center gap-1">
-                              {step.status === 'running' ? (
-                                <span className="text-[10px] text-blue-600 font-mono animate-pulse">执行中...</span>
-                              ) : step.status === 'passed' ? (
-                                <span className="text-[10px] text-emerald-600 font-mono font-semibold flex items-center gap-0.5">
-                                  <Check className="w-3 h-3" />
-                                  <span>{step.durationMs ? `${step.durationMs}ms` : 'PASS'}</span>
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-300 font-mono">待执行</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 3. 代码实现面 (Implementation View: 折叠/展开 Monaco 代码块) */}
-                  {(caseViewMode === 'unified' || caseViewMode === 'code') && (
-                    <div>
-                      {caseViewMode === 'unified' && (
-                        <div className="flex items-center justify-between pt-1">
-                          <button
-                            onClick={() =>
-                              setExpandedCodeCaseIds((prev) => ({ ...prev, [c.id]: !isCodeExpanded }))
-                            }
-                            className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-[11px] font-semibold"
-                          >
-                            <Code2 className="w-3.5 h-3.5" />
-                            <span>{isCodeExpanded ? '折叠 Python 测试代码' : '展开 Python 测试代码 (@aegis SDK)'}</span>
-                            {isCodeExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                          </button>
-
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            Git Commit: {c.implementation.lastCommitHash} ({c.implementation.lastCommitTime})
-                          </div>
-                        </div>
-                      )}
-
-                      {(caseViewMode === 'code' || isCodeExpanded) && (
-                        <div className="mt-2 rounded-xl bg-[#0F172A] border border-slate-800 overflow-hidden shadow-inner font-mono text-xs">
-                          {/* 代码框顶部状态条 */}
-                          <div className="h-7 px-3 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                            <div className="flex items-center gap-2 text-slate-300">
-                              <FileCode2 className="w-3 h-3 text-cyan-400" />
-                              <span className="font-semibold text-[10px] text-slate-300 truncate max-w-[200px]">
-                                {c.implementation.gitFilePath}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-3 text-[10px]">
-                              {c.executionDuration && (
-                                <span className="text-slate-400 flex items-center gap-1">
-                                  <Clock className="w-2.5 h-2.5 text-emerald-400" />
-                                  <span>{c.executionDuration}</span>
-                                </span>
-                              )}
-
-                              {/* 提交至 Git 按钮 */}
-                              <button
-                                onClick={() => handleCommitToGit(c)}
-                                className="text-indigo-300 hover:text-white flex items-center gap-1 font-semibold transition-colors bg-indigo-900/60 px-2.5 py-0.5 rounded border border-indigo-500/40"
-                              >
-                                <GitCommit className="w-3 h-3 text-cyan-400" />
-                                <span>Commit 到 Git</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* 代码内容区域 */}
-                          <div className="p-3">
-                            <textarea
-                              value={code}
-                              onChange={(e) => {
-                                setCodeEditBuffer((prev) => ({ ...prev, [c.id]: e.target.value }));
-                              }}
-                              rows={9}
-                              className="w-full bg-transparent text-[#E2E8F0] text-[11px] font-mono leading-5 outline-none resize-y selection:bg-blue-600 selection:text-white"
-                              placeholder="在此编写带 @aegis.case 与 with aegis.step 的原生 Python 测试函数..."
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
+        <div className="flex items-center gap-3 text-slate-400 text-[11px] font-mono">
+          <span>共找到 {filteredCases.length} 条用例</span>
+          <span>·</span>
+          <span>已勾选 {selectedCaseIds.length} 项</span>
         </div>
       </div>
 
-      {/* ================= 3. 底部执行打屏终端 (Streaming Terminal) ================= */}
+      {/* ================= 3. 主体内容区 (Table View vs Tree View) ================= */}
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
+        {explorerMode === 'table' ? (
+          /* ------------------- 📋 核心：高密度统一用例列表表格 ------------------- */
+          <div className="flex-1 flex flex-col min-h-0 bg-white overflow-y-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="sticky top-0 bg-slate-50/90 backdrop-blur-xs border-b border-slate-200 z-10 font-semibold text-slate-600">
+                <tr>
+                  <th className="w-10 px-3 py-2.5 text-center">
+                    <button onClick={toggleSelectAll} className="p-0.5 hover:text-blue-600">
+                      {isAllSelected ? (
+                        <CheckSquare className="w-4 h-4 text-blue-600" />
+                      ) : (
+                        <Square className="w-4 h-4 text-slate-400" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="w-28 px-3 py-2.5 font-mono">用例编号</th>
+                  <th className="px-3 py-2.5 min-w-[260px]">用例名称 (Docstring)</th>
+                  <th className="w-24 px-3 py-2.5">关联需求</th>
+                  <th className="w-16 px-3 py-2.5 text-center">优先级</th>
+                  <th className="px-3 py-2.5 min-w-[280px]">代码目标 (文件与函数)</th>
+                  <th className="w-24 px-3 py-2.5">最近状态</th>
+                  <th className="w-20 px-3 py-2.5">耗时</th>
+                  <th className="w-28 px-3 py-2.5 text-center">快捷操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredCases.map((c) => {
+                  const isChecked = selectedCaseIds.includes(c.id);
+                  return (
+                    <tr
+                      key={c.id}
+                      className={`group transition-colors hover:bg-slate-50/80 ${
+                        isChecked ? 'bg-blue-50/40' : ''
+                      }`}
+                    >
+                      {/* 复选框 */}
+                      <td className="px-3 py-3 text-center">
+                        <button onClick={() => toggleSelectCase(c.id)} className="p-0.5">
+                          {isChecked ? (
+                            <CheckSquare className="w-4 h-4 text-blue-600" />
+                          ) : (
+                            <Square className="w-4 h-4 text-slate-300 group-hover:text-slate-400" />
+                          )}
+                        </button>
+                      </td>
+
+                      {/* 用例编号 */}
+                      <td className="px-3 py-3 font-mono font-bold text-blue-600">
+                        {c.code}
+                      </td>
+
+                      {/* 用例名称 */}
+                      <td className="px-3 py-3 font-medium text-slate-900 max-w-md">
+                        <div
+                          onClick={() => setActiveDrawerCase(c)}
+                          className="cursor-pointer hover:text-blue-600 truncate"
+                        >
+                          {c.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono pt-0.5 truncate">
+                          前置: {c.design.precondition}
+                        </div>
+                      </td>
+
+                      {/* 关联需求 */}
+                      <td className="px-3 py-3">
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-[10px] text-indigo-700 bg-indigo-50 border-indigo-200/60"
+                        >
+                          {c.reqSource}
+                        </Badge>
+                      </td>
+
+                      {/* 优先级 */}
+                      <td className="px-3 py-3 text-center">
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] px-1 py-0 font-bold ${
+                            c.priority === 'P0'
+                              ? 'border-red-200 text-red-600 bg-red-50'
+                              : 'border-amber-200 text-amber-600 bg-amber-50'
+                          }`}
+                        >
+                          {c.priority}
+                        </Badge>
+                      </td>
+
+                      {/* 代码目标锚点 */}
+                      <td className="px-3 py-3 font-mono text-[11px] text-slate-600">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <FileCode2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="text-slate-500 truncate">{c.implementation.gitFilePath}</span>
+                          <span className="text-slate-300">::</span>
+                          <span className="font-semibold text-slate-800 truncate">{c.implementation.functionName}</span>
+                        </div>
+                      </td>
+
+                      {/* 状态 */}
+                      <td className="px-3 py-3">
+                        {c.executionDuration === '执行中...' ? (
+                          <span className="text-[10px] font-mono text-blue-600 animate-pulse flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                            运行中...
+                          </span>
+                        ) : c.status === 'passed' ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] text-emerald-700 bg-emerald-50 border-emerald-200 gap-1 font-medium font-mono"
+                          >
+                            <Check className="w-2.5 h-2.5" /> PASS
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-slate-400 border-slate-200 font-mono">
+                            READY
+                          </Badge>
+                        )}
+                      </td>
+
+                      {/* 耗时 */}
+                      <td className="px-3 py-3 font-mono text-[11px] text-slate-500">
+                        {c.executionDuration}
+                      </td>
+
+                      {/* 操作 */}
+                      <td className="px-3 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleExecuteSingleCase(c)}
+                            className="h-6 px-2 text-[11px] text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            <span>调试</span>
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setActiveDrawerCase(c)}
+                            className="h-6 px-2 text-[11px] text-slate-500 hover:text-slate-900 rounded"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>详情</span>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* ------------------- 📦 仓库文件树套件视窗 ------------------- */
+          <div className="flex-1 flex min-h-0">
+            <div className="w-72 shrink-0 bg-white border-r border-slate-200/70 p-3 space-y-2 overflow-y-auto">
+              <div className="text-xs font-semibold text-slate-500 px-2 pb-1">工程文件结构 (tests/)</div>
+              {REPO_TREE_DATA[0]?.children?.map((child) => (
+                <div key={child.id} className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 px-2 py-1">
+                    <FolderOpen className="w-3.5 h-3.5 text-blue-500" />
+                    <span>{child.name}</span>
+                  </div>
+                  {child.children?.map((file) => (
+                    <div
+                      key={file.id}
+                      onClick={() => setSelectedFileId(file.id)}
+                      className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
+                        selectedFileId === file.id
+                          ? 'bg-blue-50 text-blue-900 font-semibold border border-blue-200'
+                          : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <FileCode2 className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate">{file.name}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[9px] font-mono">
+                        {file.caseCount} cases
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#FAFAFC]">
+              <div className="font-semibold text-slate-800 text-xs flex items-center justify-between">
+                <span>tests/auth/test_sms_login.py 中的统一用例套件</span>
+                <span className="text-slate-400 text-[11px] font-mono">Git Commit: 4f9c2d1</span>
+              </div>
+              {filteredCases
+                .filter((c) => c.fileId === selectedFileId)
+                .map((c) => (
+                  <Card key={c.id} className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-blue-600 font-mono text-xs">{c.code}</span>
+                        <h4 className="font-bold text-slate-900 text-xs">{c.title}</h4>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleExecuteSingleCase(c)}
+                        className="h-7 text-xs bg-slate-900 text-white rounded-lg px-2.5"
+                      >
+                        <Play className="w-3 h-3 fill-current mr-1" /> 调试
+                      </Button>
+                    </div>
+                    <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg">
+                      {c.design.steps.map((st) => (
+                        <div key={st.stepNumber} className="py-0.5">
+                          步骤 {st.stepNumber}: {st.name} ➔ 预期: {st.expected}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ================= 4. 底部执行打屏终端 (Streaming Terminal) ================= */}
       <div
-        style={{ height: isConsoleOpen ? '150px' : '32px' }}
-        className="shrink-0 bg-[#0B0F17] border-t border-slate-800/80 flex flex-col z-20 transition-all duration-150 relative text-slate-300"
+        style={{ height: isConsoleOpen ? '150px' : '30px' }}
+        className="shrink-0 bg-[#0B0F17] border-t border-slate-800 flex flex-col z-20 transition-all duration-150 relative text-slate-300"
       >
-        <div className="h-8 bg-[#0F172A] border-b border-slate-800/80 px-4 flex items-center justify-between text-xs">
+        <div className="h-7.5 bg-[#0F172A] border-b border-slate-800/80 px-4 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 font-mono text-[11px]">
             <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="font-semibold text-slate-200">测试工程执行日志 (Step Events Stream)</span>
+            <span className="font-semibold text-slate-200">测试工程运行终端 (Pytest Worker Stream)</span>
             <span className="text-slate-600">|</span>
             <span className="text-emerald-400 text-[10px] flex items-center gap-1 font-medium">
-              <Cpu className="w-3 h-3" /> pytest 工作区原生执行 · 步骤逐级高亮
+              <Cpu className="w-3 h-3" /> 本地工程目录上下文挂载完毕 · 支持单点与批量调度
             </span>
           </div>
 
@@ -964,6 +1107,114 @@ export function RepoCaseExplorer() {
           </div>
         )}
       </div>
+
+      {/* ================= 5. 统一用例双面抽屉 (Drawer) ================= */}
+      <Sheet open={!!activeDrawerCase} onOpenChange={(open) => !open && setActiveDrawerCase(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0 z-50">
+          {activeDrawerCase && (
+            <div className="flex flex-col h-full bg-white text-xs">
+              <SheetHeader className="p-5 border-b border-slate-200 bg-slate-50/60">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      {activeDrawerCase.code}
+                    </span>
+                    <Badge variant="outline" className="font-bold">
+                      {activeDrawerCase.priority}
+                    </Badge>
+                    <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                      {activeDrawerCase.reqSource}
+                    </Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleExecuteSingleCase(activeDrawerCase)}
+                    className="h-7 text-xs bg-slate-900 text-white rounded-lg px-3"
+                  >
+                    <Play className="w-3 h-3 fill-current mr-1" /> 运行调试
+                  </Button>
+                </div>
+                <SheetTitle className="text-sm font-bold text-slate-900 pt-2 text-left">
+                  {activeDrawerCase.title}
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 p-5 space-y-5 overflow-y-auto">
+                {/* 业务设计步骤 */}
+                <div className="space-y-2 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="font-semibold text-slate-800 text-xs flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
+                      <span>业务设计步骤 (Business Steps)</span>
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      前置: {activeDrawerCase.design.precondition}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {activeDrawerCase.design.steps.map((st) => (
+                      <div
+                        key={st.stepNumber}
+                        className="p-2.5 rounded-lg bg-white border border-slate-200/80 space-y-0.5 shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between font-medium text-slate-800">
+                          <span>步骤 {st.stepNumber}: {st.name}</span>
+                          <span className="text-[10px] text-emerald-600 font-mono">
+                            {st.durationMs ? `${st.durationMs}ms` : 'PASS'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">预期结果: {st.expected}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 原生 Python 代码 */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between font-semibold text-slate-800">
+                    <span className="flex items-center gap-1.5">
+                      <Code2 className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Git 原生测试代码 (@aegis SDK)</span>
+                    </span>
+                    <button
+                      onClick={() => handleCommitToGit(activeDrawerCase)}
+                      className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 font-semibold text-[11px]"
+                    >
+                      <GitCommit className="w-3 h-3" />
+                      <span>Commit 代码变更</span>
+                    </button>
+                  </div>
+
+                  <div className="rounded-xl bg-[#0F172A] border border-slate-800 overflow-hidden shadow-inner font-mono text-xs">
+                    <div className="h-7 px-3 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                      <span>{activeDrawerCase.implementation.gitFilePath}</span>
+                      <span>Commit: {activeDrawerCase.implementation.lastCommitHash}</span>
+                    </div>
+                    <div className="p-3">
+                      <textarea
+                        value={
+                          codeEditBuffer[activeDrawerCase.id] !== undefined
+                            ? codeEditBuffer[activeDrawerCase.id]
+                            : activeDrawerCase.implementation.codeContent
+                        }
+                        onChange={(e) => {
+                          setCodeEditBuffer((prev) => ({
+                            ...prev,
+                            [activeDrawerCase.id]: e.target.value,
+                          }));
+                        }}
+                        rows={12}
+                        className="w-full bg-transparent text-[#E2E8F0] text-[11px] font-mono leading-5 outline-none resize-y selection:bg-blue-600 selection:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
