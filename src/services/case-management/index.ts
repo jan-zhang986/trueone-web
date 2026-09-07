@@ -7,6 +7,8 @@
 export * from './service-feature-case';
 // 导出用例评审服务
 export * from './service-case-review';
+// 导出代码工程用例库服务
+export * from './service-repo-case';
 // 导出 URL 常量
 export * from './constants/urls';
 
