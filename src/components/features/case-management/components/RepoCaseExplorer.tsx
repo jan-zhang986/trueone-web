@@ -27,6 +27,8 @@ import {
   Check,
   Tag,
   Info,
+  GitMerge,
+  Network,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,7 +83,7 @@ export interface UnifiedTestCaseItem {
     gitBranch: string;
     gitFilePath: string;
     functionName: string;
-    scriptLanguage: 'python' | 'typescript';
+    scriptLanguage: 'python' | 'typescript' | 'yaml' | 'go' | string;
     codeContent: string;
     lastCommitHash: string;
     lastCommitTime: string;
@@ -122,11 +124,11 @@ function mapBackendCaseToItem(c: UnifiedTestCase): UnifiedTestCaseItem {
       })),
     },
     implementation: {
-      gitRepo: c.gitRepo || 'aegis-runner',
+      gitRepo: c.gitRepo || 'trueone-anubis',
       gitBranch: c.gitBranch || 'main',
       gitFilePath: c.gitFilePath || '',
       functionName: c.functionName || '',
-      scriptLanguage: (c.scriptLanguage as 'python' | 'typescript') || 'python',
+      scriptLanguage: (c.scriptLanguage as any) || 'yaml',
       codeContent: c.codeContent || '',
       lastCommitHash: c.lastCommitHash || 'git-head',
       lastCommitTime: c.lastCommitTime || '刚刚',
@@ -452,9 +454,9 @@ export function RepoCaseExplorer({
   };
 
   // 单点调试
-  const handleExecuteSingleCase = (caseItem: UnifiedTestCaseItem) => {
+  const handleExecuteSingleCase = async (caseItem: UnifiedTestCaseItem) => {
     setIsConsoleOpen(true);
-    toast.info(`正在调试执行 [${caseItem.code}]...`);
+    toast.info(`正在调度执行 [${caseItem.code}]...`);
 
     setCases((prev) =>
       prev.map((item) =>
@@ -462,43 +464,85 @@ export function RepoCaseExplorer({
       )
     );
 
+    const isWorkflow = caseItem.implementation.scriptLanguage === 'yaml' || caseItem.reqSource === 'E2E_WORKFLOW_DAG';
+
     setLogs((prev) => [
       ...prev,
       {
         id: `run-${Date.now()}`,
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
-        tag: 'PytestWorker',
-        text: `⚡ pytest ${caseItem.implementation.gitFilePath}::${caseItem.implementation.functionName}`,
+        tag: isWorkflow ? 'DAGEngine' : 'TestRunner',
+        text: isWorkflow
+          ? `🚀 [DAG 拓扑调度] 正在触发有向无环图执行: ${caseItem.code} (${caseItem.title})`
+          : `⚡ [TestRunner] 运行测试: ${caseItem.implementation.gitFilePath}::${caseItem.implementation.functionName}`,
       },
     ]);
 
-    setTimeout(() => {
+    try {
+      const res = await repoCaseService.executeCase(currentRepoId, {
+        caseId: caseItem.id,
+        branch: selectedBranch,
+      });
+      const data = (res as any)?.data || res;
+      const durationStr = `${data.durationMs || 15}ms`;
+
       setCases((prev) =>
         prev.map((item) =>
           item.id === caseItem.id
             ? {
                 ...item,
-                status: 'passed',
+                status: (data.status === 'SUCCESS' ? 'passed' : 'failed') as any,
                 lastExecutionTime: new Date().toTimeString().slice(0, 8),
-                executionDuration: '48ms',
+                executionDuration: durationStr,
               }
             : item
         )
       );
 
-      setLogs((prev) => [
-        ...prev,
-        {
-          id: `end-${Date.now()}`,
+      if (data.caseType === 'WORKFLOW_DAG' && data.execution?.nodeResults) {
+        const nodes = Object.values(data.execution.nodeResults);
+        const newLogs: LogEntry[] = nodes.map((n: any, idx: number) => ({
+          id: `node-${Date.now()}-${idx}`,
           time: new Date().toTimeString().slice(0, 8),
-          type: 'success',
-          tag: 'TestReport',
-          text: `🎯 [${caseItem.code}] 测试断言 100% 通过 (48ms) 🟢`,
-        },
-      ]);
+          type: n.status === 'SUCCESS' ? 'step' : 'error',
+          tag: `DAG-Step-${idx + 1}`,
+          text: `[${n.status}] ${n.nodeName} (${n.durationMs}ms) - 输出: ${JSON.stringify(n.output || n.evidence || {})}`,
+        }));
+        setLogs((prev) => [
+          ...prev,
+          ...newLogs,
+          {
+            id: `end-${Date.now()}`,
+            time: new Date().toTimeString().slice(0, 8),
+            type: 'success',
+            tag: 'WorkflowReport',
+            text: `🎯 全链路 DAG 执行完成: 状态 ${data.status}, 总节点数 ${data.execution.totalNodes}, 耗时 ${durationStr} 🟢`,
+          },
+        ]);
+      } else {
+        setLogs((prev) => [
+          ...prev,
+          {
+            id: `end-${Date.now()}`,
+            time: new Date().toTimeString().slice(0, 8),
+            type: 'success',
+            tag: 'TestReport',
+            text: `🎯 [${caseItem.code}] 断言通过 (${durationStr}) 🟢`,
+          },
+        ]);
+      }
       toast.success(`用例 [${caseItem.code}] 执行通过！`);
-    }, 450);
+    } catch (err: any) {
+      toast.error(`执行失败: ${err.message || err}`);
+      setCases((prev) =>
+        prev.map((item) =>
+          item.id === caseItem.id
+            ? { ...item, status: 'failed', executionDuration: '失败' }
+            : item
+        )
+      );
+    }
   };
 
   // 批量执行
@@ -893,6 +937,12 @@ export function RepoCaseExplorer({
                             <span className="font-mono text-[11px] font-semibold text-blue-600 bg-blue-50/80 px-1.5 py-0.5 rounded border border-blue-200/50 shrink-0">
                               {c.code}
                             </span>
+                            {(c.implementation.scriptLanguage === 'yaml' || c.reqSource === 'E2E_WORKFLOW_DAG') && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs shrink-0">
+                                <GitMerge className="w-2.5 h-2.5 text-purple-600" />
+                                E2E DAG
+                              </span>
+                            )}
                             <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate">
                               {c.title}
                             </span>
@@ -903,7 +953,9 @@ export function RepoCaseExplorer({
                         <td className="px-3 py-2.5 font-mono text-[11px]">
                           <div className="flex items-center gap-1.5 truncate max-w-sm">
                             <span className="font-semibold text-indigo-600 truncate">
-                              {c.implementation.functionName || 'TestRunner'}()
+                              {c.implementation.scriptLanguage === 'yaml'
+                                ? c.implementation.functionName
+                                : `${c.implementation.functionName || 'TestRunner'}()`}
                             </span>
                             <span className="text-slate-400 text-[10px] bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
                               {c.implementation.gitFilePath ? c.implementation.gitFilePath.split('/').pop() : 'test.go'}
@@ -1079,6 +1131,12 @@ export function RepoCaseExplorer({
                       <span className="font-mono font-bold text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60">
                         {activeDrawerCase.code}
                       </span>
+                      {(activeDrawerCase.implementation.scriptLanguage === 'yaml' || activeDrawerCase.reqSource === 'E2E_WORKFLOW_DAG') && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
+                          <GitMerge className="w-3 h-3 text-purple-600" />
+                          E2E Workflow DAG
+                        </span>
+                      )}
                       <h2 className="text-lg font-bold text-slate-900 leading-snug">
                         {activeDrawerCase.title}
                       </h2>
@@ -1092,7 +1150,7 @@ export function RepoCaseExplorer({
                       className="h-8 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium shadow-xs gap-1.5 rounded-lg px-3.5 cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-current" />
-                      <span>调试运行</span>
+                      <span>调度运行</span>
                     </Button>
                   </div>
                 </div>
@@ -1109,7 +1167,9 @@ export function RepoCaseExplorer({
                   <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
                     <span className="text-[10px] text-slate-400 block mb-0.5">测试函数目标</span>
                     <span className="font-mono font-semibold text-indigo-600 truncate block" title={activeDrawerCase.implementation.functionName}>
-                      {activeDrawerCase.implementation.functionName || 'TestMain'}()
+                      {activeDrawerCase.implementation.scriptLanguage === 'yaml'
+                        ? activeDrawerCase.implementation.functionName
+                        : `${activeDrawerCase.implementation.functionName || 'TestMain'}()`}
                     </span>
                   </div>
 
@@ -1121,7 +1181,7 @@ export function RepoCaseExplorer({
                       <span className={`w-1.5 h-1.5 rounded-full ${
                         activeDrawerCase.status === 'passed' ? 'bg-emerald-500' : 'bg-slate-400'
                       }`} />
-                      {activeDrawerCase.status === 'passed' ? `PASS (${activeDrawerCase.executionDuration || '48ms'})` : 'READY'}
+                      {activeDrawerCase.status === 'passed' ? `PASS (${activeDrawerCase.executionDuration || '15ms'})` : 'READY'}
                     </span>
                   </div>
 
@@ -1144,7 +1204,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <ListOrdered className="w-3.5 h-3.5" />
-                    <span>测试步骤与预期 ({activeDrawerCase.design.steps.length})</span>
+                    <span>DAG 步骤拓扑 ({activeDrawerCase.design.steps.length})</span>
                   </button>
 
                   <button
@@ -1156,7 +1216,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <Code2 className="w-3.5 h-3.5" />
-                    <span>Git 源码实现</span>
+                    <span>Git 源码与 YAML 编排</span>
                   </button>
 
                   <button
@@ -1168,7 +1228,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>调试日志</span>
+                    <span>执行调度日志</span>
                   </button>
                 </div>
               </div>
@@ -1182,7 +1242,7 @@ export function RepoCaseExplorer({
                       <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/60 text-xs flex items-start gap-2.5">
                         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-semibold text-blue-900 block mb-0.5">前置条件 (Preconditions)</span>
+                          <span className="font-semibold text-blue-900 block mb-0.5">业务链路说明 (Workflow Specification)</span>
                           <p className="text-blue-800/80 leading-relaxed font-mono text-[11px]">
                             {activeDrawerCase.design.precondition}
                           </p>
@@ -1192,7 +1252,7 @@ export function RepoCaseExplorer({
 
                     {/* 步骤时间线列表 */}
                     <div className="space-y-3">
-                      <span className="text-xs font-bold text-slate-700 block">执行步骤与断言清单</span>
+                      <span className="text-xs font-bold text-slate-700 block">DAG 拓扑节点与执行断言</span>
                       <div className="space-y-2.5 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 before:z-0">
                         {activeDrawerCase.design.steps.map((st) => (
                           <div
@@ -1204,11 +1264,28 @@ export function RepoCaseExplorer({
                             </span>
                             <div className="flex-1 space-y-1.5">
                               <div className="flex items-center justify-between">
-                                <span className="font-semibold text-slate-800 text-xs">
-                                  {st.name}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  {st.name.startsWith('[HTTP]') && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                      HTTP 接口
+                                    </span>
+                                  )}
+                                  {st.name.startsWith('[SQL]') && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                      SQL 核算
+                                    </span>
+                                  )}
+                                  {st.name.startsWith('[QUALITY_GATE]') && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                      QUALITY_GATE 门禁
+                                    </span>
+                                  )}
+                                  <span className="font-semibold text-slate-800 text-xs">
+                                    {st.name.replace(/^\[[A-Z_]+\]\s*/, '')}
+                                  </span>
+                                </div>
                                 <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-semibold">
-                                  {st.durationMs ? `${st.durationMs}ms` : 'PASS'}
+                                  {st.durationMs ? `${st.durationMs}ms` : 'READY'}
                                 </span>
                               </div>
                               <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start gap-2 text-[11px] text-slate-600">

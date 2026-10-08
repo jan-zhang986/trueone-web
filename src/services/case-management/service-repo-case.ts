@@ -192,5 +192,41 @@ export const repoCaseService = {
   ) => {
     return http.post<boolean>(`/api/case/repository/${id}/branches`, data);
   },
+
+  /**
+   * 运行特定测试用例 (支持 Go 单测与 YAML E2E Workflow DAG 拓扑执行)
+   */
+  executeCase: (
+    id: string,
+    data: { caseId: string; branch?: string; params?: Record<string, any> }
+  ) => {
+    return http.post<{
+      caseId: string;
+      caseType: 'WORKFLOW_DAG' | 'UNIT_TEST';
+      status: 'SUCCESS' | 'FAILED';
+      durationMs: number;
+      message?: string;
+      execution?: {
+        workflowId: string;
+        executionId: string;
+        status: string;
+        totalNodes: number;
+        durationMs: number;
+        nodeResults: Record<
+          string,
+          {
+            nodeId: string;
+            nodeName: string;
+            status: string;
+            durationMs: number;
+            output?: Record<string, any>;
+            evidence?: Record<string, any>;
+            error?: string;
+          }
+        >;
+        context?: Record<string, any>;
+      };
+    }>(`/api/case/repository/${id}/execute-case`, data);
+  },
 };
 
