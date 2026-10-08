@@ -145,8 +145,8 @@ export interface TestCaseDetail {
   createUser: string;
   updateUser: string;
   deleteUser?: string;
-  createTime: string;
-  updateTime: string;
+  createdAt: string;
+  updatedAt: string;
   deleteTime?: string;
   steps?: string;
   customFields?: any[];

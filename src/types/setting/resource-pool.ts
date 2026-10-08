@@ -44,8 +44,8 @@ export interface ResourcePoolItem {
   allOrg?: boolean;
   maxConcurrentNumber?: number;
   orgNames?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   testResourceDTO?: TestResourceDTO;
 }
 

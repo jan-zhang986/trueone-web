@@ -90,8 +90,8 @@ export function CaseManagementPage({
       defaultBranch: 'master',
       description: '系统默认示例用例库，已全量关联现存测试用例集与功能模块树',
       creator: '系统管理员 (admin)',
-      createTime: Date.now() - 86400000 * 7,
-      updateTime: Date.now() - 3600000 * 4,
+      createdAt: Date.now() - 86400000 * 7,
+      updatedAt: Date.now() - 3600000 * 4,
       caseCount: 128,
     },
   ]);
@@ -125,14 +125,14 @@ export function CaseManagementPage({
                 name: item,
                 defaultBranch: 'master',
                 creator: 'admin',
-                updateTime: Date.now(),
+                updatedAt: Date.now(),
               };
             }
             return {
               ...item,
               branches: (item.branches || []).filter((b: string) => b !== 'v1.0.0' && b !== 'v2.0.0'),
               creator: item.creator || item.createUser || 'admin',
-              updateTime: item.updateTime || item.createTime || Date.now(),
+              updatedAt: item.updatedAt || item.createdAt || Date.now(),
             };
           });
           setRepoItems(items);
@@ -316,8 +316,8 @@ export function CaseManagementPage({
         defaultBranch: data.defaultBranch || 'master',
         description: data.description || '新建功能业务用例库',
         creator: data.creator || 'admin',
-        createTime: Date.now(),
-        updateTime: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
         caseCount: 0,
       };
 
@@ -339,8 +339,8 @@ export function CaseManagementPage({
         defaultBranch: data.defaultBranch || 'master',
         description: data.description || '新建功能业务用例库',
         creator: data.creator || 'admin',
-        createTime: Date.now(),
-        updateTime: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
         caseCount: 0,
       };
       setRepoItems((prev) => [newItem, ...prev.filter((i) => i.name !== trimmed)]);
@@ -382,7 +382,7 @@ export function CaseManagementPage({
                 code: data.code || item.code,
                 description: data.description ?? item.description,
                 defaultBranch: data.defaultBranch || item.defaultBranch,
-                updateTime: Date.now(),
+                updatedAt: Date.now(),
               }
             : item
         )
@@ -404,7 +404,7 @@ export function CaseManagementPage({
                 code: data.code || item.code,
                 description: data.description ?? item.description,
                 defaultBranch: data.defaultBranch || item.defaultBranch,
-                updateTime: Date.now(),
+                updatedAt: Date.now(),
               }
             : item
         )

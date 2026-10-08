@@ -224,7 +224,7 @@ export function TemplateFieldSetting({ organizationId, scopeId, scope = 'organiz
                     </TableCell>
                     <TableCell>{row.type || '-'}</TableCell>
                     <TableCell>{row.remark || '-'}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{formatTime(row.updateTime)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{formatTime(row.updatedAt)}</TableCell>
                     <TableCell>
                       {!row.internal && (
                         <>

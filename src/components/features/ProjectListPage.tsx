@@ -10,7 +10,7 @@ interface Project {
   name: string;
   creator?: string;
   organization?: string;
-  createTime?: string;
+  createdAt?: string;
   description?: string;
 }
 
@@ -41,7 +41,7 @@ export function ProjectListPage({ onSelectProject }: ProjectListPageProps) {
         // 后端只返回 id 和 name，其他字段设为可选或默认值
         creator: undefined,
         organization: undefined,
-        createTime: undefined,
+        createdAt: undefined,
         description: undefined,
       }));
       setProjects(formattedProjects);
@@ -137,7 +137,7 @@ export function ProjectListPage({ onSelectProject }: ProjectListPageProps) {
                   </p>
                 )}
                 
-                {(project.creator || project.createTime) && (
+                {(project.creator || project.createdAt) && (
                 <div className="space-y-2 pt-3 border-t border-gray-100">
                     {project.creator && (
                   <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -145,10 +145,10 @@ export function ProjectListPage({ onSelectProject }: ProjectListPageProps) {
                     <span>{project.creator}</span>
                   </div>
                     )}
-                    {project.createTime && (
+                    {project.createdAt && (
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>{project.createTime}</span>
+                    <span>{project.createdAt}</span>
                   </div>
                     )}
                 </div>

@@ -31,7 +31,7 @@ export function useLogQuery(projectId: string): UseLogQueryResult {
   const [current, setCurrent] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<LogFilters>({});
-  const [sortField, setSortField] = useState('createTime');
+  const [sortField, setSortField] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // 查询日志

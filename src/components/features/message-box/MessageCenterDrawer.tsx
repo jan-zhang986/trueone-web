@@ -364,7 +364,7 @@ export function MessageCenterDrawer({ open, onOpenChange, onReadChange }: Messag
                         )}
                         {/* 第三行：时间 + 操作人，与正文留出间距 */}
                         <div className="mt-2 text-xs leading-normal text-muted-foreground">
-                          {item.createTime}
+                          {item.createdAt}
                           {item.operator && ` · ${item.operator}`}
                         </div>
                       </div>

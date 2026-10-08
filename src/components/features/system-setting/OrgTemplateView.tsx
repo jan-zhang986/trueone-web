@@ -64,38 +64,27 @@ export function OrgTemplateView() {
   }
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto animate-in fade-in duration-700 pb-12">
-      <div className="flex flex-col gap-1 px-1">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-100 ring-4 ring-blue-50">
-            <Settings className="w-5 h-5" />
-          </div>
-          <h2 className="text-2xl font-black tracking-tight text-gray-900">模板管理</h2>
-        </div>
-        <p className="text-sm font-medium text-gray-400 mt-2 pl-14">统一管理组织内各核心模块的自定义字段、用例/缺陷模板及业务流转规则。</p>
-      </div>
-
-      <div className="border border-gray-100 rounded-[2.5rem] bg-white p-10 shadow-[0_30px_60px_rgba(0,0,0,0.03)] ring-1 ring-gray-50">
-        {showTip && (
-          <Alert className="mb-10 border-none bg-blue-50/50 rounded-2xl p-5 relative overflow-hidden group">
-            <div className="absolute left-0 top-0 w-1 h-full bg-blue-500" />
-            <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-bold text-gray-600">
-                  通过模板管理，您可以根据团队习惯定制工作流与表单字段，提升协作效率。
-                </span>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {showTip && (
+        <Alert className="mb-6 border-none bg-blue-50/50 rounded-xl p-4 relative overflow-hidden group">
+          <div className="absolute left-0 top-0 w-1 h-full bg-blue-500" />
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-blue-100 text-blue-600">
+                <FileText className="w-4 h-4" />
               </div>
-              <Button variant="ghost" size="sm" className="h-8 px-4 rounded-xl text-xs font-black text-gray-400 hover:text-blue-600 hover:bg-white transition-all" onClick={() => setShowTip(false)}>
-                我知道了
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+              <span className="text-sm font-medium text-gray-700">
+                通过模板管理，您可以根据团队习惯定制工作流与表单字段，提升协作效率。
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-xs font-medium text-gray-500 hover:text-blue-600 hover:bg-white transition-all" onClick={() => setShowTip(false)}>
+              我知道了
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {TEMPLATE_TYPES.map((type, idx) => (
             <Card key={type.key} className="group overflow-hidden border-none shadow-[0_10px_30px_rgba(0,0,0,0.02)] rounded-[2rem] bg-gray-50/30 hover:bg-white hover:shadow-2xl hover:shadow-blue-900/5 hover:-translate-y-1.5 transition-all duration-500 ring-1 ring-gray-100/50">
               <CardHeader className="pb-4 pt-8 px-8">
@@ -148,7 +137,6 @@ export function OrgTemplateView() {
             </Card>
           ))}
         </div>
-      </div>
     </div>
   );
 }

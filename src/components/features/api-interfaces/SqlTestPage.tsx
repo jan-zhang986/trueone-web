@@ -358,8 +358,8 @@ export function SqlTestPage({ apiName, onClose, definitionId, definitions = [], 
           tags: typeof result === 'string' ? editor.state.tags : (result.tags || editor.state.tags || []),
           scriptContent: typeof result === 'string' ? ddlContent.trim() : (result.scriptContent || ddlContent.trim()),
           createUser: typeof result === 'string' ? '' : (result.createUser || ''),
-          createTime: typeof result === 'string' ? Date.now() : (result.createTime || Date.now()),
-          updateTime: typeof result === 'string' ? Date.now() : (result.updateTime || Date.now()),
+          createdAt: typeof result === 'string' ? Date.now() : (result.createdAt || Date.now()),
+          updatedAt: typeof result === 'string' ? Date.now() : (result.updatedAt || Date.now()),
         };
         editor.loadFromDefinition(updatedDefinition);
         

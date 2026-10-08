@@ -243,7 +243,7 @@ export function PlanDetailDefect({ planId, projectId, canEdit, onRefresh, onDefe
                                             {(item as any).handleUserName ?? (item.handleUser && handleUserNameMap[item.handleUser]) ?? (item as any).handle_user ?? item.handleUser ?? '-'}
                                         </TableCell>
                                         <TableCell className="text-gray-500 tabular-nums font-mono text-xs">
-                                            {formatCreateTime(item.createTime)}
+                                            {formatCreateTime(item.createdAt)}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex justify-center gap-3">

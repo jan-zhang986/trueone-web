@@ -57,8 +57,8 @@ export interface MockRule {
   ruleFeatures: RuleFeatures;
   respStruct: MockRespStruct;
   features: MockFeatures;
-  createTime?: string;
-  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
   author?: string;
 }
 
@@ -70,8 +70,8 @@ export interface MockScene {
   sceneCode: string;
   sceneName: string;
   author?: string;
-  createTime?: string;
-  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
@@ -108,7 +108,7 @@ export interface MockHistory {
   id: number;
   ruleId: number;
   content: any;
-  createTime: string;
+  createdAt: string;
 }
 
 /**
@@ -153,7 +153,7 @@ export const mockFactoryService = {
   /**
    * 添加 Mock 规则
    */
-  addMockData: async (data: Omit<MockRule, 'id' | 'createTime' | 'updateTime'>): Promise<MockRule> => {
+  addMockData: async (data: Omit<MockRule, 'id' | 'createdAt' | 'updatedAt'>): Promise<MockRule> => {
     return http.post<MockRule>('/spotter-data-forge/mock/rule/add', data);
   },
 

@@ -37,7 +37,7 @@ export interface DebugHistoryItem {
   triggerType: string;
   status: string;
   environmentName?: string;
-  createTime?: number;
+  createdAt?: number;
   startTime?: number;
   duration?: number;
   durationMs?: number;

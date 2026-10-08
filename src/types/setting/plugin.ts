@@ -18,8 +18,8 @@ export interface PluginItem {
   name: string;
   pluginId?: string;
   fileName?: string;
-  createTime?: string | number;
-  updateTime?: string | number;
+  createdAt?: string | number;
+  updatedAt?: string | number;
   createUser?: string;
   enable?: boolean;
   global?: boolean;

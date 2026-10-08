@@ -41,7 +41,7 @@ interface UserGroup {
   memberCount?: number;
   internal?: boolean; // 是否内置用户组
   type?: string; // PROJECT, ORGANIZATION, SYSTEM
-  createTime?: number;
+  createdAt?: number;
   scopeId?: string;
 }
 
@@ -283,7 +283,7 @@ export function UserGroupsPage({ project }: UserGroupsPageProps) {
 
                 {/* 底部信息 */}
                 <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                  创建时间: {formatDate(group.createTime)}
+                  创建时间: {formatDate(group.createdAt)}
                 </div>
               </div>
             ))}

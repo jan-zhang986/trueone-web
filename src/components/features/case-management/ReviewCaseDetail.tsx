@@ -547,7 +547,7 @@ export function ReviewCaseDetail({
                             <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
                               <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">创建时间</div>
                               <div className="text-sm text-gray-900 font-mono">
-                                {caseDetail.createTime ? new Date(caseDetail.createTime).toLocaleString('zh-CN') : '-'}
+                                {caseDetail.createdAt ? new Date(caseDetail.createdAt).toLocaleString('zh-CN') : '-'}
                               </div>
                             </div>
                             <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
@@ -557,7 +557,7 @@ export function ReviewCaseDetail({
                             <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
                               <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">更新时间</div>
                               <div className="text-sm text-gray-900 font-mono">
-                                {caseDetail.updateTime ? new Date(caseDetail.updateTime).toLocaleString('zh-CN') : '-'}
+                                {caseDetail.updatedAt ? new Date(caseDetail.updatedAt).toLocaleString('zh-CN') : '-'}
                               </div>
                             </div>
                           </div>
@@ -640,7 +640,7 @@ export function ReviewCaseDetail({
                                           {statusInfo.label}
                                         </span>
                                         <span className="text-xs text-gray-400 font-mono shrink-0">
-                                          {item.createTime ? new Date(item.createTime).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                                          {item.createdAt ? new Date(item.createdAt).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
                                       </div>
                                       <div className="text-xs text-gray-500 mb-2">评审人：{item.userName ?? item.createUser ?? '-'}</div>

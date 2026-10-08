@@ -135,7 +135,7 @@ export function useMockRuleForm(selectedSceneCode: string, onSaveSuccess?: () =>
         } as MockRule);
         toast.success('更新成功');
       } else {
-        await mockFactoryService.addMockData(dataToSave as Omit<MockRule, 'id' | 'createTime' | 'updateTime'>);
+        await mockFactoryService.addMockData(dataToSave as Omit<MockRule, 'id' | 'createdAt' | 'updatedAt'>);
         toast.success('创建成功');
       }
       setIsEditing(false);

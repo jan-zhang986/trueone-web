@@ -42,7 +42,7 @@ export interface LogItem {
   module?: string;
   type?: string;
   content?: string;
-  createTime: number;
+  createdAt: number;
   sourceId?: string;
   /** 操作结果，系统/组织/项目日志可能返回（兼容多种字段名） */
   status?: 'SUCCESS' | 'FAILED';

@@ -80,8 +80,8 @@ export interface TestReportVO {
   summary: string;
   environmentId?: string;
   environmentName?: string;
-  createTime: number;
-  updateTime: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**
@@ -135,9 +135,9 @@ export interface TestReportDetailVO {
   environmentId?: string;
   environmentName?: string;
   reportFileId?: string;
-  createTime: number;
+  createdAt: number;
   createUser?: string;
-  updateTime: number;
+  updatedAt: number;
   updateUser?: string;
 }
 

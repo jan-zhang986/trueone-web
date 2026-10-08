@@ -11,7 +11,7 @@ interface Project {
   name: string;
   creator?: string;
   organization?: string;
-  createTime?: string;
+  createdAt?: string;
   description?: string;
 }
 
@@ -65,7 +65,7 @@ export function ProjectBasicInfoPage({ project }: ProjectBasicInfoPageProps) {
               ? detail.adminList[0].name || '未知'
               : '未知',
             organization: detail.organizationName || '未知',
-            createTime: formatDate(detail.createTime as number),
+            createdAt: formatDate(detail.createdAt as number),
             description: detail.description || '',
           });
 
@@ -293,7 +293,7 @@ export function ProjectBasicInfoPage({ project }: ProjectBasicInfoPageProps) {
               ? updatedProject.adminList[0].name || '未知'
               : '未知',
             organization: updatedProject.organizationName || '未知',
-            createTime: formatDate(updatedProject.createTime as number),
+            createdAt: formatDate(updatedProject.createdAt as number),
             description: updatedProject.description || '',
           });
         }
@@ -419,7 +419,7 @@ export function ProjectBasicInfoPage({ project }: ProjectBasicInfoPageProps) {
                     <span className="text-sm">创建时间</span>
                   </div>
                   <div className="flex-1 text-gray-900 text-sm font-medium">
-                    {projectDetail?.createTime || project.createTime || '-'}
+                    {projectDetail?.createdAt || project.createdAt || '-'}
                   </div>
                 </div>
 

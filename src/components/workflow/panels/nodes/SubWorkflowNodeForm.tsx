@@ -49,7 +49,7 @@ interface WorkflowOption {
   id: string;
   name: string;
   description?: string;
-  updateTime?: number | string;
+  updatedAt?: number | string;
   stepCount?: number;
 }
 
@@ -88,7 +88,7 @@ export const SubWorkflowNodeForm: React.FC<SubWorkflowNodeFormProps> = ({
               id: item.id ?? item.workflowId ?? '',
               name: item.name ?? item.id ?? '-',
               description: item.description,
-              updateTime: item.updateTime,
+              updatedAt: item.updatedAt,
               stepCount: item.stepCount,
             }))
           : [];
@@ -235,10 +235,10 @@ export const SubWorkflowNodeForm: React.FC<SubWorkflowNodeFormProps> = ({
                       <dd className="text-gray-900">{selectedWorkflow.stepCount} 个</dd>
                     </div>
                   )}
-                  {selectedWorkflow.updateTime != null && (
+                  {selectedWorkflow.updatedAt != null && (
                     <div>
                       <dt className="text-gray-500">更新时间</dt>
-                      <dd className="text-gray-700">{formatTimestampBeijing(selectedWorkflow.updateTime)}</dd>
+                      <dd className="text-gray-700">{formatTimestampBeijing(selectedWorkflow.updatedAt)}</dd>
                     </div>
                   )}
                 </dl>

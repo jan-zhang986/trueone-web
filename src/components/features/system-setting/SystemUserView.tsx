@@ -526,26 +526,20 @@ export function SystemUserView() {
 
   return (
     <div className="space-y-4">
-      {/* 标题与操作：简洁一行，不单独成卡 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">用户管理</h3>
-          <p className="text-sm text-gray-500 mt-0.5">管理系统全量用户及其对应的全局角色组权限。</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-gray-100/80 p-1 rounded-lg border border-gray-200/50">
-            <Button variant="ghost" size="sm" className="h-9 px-3 rounded-md text-gray-600 hover:bg-white text-xs font-medium" onClick={() => setImportOpen(true)}>
-              <FileUp className="w-3.5 h-3.5 mr-1.5" /> 导入
-            </Button>
-            <Button variant="ghost" size="sm" className="h-9 px-3 rounded-md text-gray-600 hover:bg-white text-xs font-medium" onClick={openInviteModal}>
-              <Mail className="w-3.5 h-3.5 mr-1.5" /> 邀请
-            </Button>
-          </div>
-          <Button onClick={openCreate} size="sm" className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
-            <UserPlus className="w-4 h-4 mr-2" />
-            新建用户
+      {/* 操作栏 */}
+      <div className="flex items-center justify-end gap-3">
+        <div className="flex bg-gray-100/80 p-1 rounded-lg border border-gray-200/50">
+          <Button variant="ghost" size="sm" className="h-9 px-3 rounded-md text-gray-600 hover:bg-white text-xs font-medium" onClick={() => setImportOpen(true)}>
+            <FileUp className="w-3.5 h-3.5 mr-1.5" /> 导入
+          </Button>
+          <Button variant="ghost" size="sm" className="h-9 px-3 rounded-md text-gray-600 hover:bg-white text-xs font-medium" onClick={openInviteModal}>
+            <Mail className="w-3.5 h-3.5 mr-1.5" /> 邀请
           </Button>
         </div>
+        <Button onClick={openCreate} size="sm" className="h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
+          <UserPlus className="w-4 h-4 mr-2" />
+          新建用户
+        </Button>
       </div>
 
       {/* 搜索与批量操作 */}
@@ -677,7 +671,7 @@ export function SystemUserView() {
                     />
                   </TableCell>
                   <TableCell className="text-gray-400 font-bold whitespace-nowrap text-[10px]">
-                    {row.createTime ? new Date(row.createTime).toLocaleString('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
+                    {row.createdAt ? new Date(row.createdAt).toLocaleString('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
                   </TableCell>
                   <TableCell className="text-right pr-4">
                     <div className="flex items-center justify-end gap-1">

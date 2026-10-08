@@ -38,7 +38,7 @@ describe('useLogFilters - Property Tests', () => {
               'COPY', 'EXECUTE', 'SHARE', 'RESTORE', 'IMPORT', 'EXPORT'
             ),
             content: fc.string(),
-            createTime: fc.date().map(d => d.toISOString()),
+            createdAt: fc.date().map(d => d.toISOString()),
           })
         ),
         // Generate arbitrary operator ID
@@ -84,7 +84,7 @@ describe('useLogFilters - Property Tests', () => {
             module: fc.string(),
             type: fc.constantFrom<OperationType>('ADD', 'DELETE', 'UPDATE'),
             content: fc.string(),
-            createTime: fc.date().map(d => d.toISOString()),
+            createdAt: fc.date().map(d => d.toISOString()),
             // Add scope field for filtering
             scope: fc.constantFrom<OperationScope>('SYSTEM', 'ORGANIZATION', 'PROJECT'),
           })
@@ -131,7 +131,7 @@ describe('useLogFilters - Property Tests', () => {
               'COPY', 'EXECUTE', 'SHARE', 'RESTORE', 'IMPORT', 'EXPORT'
             ),
             content: fc.string(),
-            createTime: fc.date().map(d => d.toISOString()),
+            createdAt: fc.date().map(d => d.toISOString()),
           })
         ),
         // Generate arbitrary operation type
@@ -176,7 +176,7 @@ describe('useLogFilters - Property Tests', () => {
             module: fc.string(),
             type: fc.constantFrom<OperationType>('ADD', 'DELETE', 'UPDATE'),
             content: fc.string({ minLength: 1, maxLength: 50 }),
-            createTime: fc.date().map(d => d.toISOString()),
+            createdAt: fc.date().map(d => d.toISOString()),
           })
         ),
         // Generate arbitrary search keyword
@@ -289,7 +289,7 @@ describe('useLogFilters - Property Tests', () => {
         module: 'SYSTEM_USER',
         type: 'ADD',
         content: '创建用户',
-        createTime: '2024-01-01T00:00:00Z',
+        createdAt: '2024-01-01T00:00:00Z',
       },
       {
         id: '2',
@@ -302,7 +302,7 @@ describe('useLogFilters - Property Tests', () => {
         module: 'SYSTEM_USER',
         type: 'DELETE',
         content: '删除用户',
-        createTime: '2024-01-02T00:00:00Z',
+        createdAt: '2024-01-02T00:00:00Z',
       },
     ];
 

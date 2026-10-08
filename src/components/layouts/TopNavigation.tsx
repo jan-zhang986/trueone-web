@@ -170,7 +170,6 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
     { id: 'message-management', label: '消息管理' },
     { id: 'service-management', label: '服务管理' },
     { id: 'environment-management', label: '环境管理' },
-    { id: 'logs', label: '日志' },
   ];
 
   // 工作台的二级菜单项
@@ -184,9 +183,9 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
     { id: 'feature-case', label: '用例库' },
   ];
 
-  // 质量工作台的二级菜单项
+  // 测试计划的二级菜单项
   const qualityWorkspaceNavItems = [
-    { id: 'workspace', label: '工作台' },
+    { id: 'workspace', label: '计划列表' },
     { id: 'test-report', label: '报告中心' },
   ];
 
@@ -240,10 +239,9 @@ export function TopNavigation({ selectedTopMenu = 'api', onSelectTopMenu, showSe
       <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4">
         <div className="flex items-center">
           <img
-            src="/aegisones-logo.png?v=4"
-            alt="AegisOnes"
-            className="h-12 scale-110 origin-left w-auto object-contain cursor-pointer -ml-[10px]"
-            style={{ imageRendering: '-webkit-optimize-contrast' }}
+            src="/trueone-logo.png?v=11"
+            alt="TrueOne"
+            className="h-8 w-auto object-contain cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => navigate('/')}
           />
         </div>

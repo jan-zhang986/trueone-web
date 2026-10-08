@@ -51,7 +51,7 @@ interface CaseRow {
     createUser?: string;
     /** 创建人名称（接口可能返回 createUserName，优先展示） */
     createUserName?: string;
-    createTime?: number;
+    createdAt?: number;
 }
 
 interface AssociateCaseDialogProps {
@@ -526,8 +526,8 @@ export function AssociateCaseDialog({
                                                     </TableCell>
                                                     <TableCell>{row.createUserName ?? row.createUser ?? '-'}</TableCell>
                                                     <TableCell className="text-sm text-gray-600">
-                                                        {row.createTime
-                                                            ? new Date(row.createTime).toLocaleString('zh-CN', {
+                                                        {row.createdAt
+                                                            ? new Date(row.createdAt).toLocaleString('zh-CN', {
                                                                   year: 'numeric',
                                                                   month: '2-digit',
                                                                   day: '2-digit',

@@ -50,8 +50,8 @@ interface QualityWorkspaceListItem {
   metadata?: Record<string, any>;
   workItems?: any[];
   createUser?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   stats?: Record<string, any>;
   [key: string]: any;
 }
@@ -167,7 +167,7 @@ export function QualityWorkspacePage() {
       setTotal(nextTotal);
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.message || '加载质量工作台失败');
+      toast.error(error?.message || '加载测试计划失败');
     } finally {
       setLoading(false);
     }
@@ -189,10 +189,10 @@ export function QualityWorkspacePage() {
 
   const archiveWorkspace = async (item: QualityWorkspaceListItem) => {
     if (!item.workspaceId) return;
-    const toastId = toast.loading('正在归档质量工作台...');
+    const toastId = toast.loading('正在归档测试计划...');
     try {
       await qualityWorkspaceService.archiveWorkspace(item.workspaceId);
-      toast.success('质量工作台已归档', { id: toastId });
+      toast.success('测试计划已归档', { id: toastId });
       loadList();
     } catch (error: any) {
       console.error(error);
@@ -202,11 +202,11 @@ export function QualityWorkspacePage() {
 
   const deleteWorkspace = async (item: QualityWorkspaceListItem) => {
     if (!item.workspaceId) return;
-    if (!window.confirm(`确定删除质量工作台「${item.name}」吗？`)) return;
-    const toastId = toast.loading('正在删除质量工作台...');
+    if (!window.confirm(`确定删除测试计划「${item.name}」吗？`)) return;
+    const toastId = toast.loading('正在删除测试计划...');
     try {
       await qualityWorkspaceService.deleteWorkspace(item.workspaceId);
-      toast.success('质量工作台已删除', { id: toastId });
+      toast.success('测试计划已删除', { id: toastId });
       loadList();
     } catch (error: any) {
       console.error(error);
@@ -228,8 +228,8 @@ export function QualityWorkspacePage() {
               <ClipboardList className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight text-slate-950">质量工作台</h1>
-              <p className="hidden text-xs font-medium text-slate-500 lg:block">组织迭代测试分析、评审、检查项执行、风险复测与准出。</p>
+              <h1 className="text-xl font-black tracking-tight text-slate-950">测试计划</h1>
+              <p className="hidden text-xs font-medium text-slate-500 lg:block">组织版本与迭代测试分析、评审、检查项执行、缺陷复测与准出评估。</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export function QualityWorkspacePage() {
             </Button>
             <Button size="sm" className="h-9 rounded-xl bg-slate-900 px-4 text-xs font-black text-white hover:bg-slate-800" onClick={openCreate}>
               <Plus className="mr-1.5 h-3.5 w-3.5" />
-              创建工作台
+              创建测试计划
             </Button>
           </div>
         </div>
@@ -295,7 +295,7 @@ export function QualityWorkspacePage() {
         {loading && !items.length ? (
           <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-slate-400">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            正在加载质量工作台
+            正在加载测试计划
           </div>
         ) : items.length ? (
           viewMode === 'grid' ? (
@@ -407,7 +407,7 @@ export function QualityWorkspacePage() {
                           <span className={cn('text-xs font-black', passRate >= 80 ? 'text-emerald-600' : 'text-slate-600')}>{passRate}%</span>
                         </td>
                         <td className="px-6 py-3 text-xs font-medium text-slate-500">{item.ownerId || '未设置'}</td>
-                        <td className="px-6 py-3 text-xs text-slate-400 font-medium">{formatDate(item.updateTime)}</td>
+                        <td className="px-6 py-3 text-xs text-slate-400 font-medium">{formatDate(item.updatedAt)}</td>
                         <td className="px-6 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50" onClick={() => goDetail(item)}>
@@ -439,11 +439,11 @@ export function QualityWorkspacePage() {
             <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
               <ClipboardList className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-black text-slate-900">还没有质量工作台</h3>
+            <h3 className="text-xl font-black text-slate-900">还没有测试计划</h3>
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">从一个需求、版本或发布批次开始，建立测试分析、任务执行、风险证据和资产沉淀的完整闭环。</p>
             <Button className="mt-6 rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              创建质量工作台
+              创建测试计划
             </Button>
           </div>
         )}

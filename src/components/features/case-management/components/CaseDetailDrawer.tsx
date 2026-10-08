@@ -1532,7 +1532,7 @@ export function CaseDetailDrawer({
                               <Clock className="w-3.5 h-3.5 text-gray-400" /> 创建时间
                             </span>
                             <span className="text-gray-600 text-[13px] px-1.5">
-                              {detail.createTime ? new Date(detail.createTime).toLocaleString() : '-'}
+                              {detail.createdAt ? new Date(detail.createdAt).toLocaleString() : '-'}
                             </span>
                           </div>
 

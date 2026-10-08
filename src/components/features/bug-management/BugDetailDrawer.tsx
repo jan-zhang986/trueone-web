@@ -74,9 +74,9 @@ interface BugDetail {
     templateId?: string;
     createUser?: string;
     createUserName?: string;
-    createTime?: number;
+    createdAt?: number;
     updateUser?: string;
-    updateTime?: number;
+    updatedAt?: number;
     tags?: string[];
     followFlag?: boolean;
     customFields?: { id: string; name?: string; type?: string; value: string; text?: string }[];
@@ -869,10 +869,10 @@ export function BugDetailDrawer({
                                                     {detail.createUserName || detail.createUser || '-'}
                                                 </InfoItem>
                                                 <InfoItem icon={<Clock className="w-4 h-4" />} label="创建时间">
-                                                    {formatTime(detail.createTime)}
+                                                    {formatTime(detail.createdAt)}
                                                 </InfoItem>
                                                 <InfoItem icon={<Clock className="w-4 h-4" />} label="更新时间">
-                                                    {formatTime(detail.updateTime)}
+                                                    {formatTime(detail.updatedAt)}
                                                 </InfoItem>
                                             </div>
                                         </div>
@@ -1069,7 +1069,7 @@ export function BugDetailDrawer({
                                                                             </div>
                                                                             <div className="min-w-0 flex-1">
                                                                                 <div className="text-sm text-gray-500 mb-0.5">
-                                                                                    {authorName} · {formatTime(c.createTime)}
+                                                                                    {authorName} · {formatTime(c.createdAt)}
                                                                                 </div>
                                                                                 <div
                                                                                     className="text-sm text-gray-800 whitespace-pre-wrap break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:cursor-pointer"
@@ -1181,7 +1181,7 @@ export function BugDetailDrawer({
                                                                         {item.createUserName ?? item.createUser ?? '-'}
                                                                     </td>
                                                                     <td className="px-4 py-3 text-sm text-gray-600">
-                                                                        {formatTime(item.createTime)}
+                                                                        {formatTime(item.createdAt)}
                                                                     </td>
                                                                 </tr>
                                                             ))}

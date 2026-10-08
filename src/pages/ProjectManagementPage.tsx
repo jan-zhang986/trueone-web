@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FolderKanban, FileText, MessageSquare, Settings as SettingsIcon, ScrollText } from 'lucide-react';
+import { FolderKanban, FileText, MessageSquare, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -34,7 +34,6 @@ import { EnvironmentManagementPage } from '@/components/features/EnvironmentMana
 import { ProjectPermissionView } from '@/components/features/project-management/ProjectPermissionView';
 import { ProjectMessageView } from '@/components/features/project-management/ProjectMessageView';
 import { ProjectTemplateView } from '@/components/features/project-management/ProjectTemplateView';
-import { ProjectLogView } from '@/components/features/project-management/ProjectLogView';
 import { TruncateWithTooltip } from '@/components/ui/truncate-with-tooltip';
 import { projectService, ProjectSimple } from '@/services/project';
 import { cn } from '@/utils/cn';
@@ -52,7 +51,7 @@ interface Project {
   name: string;
   creator?: string;
   organization?: string;
-  createTime?: string;
+  createdAt?: string;
   description?: string;
 }
 
@@ -141,7 +140,7 @@ export function ProjectManagementPage({ selectedTopMenu: propSelectedTopMenu }: 
                 ? projectDetail.adminList[0].name || '未知'
                 : '未知',
               organization: projectDetail.organizationName || '未知',
-              createTime: formatDate(projectDetail.createTime as number),
+              createdAt: formatDate(projectDetail.createdAt as number),
               description: projectDetail.description || '',
             });
 
@@ -420,39 +419,6 @@ export function ProjectManagementPage({ selectedTopMenu: propSelectedTopMenu }: 
         return (
           <div className="flex-1 overflow-auto custom-scrollbar animate-in fade-in duration-500">
             <EnvironmentManagementPage projectId={selectedProject?.id} />
-          </div>
-        );
-
-      case 'logs':
-        if (!selectedProject) {
-          return (
-            <div className="flex-1 flex flex-col items-center justify-center bg-gray-50/50 animate-in fade-in duration-700">
-              <div className="p-8 rounded-[40px] bg-white shadow-2xl shadow-gray-200/50 flex flex-col items-center gap-6">
-                <div className="p-6 rounded-3xl bg-gray-50 text-gray-400">
-                  <ScrollText className="w-12 h-12" />
-                </div>
-                <div className="text-center space-y-2">
-                  <h3 className="text-lg font-black text-gray-900">未选择项目</h3>
-                  <p className="text-sm text-gray-400 font-medium">选择项目后即可查看其详细的审计日志</p>
-                </div>
-                <Button
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams);
-                    params.set('tab', 'project-permission');
-                    window.history.pushState(null, '', `?${params.toString()}`);
-                    window.location.reload();
-                  }}
-                  className="rounded-2xl bg-gray-900 px-8 font-bold"
-                >
-                  去选择项目
-                </Button>
-              </div>
-            </div>
-          );
-        }
-        return (
-          <div className="flex-1 overflow-auto p-8 bg-gray-50/20 custom-scrollbar animate-in fade-in duration-500">
-            <ProjectLogView projectId={selectedProject.id} />
           </div>
         );
 

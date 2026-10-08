@@ -3,9 +3,10 @@
  * 管理权限检查逻辑
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { authService } from '@/services/auth';
 import { projectManagementService } from '@/services/project-management';
+import { useUser } from '@/contexts/UserContext';
 
 interface UsePermissionCheckReturn {
   hasPermission: boolean | null; // null 表示正在检查
@@ -150,4 +151,52 @@ export function useSystemAdminCheck(): UseSystemAdminCheckReturn {
   }, []);
 
   return { isSystemAdmin, isChecking };
+}
+
+/**
+ * 细粒度功能权限检查 Hook
+ * @param permissionCode 权限码（如 WORKSPACE:READ, CASE:READ, BUG:READ, SYSTEM:READ）
+ */
+export function useHasPermission(permissionCode?: string): boolean {
+  const { user } = useUser();
+
+  return useMemo(() => {
+    if (!permissionCode) return true;
+    if (!user) return false;
+
+    // 超级管理员默认拥有所有权限
+    if (
+      user.id === 'admin' ||
+      user.name === 'admin' ||
+      user.name === 'Administrator' ||
+      (Array.isArray(user.userRoles) && user.userRoles.some((r: any) => r?.id === 'admin')) ||
+      (Array.isArray(user.userRoleRelations) && user.userRoleRelations.some((r: any) => r?.roleId === 'admin'))
+    ) {
+      return true;
+    }
+
+    const perms = user.permissions || [];
+    if (perms.includes('*') || perms.includes('ADMIN')) {
+      return true;
+    }
+
+    // 精确匹配
+    if (perms.includes(permissionCode)) {
+      return true;
+    }
+
+    // 前缀与同义词映射兼容
+    const aliasMap: Record<string, string[]> = {
+      'WORKSPACE:READ': ['WORKSPACE:READ', 'QUALITY_WORKSPACE:READ'],
+      'PROJECT_MANAGEMENT:READ': ['PROJECT_MANAGEMENT:READ', 'ORGANIZATION_PROJECT:READ', 'PROJECT_USER:READ'],
+      'QUALITY:READ': ['QUALITY:READ', 'QUALITY_WORKSPACE:READ'],
+      'CASE:READ': ['CASE:READ', 'FUNCTIONAL_CASE:READ', 'PROJECT_CASE:READ'],
+      'BUG:READ': ['BUG:READ', 'PROJECT_BUG:READ'],
+      'COV:READ': ['COV:READ', 'PRECISION_TEST:READ'],
+      'SYSTEM:READ': ['SYSTEM:READ', 'SYSTEM_SETTING:READ'],
+    };
+
+    const aliases = aliasMap[permissionCode] || [permissionCode];
+    return aliases.some((a) => perms.includes(a));
+  }, [user, permissionCode]);
 }

@@ -10,8 +10,8 @@ export interface UserGroupItem {
   description?: string;
   internal?: boolean;
   type?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   createUser?: string;
   scopeId?: string;
   pos?: number;
@@ -39,7 +39,7 @@ export interface UserGroupMemberItem {
   email?: string;
   phone?: string;
   enable?: boolean;
-  createTime?: number;
+  createdAt?: number;
   [key: string]: string | boolean | number | undefined;
 }
 

@@ -189,7 +189,7 @@ export function QualityWorkspaceReportPage({ onViewReport }: QualityWorkspaceRep
 
   const generateOverview = async () => {
     if (!selectedWorkspaceId) {
-      toast.warning('请先选择一个质量工作台');
+      toast.warning('请先选择一个测试计划');
       return;
     }
     setGenerating(true);
@@ -218,13 +218,13 @@ export function QualityWorkspaceReportPage({ onViewReport }: QualityWorkspaceRep
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-950">质量报告</h1>
-              <p className="mt-1 text-sm text-slate-500">沉淀质量工作台快照，支持阶段留痕、项目内分享和 Markdown 导出。</p>
+              <p className="mt-1 text-sm text-slate-500">沉淀测试计划快照，支持阶段留痕、项目内分享和 Markdown 导出。</p>
             </div>
           </div>
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <Select value={selectedWorkspaceId} onValueChange={setSelectedWorkspaceId}>
               <SelectTrigger className="h-11 min-w-[260px] rounded-2xl bg-white">
-                <SelectValue placeholder="选择质量工作台" />
+                <SelectValue placeholder="选择测试计划" />
               </SelectTrigger>
               <SelectContent>
                 {workspaces.map((workspace) => (
@@ -328,7 +328,7 @@ export function QualityWorkspaceReportPage({ onViewReport }: QualityWorkspaceRep
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-                      <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDate(report.createTime)}</span>
+                      <span className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDate(report.createdAt)}</span>
                       <span className="flex items-center gap-1"><ClipboardList className="h-3.5 w-3.5" />执行进度 {summary.executionRate}%</span>
                     </div>
                   </Card>
@@ -434,7 +434,7 @@ export function QualityWorkspaceReportDetailPage({ workspaceId: reportId, onBack
             </div>
             <h1 className="mt-3 truncate text-3xl font-black text-slate-950">{report.name}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-              {workspaceNameOf(report)} · 生成于 {formatDate(report.createTime)}
+              {workspaceNameOf(report)} · 生成于 {formatDate(report.createdAt)}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

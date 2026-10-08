@@ -468,10 +468,6 @@ export function SystemParameterView() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">系统参数</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">配置系统基础信息、邮件、认证与清理策略</p>
-      </div>
       <Tabs value={tab} onValueChange={(v) => setTab(v as 'base' | 'email' | 'page' | 'auth' | 'qrCode' | 'model' | 'cleanup')} className="space-y-6">
         <TabsList className="bg-gray-100/60 border border-gray-200/50 rounded-xl p-1 gap-1 h-auto flex-wrap justify-start">
           <TabsTrigger value="base" className="rounded-lg px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 transition-all">基础配置</TabsTrigger>

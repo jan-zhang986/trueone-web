@@ -691,7 +691,7 @@ export function PrecisionTestPage() {
                                 {row.createUser || '-'}
                               </div>
                             </td>
-                            <td className="px-3 py-3 whitespace-nowrap text-gray-500">{formatDateTime(row.createTime, 'short')}</td>
+                            <td className="px-3 py-3 whitespace-nowrap text-gray-500">{formatDateTime(row.createdAt, 'short')}</td>
                             <td className="px-3 py-3 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
                               {row.requestStatus === 3 && row.reportUrl ? (
                                 <Button
@@ -870,7 +870,7 @@ export function PrecisionTestPage() {
                         <td className="px-3 py-2.5 font-mono text-xs truncate max-w-[200px]" title={row.excludeRule}>{row.excludeRule}</td>
                         <td className="px-3 py-2.5 text-gray-500 truncate max-w-[160px]" title={row.description}>{row.description ?? '-'}</td>
                         <td className="px-3 py-2.5">{row.createUser ?? '-'}</td>
-                        <td className="px-3 py-2.5 text-gray-500">{row.createTime ? formatDateTime(row.createTime, 'short') : '-'}</td>
+                        <td className="px-3 py-2.5 text-gray-500">{row.createdAt ? formatDateTime(row.createdAt, 'short') : '-'}</td>
                       </tr>
                     ))
                   )}

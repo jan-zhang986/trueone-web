@@ -106,8 +106,8 @@ export function ApiPreviewPage({
               url={url}
               getTypeBadgeColor={getTypeBadgeColor}
               formatTime={formatTime}
-              createTime={definition.createTime}
-              updateTime={definition.updateTime}
+              createdAt={definition.createdAt}
+              updatedAt={definition.updatedAt}
               createUser={definition.createUser}
               userNameMap={userNameMap}
               directoryLabel={directoryLabel}

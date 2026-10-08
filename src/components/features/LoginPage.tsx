@@ -513,316 +513,313 @@ export function LoginPage() {
     setGreeting(getGreeting());
   }, []);
 
-  // 如果正在处理回调，显示加载状态
+  // 如果正在处理回调，显示极客暗黑加载状态
   if (isProcessingCallback) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="w-screen h-screen bg-[#050811] text-white flex items-center justify-center p-6 relative overflow-hidden font-sans select-none">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(110% 85% at 68% 28%, #14325c 0%, #0d1e38 32%, #081120 62%, #050811 100%)',
+          }}
+        />
         <div className="relative z-10 text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto" />
-          <p className="text-lg font-medium text-gray-700">正在处理登录回调...</p>
-          <p className="text-sm text-gray-500">请稍候</p>
+          <Loader2 className="w-10 h-10 animate-spin text-blue-400 mx-auto" />
+          <p className="text-lg font-medium text-white/90">正在处理安全授权回调...</p>
+          <p className="text-sm text-white/50">请稍候，正在验证凭证建立会话</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      {/* Spotter Logo - Top Left */}
-      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs sm:text-sm font-semibold">QA</span>
+    <div className="min-h-screen w-full bg-[#050811] text-white flex flex-col relative overflow-x-hidden select-none font-sans">
+      {/* ================= 背景艺术层 (1:1 还原 DeepSeek 烟雾流动与深海蓝光) ================= */}
+      {/* 径向深海蓝聚光 */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(110% 85% at 68% 28%, #14325c 0%, #0d1e38 32%, #081120 62%, #050811 100%)',
+        }}
+      />
+
+      {/* 微弱点阵坐标背景 (Dot Matrix Grid) */}
+      <svg className="absolute inset-0 w-full h-full opacity-25 pointer-events-none">
+        <defs>
+          <pattern id="loginDotPattern" width="36" height="36" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1" fill="#7fa8db" opacity="0.45" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#loginDotPattern)" />
+      </svg>
+
+      {/* 拟真三维高光流体烟雾波纹 (SVG Fluid Smoke Waves) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-screen opacity-60">
+        <svg
+          viewBox="0 0 1600 900"
+          className="w-full h-full object-cover scale-110 -translate-y-6"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <filter id="loginSmokeBlur1" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="38" />
+            </filter>
+            <filter id="loginSmokeBlur2" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="65" />
+            </filter>
+            <linearGradient id="loginSmokeGrad1" x1="20%" y1="0%" x2="80%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+              <stop offset="25%" stopColor="#cfe3ff" stopOpacity="0.65" />
+              <stop offset="60%" stopColor="#5b93e6" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#1e3b6e" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="loginSmokeGrad2" x1="0%" y1="10%" x2="100%" y2="90%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+              <stop offset="40%" stopColor="#a8cdfc" stopOpacity="0.4" />
+              <stop offset="70%" stopColor="#3b6eb8" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#08152e" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          <path
+            d="M 280 -60 C 260 220, 160 380, 240 540 C 310 680, 520 740, 680 820 C 820 890, 1100 920, 1400 960"
+            fill="none"
+            stroke="url(#loginSmokeGrad1)"
+            strokeWidth="56"
+            strokeLinecap="round"
+            filter="url(#loginSmokeBlur1)"
+          />
+          <path
+            d="M 1250 -40 C 1100 120, 880 180, 780 320 C 660 480, 860 620, 950 780 C 1020 900, 1150 940, 1380 980"
+            fill="none"
+            stroke="url(#loginSmokeGrad2)"
+            strokeWidth="74"
+            strokeLinecap="round"
+            filter="url(#loginSmokeBlur2)"
+          />
+        </svg>
+      </div>
+
+      {/* ================= 顶部长廊导航栏 (1:1 风格) ================= */}
+      <header className="w-full max-w-[1360px] mx-auto px-6 sm:px-12 h-20 sm:h-24 flex items-center justify-between relative z-20">
+        {/* 左侧 Logo + 胶囊徽章 */}
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+          <img
+            src="/trueone-logo-white.png?v=11"
+            alt="TrueOne"
+            className="h-11 sm:h-12 w-auto object-contain cursor-pointer transition-opacity hover:opacity-90 drop-shadow-[0_0_20px_rgba(56,189,248,0.2)]"
+          />
+
+          <div
+            className="rounded-[9px] p-[1px] ml-1"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.45) 100%)',
+            }}
+          >
+            <div className="bg-[#0b101d]/90 backdrop-blur-md px-2.5 py-[3px] rounded-[8px]">
+              <span className="font-mono text-[11px] font-medium tracking-wide text-white/90">Harness</span>
+            </div>
           </div>
-          <span className="text-gray-900 font-semibold text-base sm:text-lg">SPOTTER</span>
         </div>
-      </div>
 
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Animated gradient orbs */}
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        {/* 右侧：返回门户首页按钮 */}
+        <button
+          onClick={() => navigate('/')}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.12] text-white/85 hover:text-white text-xs font-medium transition-all backdrop-blur-md cursor-pointer"
+        >
+          <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+          <span>返回门户首页</span>
+        </button>
+      </header>
 
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, #000 1px, transparent 1px),
-              linear-gradient(to bottom, #000 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-          }}
-        />
-
-      </div>
-
-      {/* Main content */}
-      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
-        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-12 items-center justify-center">
-          {/* Left side - Branding (占 6 列) */}
-          <div className="space-y-6 lg:space-y-8 hidden lg:block lg:col-span-6 lg:justify-self-start lg:pr-8">
-            {/* Logo & Title */}
-            <div className="space-y-4 xl:space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-14 h-14 xl:w-16 xl:h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-purple-500/30">
-                    <Shield className="w-8 h-8 xl:w-9 xl:h-9 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-3xl xl:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent">
-                      AegisOnes
-                    </h1>
-                    <span className="px-2 py-0.5 text-[10px] font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-md">
-                      SPOTTER
-                    </span>
-                  </div>
-                  <p className="text-xs xl:text-sm text-gray-500 mt-1">Aegis One Platform</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h2 className="text-2xl xl:text-3xl font-bold text-gray-900">
-                  自动化测试、数据生成、用例管理
-                  <br />
-                  <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    一体化测试工具
-                  </span>
-                </h2>
-                <p className="text-sm xl:text-base text-gray-600 leading-relaxed">
-                  支持 HTTP、SQL、Dubbo、RocketMQ 等多协议，提供强大的API测试能力
-                </p>
-              </div>
+      {/* ================= 核心登录主视口 ================= */}
+      <main className="flex-1 w-full max-w-[1360px] mx-auto px-6 sm:px-12 flex items-center justify-center relative z-20 pb-16">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
+          
+          {/* 左侧说明区 (在桌面端展示，与门户页保持高度统一) */}
+          <div className="hidden lg:flex flex-col items-start pr-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-400 text-xs font-medium mb-4 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>TrueOne Next · 智能测试工程中枢</span>
             </div>
 
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.15] mb-5 bg-gradient-to-br from-white via-white/95 to-white/70 bg-clip-text text-transparent">
+              一切皆插件，<br />赋能极致效能。
+            </h1>
+
+            <p className="text-[15px] text-white/65 leading-[1.8] max-w-[500px] mb-8 font-normal">
+              面向现代软件工程的企业级自动化测试生态。集成智能体编排、多协议接口与数据工厂，通过单点认证无缝融入敏捷团队。
+            </p>
+
+            {/* 核心特性胶囊卡片 */}
+            <div className="grid grid-cols-2 gap-3.5 w-full max-w-[500px]">
               {features.map((feature, index) => (
                 <div
                   key={index}
-                  className="group relative bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl p-4 hover:bg-white hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-200 transition-all duration-300"
+                  className="group rounded-xl border border-white/[0.08] bg-[#0c1424]/50 backdrop-blur-md p-3.5 hover:border-blue-400/30 hover:bg-[#0f1b33]/60 transition-all duration-200"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-blue-500/20 group-hover:to-purple-500/20 transition-all">
-                      <feature.icon className="w-5 h-5 text-blue-600" />
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <feature.icon className="w-3.5 h-3.5 text-blue-400" />
                     </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">{feature.title}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{feature.description}</p>
-                    </div>
+                    <span className="text-sm font-semibold text-white/90">{feature.title}</span>
                   </div>
+                  <p className="text-xs text-white/50 leading-relaxed pl-[38px]">{feature.description}</p>
                 </div>
               ))}
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-6 pt-4">
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-purple-400"
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-gray-600">时时寻求效率进步，事事讲求方法技术。</span>
-              </div>
+            <div className="mt-8 flex items-center gap-2 text-xs text-white/45">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>时时寻求效率进步，事事讲求方法技术。</span>
             </div>
           </div>
 
+          {/* 右侧微光毛玻璃登录卡片 (Linear / Apple 旗舰级暗黑极简质感) */}
+          <div className="w-full max-w-[440px] mx-auto lg:ml-auto">
+            <div className="relative rounded-3xl border border-white/[0.12] bg-[#0a101d]/80 backdrop-blur-2xl shadow-[0_30px_90px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.06)] p-7 sm:p-9 overflow-hidden">
+              
+              {/* 顶部极光微光掠线 (Ambient Top-Rim Light) */}
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent pointer-events-none" />
+              <div className="absolute top-0 right-1/4 w-32 h-20 bg-blue-500/10 blur-2xl pointer-events-none" />
 
-          {/* Right side - Login Card (占 6 列) */}
-          <div className="relative w-full max-w-md mx-auto lg:max-w-sm lg:col-span-6 lg:justify-self-start">
-            <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 p-6 sm:p-7 lg:p-8">
-              {/* Decorative elements */}
-              <div className="absolute -top-3 -right-3 w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-2xl opacity-20" />
-              <div className="absolute -bottom-3 -left-3 w-32 h-32 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-2xl opacity-20" />
-
-              <div className="relative space-y-8">
-                {/* Header */}
-                <div className="text-center space-y-3">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-xl shadow-purple-500/30">
-                    <Shield className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{greeting.title}</h3>
-                    <p className="text-gray-500 mt-1">{greeting.message}</p>
-                  </div>
+              {/* 标题与欢迎提示 */}
+              <div className="mb-6">
+                <div className="inline-block text-[11px] font-medium text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full mb-2.5">
+                  {greeting.title} · {greeting.message}
                 </div>
+                <h3 className="text-2xl font-bold text-white tracking-tight">登录 TrueOne 平台</h3>
+                <p className="text-xs text-white/50 mt-1.5">统一登录身份中心，快速开启高效测试</p>
+              </div>
 
-                {/* 登录方式切换 */}
-                {loginMethod === 'feishu' ? (
-                  <div className="space-y-6">
-                    <div className="space-y-4">
-                      <Button
-                        type="button"
-                        onClick={handleFeishuLogin}
-                        disabled={isLoading}
-                        className="w-full h-12 bg-[#3370ff] hover:bg-[#285ae0] text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 text-base rounded-xl flex items-center justify-center gap-2"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            登录中...
-                          </>
-                        ) : (
-                          <>
-                            <Globe className="w-5 h-5" />
-                            飞书 SSO 登录
-                          </>
-                        )}
-                      </Button>
+              {/* 内嵌式 iOS / Linear 风格分段选择器 (Segmented Switcher) */}
+              <div className="p-1 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center mb-6">
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('feishu')}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                    loginMethod === 'feishu'
+                      ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/30'
+                      : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.5 13.8L19.5 3.5L14.2 21.2L10.8 14.2L2.5 13.8Z" />
+                  </svg>
+                  <span>飞书快捷登录</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginMethod('password')}
+                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                    loginMethod === 'password'
+                      ? 'bg-white/15 text-white font-semibold shadow-sm'
+                      : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>账号密码登录</span>
+                </button>
+              </div>
 
-                    </div>
-
+              {/* 方式 1: 飞书快捷 SSO 登录 */}
+              {loginMethod === 'feishu' ? (
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={handleFeishuLogin}
+                    disabled={isLoading}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#2f6cf6] to-[#1c55e8] hover:from-[#3a75ff] hover:to-[#2560f2] text-white font-semibold text-sm transition-all duration-200 shadow-[0_8px_24px_rgba(47,108,246,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>授权跳转中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M2.5 13.8L19.5 3.5L14.2 21.2L10.8 14.2L2.5 13.8Z" />
+                        </svg>
+                        <span>使用飞书快捷授权登录</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                /* 方式 2: 开发者账号密码登录 */
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-white/70">用户名 / 邮箱</label>
                     <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-200" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-
-                      </div>
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type="text"
+                        placeholder="请输入用户名或工号"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={isLoading || isPasswordLoading}
+                        className="w-full pl-10 pr-4 py-2.5 bg-black/30 border border-white/[0.12] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-400 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        autoComplete="username"
+                      />
                     </div>
-
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={() => setLoginMethod('password')}
-                      disabled={isLoading}
-                      className="w-full h-12 border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-600 transition-all duration-300 text-base rounded-xl"
-                    >
-                      账号密码登录
-                    </Button>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    <form onSubmit={handlePasswordLogin} className="space-y-5">
-                      <div className="space-y-2">
-                        <label htmlFor="username" className="text-sm font-semibold text-gray-800">
-                          用户名
-                        </label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500 transition-colors" />
-                          <Input
-                            id="username"
-                            type="text"
-                            placeholder="请输入用户名"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            disabled={isLoading || isPasswordLoading}
-                            className="pl-9 h-11 border-gray-300 focus-visible:border-purple-500 focus-visible:ring-purple-500/30"
-                            autoComplete="username"
-                          />
-                        </div>
-                      </div>
 
-                      <div className="space-y-2">
-                        <label htmlFor="password" className="text-sm font-semibold text-gray-800">
-                          密码
-                        </label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500 transition-colors" />
-                          <Input
-                            id="password"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="请输入密码"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={isLoading || isPasswordLoading}
-                            className="pl-9 pr-9 h-11 border-gray-300 focus-visible:border-purple-500 focus-visible:ring-purple-500/30"
-                            autoComplete="current-password"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-500 transition-colors"
-                            disabled={isLoading || isPasswordLoading}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      <Button
-                        type="submit"
-                        disabled={isLoading || isPasswordLoading || !username.trim() || !password.trim()}
-                        className="w-full h-12 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 text-base rounded-xl"
-                      >
-                        {isPasswordLoading ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            登录中...
-                          </>
-                        ) : (
-                          <>
-                            登录
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                          </>
-                        )}
-                      </Button>
-                    </form>
-
-                    <div className="text-center">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-white/70">登录密码</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="请输入密码"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isLoading || isPasswordLoading}
+                        className="w-full pl-10 pr-10 py-2.5 bg-black/30 border border-white/[0.12] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-400 focus:bg-black/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        autoComplete="current-password"
+                      />
                       <button
-                        onClick={() => setLoginMethod('feishu')}
-                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center justify-center gap-1 mx-auto"
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                        disabled={isLoading || isPasswordLoading}
                       >
-                        <ArrowRight className="w-4 h-4 rotate-180" />
-                        返回飞书登录
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
-                )}
 
-                {/* Features list */}
-                <div className="space-y-3 pt-4 border-t border-gray-100">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    平台优势
-                  </p>
-                  <div className="space-y-2">
-                    {[
-                      '多协议支持 - HTTP / SQL / Dubbo / MQ',
-                      '可视化操作 - 无需编写代码',
-                      'AI 驱动 - 智能测试生成',
-                    ].map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 text-sm text-gray-600"
-                      >
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center flex-shrink-0">
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                  {/* 高质感渐变提交按钮 */}
+                  <button
+                    type="submit"
+                    disabled={isLoading || isPasswordLoading || !username.trim() || !password.trim()}
+                    className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all duration-150 shadow-[0_4px_20px_rgba(37,99,235,0.35),inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    {isPasswordLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>正在验证安全凭据...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>安全登录</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
 
-                {/* Footer */}
-                <div className="text-center text-xs text-gray-400 pt-4">
-                  登录即表示您同意我们的
-                  <button className="text-blue-600 hover:text-blue-700 mx-1">
-                    服务条款
-                  </button>
-                  和
-                  <button className="text-blue-600 hover:text-blue-700 ml-1">
-                    隐私政策
-                  </button>
-                </div>
+              {/* 底部协议小字 */}
+              <div className="text-center text-[11px] text-white/35 pt-5 mt-6 border-t border-white/[0.08]">
+                登录即代表您已阅读并同意 <span className="text-white/60 hover:text-white cursor-pointer transition-colors">服务条款</span> 与 <span className="text-white/60 hover:text-white cursor-pointer transition-colors">隐私保护政策</span>
               </div>
             </div>
           </div>
+
         </div>
-      </div>
+      </main>
     </div>
   );
 }

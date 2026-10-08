@@ -421,7 +421,7 @@ export function CaseTableSection({
   columnFilter = {},
   updateUserFilterOptions,
   visibleColumns: visibleCols = {},
-  columnOrder: colOrder = ['reviewStatus', 'lastExecuteResult', 'moduleId', 'tags', 'updateUserName', 'updateTime', 'createUserName', 'createTime'],
+  columnOrder: colOrder = ['reviewStatus', 'lastExecuteResult', 'moduleId', 'tags', 'updateUserName', 'updatedAt', 'createUserName', 'createdAt'],
   columnWidths,
   onColumnWidthChange,
   canEdit = true,
@@ -676,9 +676,9 @@ export function CaseTableSection({
                           {key === 'moduleId' && '所属模块'}
                           {key === 'tags' && '标签'}
                           {key === 'updateUserName' && (updateUserFilterOptions ? <SortableHeader label="更新人" field="updateUser" filter filterOptions={updateUserFilterOptions} filterValue={columnFilter.updateUser} onFilterChange={(v) => onColumnFilterChange?.('updateUser', v ?? null)} /> : '更新人')}
-                          {key === 'updateTime' && <SortableHeader label="更新时间" field="updateTime" sort={sort} onSortChange={onSortChange} />}
+                          {key === 'updatedAt' && <SortableHeader label="更新时间" field="updatedAt" sort={sort} onSortChange={onSortChange} />}
                           {key === 'createUserName' && '创建人'}
-                          {key === 'createTime' && <SortableHeader label="创建时间" field="createTime" sort={sort} onSortChange={onSortChange} />}
+                          {key === 'createdAt' && <SortableHeader label="创建时间" field="createdAt" sort={sort} onSortChange={onSortChange} />}
                         </ResizableTh>
                       ) : null;
                       if (resizeTh) return resizeTh;
@@ -705,18 +705,18 @@ export function CaseTableSection({
                               {updateUserFilterOptions ? <SortableHeader label="更新人" field="updateUser" filter filterOptions={updateUserFilterOptions} filterValue={columnFilter.updateUser} onFilterChange={(v) => onColumnFilterChange?.('updateUser', v ?? null)} /> : '更新人'}
                             </TableHead>
                           );
-                        case 'updateTime':
+                        case 'updatedAt':
                           return (
                             <TableHead key={key} className="w-36 font-medium text-gray-500">
-                              <SortableHeader label="更新时间" field="updateTime" sort={sort} onSortChange={onSortChange} />
+                              <SortableHeader label="更新时间" field="updatedAt" sort={sort} onSortChange={onSortChange} />
                             </TableHead>
                           );
                         case 'createUserName':
                           return <TableHead key={key} className="w-24 font-medium text-gray-500">创建人</TableHead>;
-                        case 'createTime':
+                        case 'createdAt':
                           return (
                             <TableHead key={key} className="w-36 font-medium text-gray-500">
-                              <SortableHeader label="创建时间" field="createTime" sort={sort} onSortChange={onSortChange} />
+                              <SortableHeader label="创建时间" field="createdAt" sort={sort} onSortChange={onSortChange} />
                             </TableHead>
                           );
                         default:
@@ -939,12 +939,12 @@ export function CaseTableSection({
                               }
                               case 'updateUserName':
                                 return (<TableCell key={`${item.id}-${key}`} className="text-gray-500 truncate max-w-[96px]" title={item.updateUserName || item.updateUser || '-'}>{item.updateUserName || item.updateUser || '-'}</TableCell>);
-                              case 'updateTime':
-                                return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.updateTime ? new Date(item.updateTime as string | number).toLocaleString('zh-CN') : '-'}>{item.updateTime ? new Date(item.updateTime as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
+                              case 'updatedAt':
+                                return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.updatedAt ? new Date(item.updatedAt as string | number).toLocaleString('zh-CN') : '-'}>{item.updatedAt ? new Date(item.updatedAt as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
                               case 'createUserName':
                                 return (<TableCell key={`${item.id}-${key}`} className="text-gray-500 truncate max-w-[96px]" title={item.createUserName || item.createUser || '-'}>{item.createUserName || item.createUser || '-'}</TableCell>);
-                              case 'createTime':
-                                return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}>{item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
+                              case 'createdAt':
+                                return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}>{item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
                               default:
                                 return null;
                             }
@@ -1198,12 +1198,12 @@ export function CaseTableSection({
                             }
                             case 'updateUserName':
                               return (<TableCell key={`${item.id}-${key}`} className="text-gray-500 truncate max-w-[96px]" title={item.updateUserName || item.updateUser || '-'}>{item.updateUserName || item.updateUser || '-'}</TableCell>);
-                            case 'updateTime':
-                              return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.updateTime ? new Date(item.updateTime as string | number).toLocaleString('zh-CN') : '-'}>{item.updateTime ? new Date(item.updateTime as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
+                            case 'updatedAt':
+                              return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.updatedAt ? new Date(item.updatedAt as string | number).toLocaleString('zh-CN') : '-'}>{item.updatedAt ? new Date(item.updatedAt as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
                             case 'createUserName':
                               return (<TableCell key={`${item.id}-${key}`} className="text-gray-500 truncate max-w-[96px]" title={item.createUserName || item.createUser || '-'}>{item.createUserName || item.createUser || '-'}</TableCell>);
-                            case 'createTime':
-                              return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}>{item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
+                            case 'createdAt':
+                              return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}>{item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
                             default:
                               return null;
                           }
@@ -1298,8 +1298,8 @@ export function CaseTableSection({
                       const content = key === 'reviewStatus' ? <SortableHeader label="评审结果" field="reviewStatus" sort={sort} onSortChange={onSortChange} filter filterOptions={Object.entries(REVIEW_STATUS_MAP).map(([v, { label }]) => ({ value: v, label }))} filterValue={columnFilter.reviewStatus} onFilterChange={(v) => onColumnFilterChange?.('reviewStatus', v ?? null)} /> :
                         key === 'lastExecuteResult' ? <SortableHeader label="执行结果" field="lastExecuteResult" sort={sort} onSortChange={onSortChange} filter filterOptions={Object.entries(EXECUTE_RESULT_MAP).map(([v, { label }]) => ({ value: v, label }))} filterValue={columnFilter.lastExecuteResult} onFilterChange={(v) => onColumnFilterChange?.('lastExecuteResult', v ?? null)} /> :
                           key === 'moduleId' ? '所属模块' : key === 'tags' ? '标签' : key === 'updateUserName' ? (updateUserFilterOptions ? <SortableHeader label="更新人" field="updateUser" filter filterOptions={updateUserFilterOptions} filterValue={columnFilter.updateUser} onFilterChange={(v) => onColumnFilterChange?.('updateUser', v ?? null)} /> : '更新人') :
-                            key === 'updateTime' ? <SortableHeader label="更新时间" field="updateTime" sort={sort} onSortChange={onSortChange} /> : key === 'createUserName' ? '创建人' :
-                              key === 'createTime' ? <SortableHeader label="创建时间" field="createTime" sort={sort} onSortChange={onSortChange} /> : null;
+                            key === 'updatedAt' ? <SortableHeader label="更新时间" field="updatedAt" sort={sort} onSortChange={onSortChange} /> : key === 'createUserName' ? '创建人' :
+                              key === 'createdAt' ? <SortableHeader label="创建时间" field="createdAt" sort={sort} onSortChange={onSortChange} /> : null;
                       return <ResizableTh key={key} columnKey={key} width={getWidth(key)} onResize={onColumnWidthChange} className="font-medium text-gray-500">{content}</ResizableTh>;
                     }
                     switch (key) {
@@ -1325,18 +1325,18 @@ export function CaseTableSection({
                             {updateUserFilterOptions ? <SortableHeader label="更新人" field="updateUser" filter filterOptions={updateUserFilterOptions} filterValue={columnFilter.updateUser} onFilterChange={(v) => onColumnFilterChange?.('updateUser', v ?? null)} /> : '更新人'}
                           </TableHead>
                         );
-                      case 'updateTime':
+                      case 'updatedAt':
                         return (
                           <TableHead key={key} className="w-36 font-medium text-gray-500">
-                            <SortableHeader label="更新时间" field="updateTime" sort={sort} onSortChange={onSortChange} />
+                            <SortableHeader label="更新时间" field="updatedAt" sort={sort} onSortChange={onSortChange} />
                           </TableHead>
                         );
                       case 'createUserName':
                         return <TableHead key={key} className="w-24 font-medium text-gray-500">创建人</TableHead>;
-                      case 'createTime':
+                      case 'createdAt':
                         return (
                           <TableHead key={key} className="w-36 font-medium text-gray-500">
-                            <SortableHeader label="创建时间" field="createTime" sort={sort} onSortChange={onSortChange} />
+                            <SortableHeader label="创建时间" field="createdAt" sort={sort} onSortChange={onSortChange} />
                           </TableHead>
                         );
                       default:
@@ -1516,12 +1516,12 @@ export function CaseTableSection({
                           }
                           case 'updateUserName':
                             return (<TableCell key={`${item.id}-${key}`} className="text-gray-500 truncate max-w-[96px]" title={item.updateUserName || item.updateUser || '-'}>{item.updateUserName || item.updateUser || '-'}</TableCell>);
-                          case 'updateTime':
-                            return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.updateTime ? new Date(item.updateTime as string | number).toLocaleString('zh-CN') : '-'}>{item.updateTime ? new Date(item.updateTime as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
+                          case 'updatedAt':
+                            return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.updatedAt ? new Date(item.updatedAt as string | number).toLocaleString('zh-CN') : '-'}>{item.updatedAt ? new Date(item.updatedAt as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
                           case 'createUserName':
                             return (<TableCell key={`${item.id}-${key}`} className="text-gray-500 truncate max-w-[96px]" title={item.createUserName || item.createUser || '-'}>{item.createUserName || item.createUser || '-'}</TableCell>);
-                          case 'createTime':
-                            return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}>{item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
+                          case 'createdAt':
+                            return (<TableCell key={`${item.id}-${key}`} className="text-gray-400 tabular-nums font-mono truncate max-w-[144px]" title={item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}>{item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}</TableCell>);
                           default:
                             return null;
                         }

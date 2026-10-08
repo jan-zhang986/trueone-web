@@ -32,9 +32,9 @@ const COLUMNS_CONFIG = [
   { key: 'moduleId', label: '所属模块' },
   { key: 'tags', label: '标签' },
   { key: 'updateUserName', label: '更新人' },
-  { key: 'updateTime', label: '更新时间' },
+  { key: 'updatedAt', label: '更新时间' },
   { key: 'createUserName', label: '创建人' },
-  { key: 'createTime', label: '创建时间' },
+  { key: 'createdAt', label: '创建时间' },
 ];
 
 const COLUMNS_SETTINGS_KEY = 'case-table-visible-columns';
@@ -52,9 +52,9 @@ export const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
   moduleId: 144,
   tags: 96,
   updateUserName: 96,
-  updateTime: 144,
+  updatedAt: 144,
   createUserName: 96,
-  createTime: 144,
+  createdAt: 144,
 };
 
 export function loadColumnWidths(): Record<string, number> {
@@ -80,7 +80,7 @@ export function saveColumnWidths(v: Record<string, number>) {
   }
 }
 
-const DEFAULT_COLUMN_ORDER = ['reviewStatus', 'lastExecuteResult', 'moduleId', 'tags', 'updateUserName', 'updateTime', 'createUserName', 'createTime'];
+const DEFAULT_COLUMN_ORDER = ['reviewStatus', 'lastExecuteResult', 'moduleId', 'tags', 'updateUserName', 'updatedAt', 'createUserName', 'createdAt'];
 
 export function getDefaultColumnOrder(): string[] {
   return [...DEFAULT_COLUMN_ORDER];

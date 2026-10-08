@@ -19,7 +19,7 @@ export interface TestPlanItem {
     schedule: string; // 是否定时
     createUser: string;
     createUserName?: string;
-    createTime: number;
+    createdAt: number;
     moduleName: string;
     moduleId: string;
     children?: TestPlanItem[];
@@ -92,8 +92,8 @@ export interface TestPlanDetail {
     actualEndTime?: number;
     createUser: string;
     createUserName?: string;
-    createTime: number;
-    updateTime?: number;
+    createdAt: number;
+    updatedAt?: number;
     followFlag: boolean;
     passRate: number;
     executeRate?: number;
@@ -213,7 +213,7 @@ export interface PlanReportDetail {
     name: string;
     testPlanName?: string;
     startTime?: number;
-    createTime?: number;
+    createdAt?: number;
     endTime?: number;
     summary?: string;
     passThreshold?: number;

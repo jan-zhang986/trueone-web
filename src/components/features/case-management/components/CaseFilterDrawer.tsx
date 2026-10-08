@@ -46,9 +46,9 @@ const FILTER_FIELDS: { dataIndex: string; title: string; operators: { value: str
   { dataIndex: 'reviewStatus', title: '评审结果', operators: [{ value: 'IN', label: '属于' }] },
   { dataIndex: 'lastExecuteResult', title: '执行结果', operators: [{ value: 'IN', label: '属于' }] },
   { dataIndex: 'createUser', title: '创建人', operators: [{ value: 'IN', label: '属于' }] },
-  { dataIndex: 'createTime', title: '创建时间', operators: [{ value: 'CONTAINS', label: '包含' }] },
+  { dataIndex: 'createdAt', title: '创建时间', operators: [{ value: 'CONTAINS', label: '包含' }] },
   { dataIndex: 'updateUser', title: '更新人', operators: [{ value: 'IN', label: '属于' }] },
-  { dataIndex: 'updateTime', title: '更新时间', operators: [{ value: 'CONTAINS', label: '包含' }] },
+  { dataIndex: 'updatedAt', title: '更新时间', operators: [{ value: 'CONTAINS', label: '包含' }] },
   { dataIndex: 'tags', title: '标签', operators: [{ value: 'CONTAINS', label: '包含' }] },
 ];
 

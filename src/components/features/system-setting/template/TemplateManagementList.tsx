@@ -368,7 +368,7 @@ export function TemplateManagementList({ organizationId, scopeId, scope = 'organ
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate text-muted-foreground" title={row.remark}>{row.remark || '-'}</TableCell>
                     <TableCell>{row.enableDefault ? <Star className="h-4 w-4 fill-amber-500 text-amber-500" /> : '-'}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{formatTime(row.updateTime)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{formatTime(row.updatedAt)}</TableCell>
                     <TableCell className="text-right">
                       {row.internal ? (
                         <span className="text-xs text-muted-foreground">-</span>

@@ -92,7 +92,7 @@ export function TabChangeHistory({ caseId, projectId }: TabChangeHistoryProps) {
               <TableCell className="font-mono">{item.id ?? '-'}</TableCell>
               <TableCell>{TYPE_MAP[item.type] ?? item.type ?? '-'}</TableCell>
               <TableCell>{item.createUserName ?? item.createUser ?? '-'}</TableCell>
-              <TableCell>{item.createTime ? new Date(item.createTime).toLocaleString() : '-'}</TableCell>
+              <TableCell>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '-'}</TableCell>
             </TableRow>
           ))}
         </TableBody>

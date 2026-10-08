@@ -33,13 +33,6 @@ export const MessageManagementRoute = lazyLoad(() =>
   }))
 );
 
-// 日志管理路由
-export const LogManagementRoute = lazyLoad(() => 
-  import('@/components/features/log-management/LogManagementPage').then(module => ({
-    default: module.LogManagementPage
-  }))
-);
-
 // 需求质量路由。旧测试计划入口已下线，历史组件只保留在 legacy 文件中。
 export const RequirementQualityRoute = lazyLoad(() =>
   import('@/pages/RequirementQualityPage').then(module => ({
@@ -60,11 +53,6 @@ export const lazyRoutes = {
     path: '/project/:projectId/message',
     component: MessageManagementRoute,
     preload: () => import('@/components/features/message-management/MessageManagementPage'),
-  },
-  logManagement: {
-    path: '/project/:projectId/logs',
-    component: LogManagementRoute,
-    preload: () => import('@/components/features/log-management/LogManagementPage'),
   },
   requirementQuality: {
     path: '/project/:projectId/quality-workspace',

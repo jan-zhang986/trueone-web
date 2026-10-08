@@ -193,20 +193,11 @@ export function OrgProjectView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">项目管理</h3>
-            <p className="text-sm text-muted-foreground">管理组织下的项目配置</p>
-          </div>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" /> 创建项目
-          </Button>
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1 max-w-sm">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="搜索项目名称"
@@ -223,6 +214,10 @@ export function OrgProjectView() {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
+          <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-4 w-4 mr-2" /> 创建项目
+          </Button>
+        </div>
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <Table>
               <TableHeader className="bg-[#f7f8fa] sticky top-0 z-10 border-b border-gray-200 shadow-sm">
@@ -290,8 +285,8 @@ export function OrgProjectView() {
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate text-muted-foreground" title={row.description}>{row.description ?? '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{row.createUser ?? '-'}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{formatTime(row.createTime)}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{formatTime(row.updateTime)}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{formatTime(row.createdAt)}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{formatTime(row.updatedAt)}</TableCell>
                       <TableCell className="text-right pr-4 space-x-1">
                         {row.deleted ? (
                           <Button variant="ghost" size="sm" onClick={() => setRevokeConfirm(row)} className="h-8 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[11px]">
@@ -326,7 +321,6 @@ export function OrgProjectView() {
             />
           )}
         </div>
-      </div>
 
       {/* 创建/编辑项目 */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

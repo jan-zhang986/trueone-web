@@ -140,7 +140,7 @@ const TABLE_COLUMNS_CONFIG: { key: string; label: string; sortable: boolean }[] 
   { key: 'caseCount', label: '用例数', sortable: true },
   { key: 'tags', label: '标签', sortable: true },
   { key: 'moduleId', label: '所属模块', sortable: true },
-  { key: 'createTime', label: '创建时间', sortable: true },
+  { key: 'createdAt', label: '创建时间', sortable: true },
   { key: 'plannedStartEnd', label: '计划起止时间', sortable: true },
   { key: 'actualStartEnd', label: '实际起止时间', sortable: true },
 ];
@@ -306,7 +306,7 @@ function SortablePlanRow({
         </TooltipProvider>
       </TableCell>
       <TableCell className="text-sm text-gray-600 whitespace-nowrap px-4">
-        {formatTimestampBeijing(plan.createTime)}
+        {formatTimestampBeijing(plan.createdAt)}
       </TableCell>
       <TableCell className="text-right pr-5 pl-4 w-[150px] min-w-[150px] sticky right-0 bg-white group-hover:bg-[#f2f3f5] border-l border-[#e5e6eb] shadow-[-4px_0_12px_-4px_rgba(0,0,0,0.05)] z-10 transition-colors">
         <div className="flex justify-end items-center gap-2.5 flex-nowrap shrink-0">
@@ -461,7 +461,7 @@ function SortableSubPlanRow({
         </TooltipProvider>
       </TableCell>
       <TableCell className="text-sm text-gray-600 whitespace-nowrap px-4">
-        {formatTimestampBeijing(child.createTime)}
+        {formatTimestampBeijing(child.createdAt)}
       </TableCell>
       <TableCell className="text-right pr-5 pl-4 w-[150px] min-w-[150px] sticky right-0 bg-[#fafafc] group-hover:bg-[#f2f3f5] border-l border-[#e5e6eb] shadow-[-4px_0_12px_-4px_rgba(0,0,0,0.05)] z-10 transition-colors">
         <div className="flex justify-end items-center gap-2.5 flex-nowrap shrink-0">
@@ -523,7 +523,7 @@ export function TestPlanPage() {
     caseCount: true,
     tags: true,
     moduleId: true,
-    createTime: true,
+    createdAt: true,
     plannedStartEnd: false,
     actualStartEnd: false,
   };

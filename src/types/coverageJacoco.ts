@@ -13,7 +13,7 @@ export interface CoverageReportListItem {
   reportUrl: string;
   lineCoverage: number;
   branchCoverage: number;
-  createTime: string;
+  createdAt: string;
   serviceCode: string;
   env: string;
   type: number;
@@ -115,7 +115,7 @@ export interface ServiceExcludeListItem {
   createUser?: string;
   projectId?: number | string;
   status?: number;
-  createTime?: string;
+  createdAt?: string;
   [key: string]: unknown;
 }
 

@@ -23,9 +23,9 @@ describe('MessageManagementPage - Accessibility Tests', () => {
       enable: true,
       projectId: 'proj1',
       createUser: 'user1',
-      createTime: '2024-01-01T10:00:00Z',
+      createdAt: '2024-01-01T10:00:00Z',
       updateUser: 'user1',
-      updateTime: '2024-01-01T10:00:00Z',
+      updatedAt: '2024-01-01T10:00:00Z',
     },
   ];
 

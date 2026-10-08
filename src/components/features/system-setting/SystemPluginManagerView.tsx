@@ -216,17 +216,8 @@ export function SystemPluginManagerView() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">插件管理</h3>
-            <p className="text-sm text-muted-foreground">管理系统插件和扩展功能</p>
-          </div>
-          <Button onClick={openUpload}>
-            <Upload className="h-4 w-4 mr-2" /> 上传插件
-          </Button>
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
             <Select value={scene || 'all'} onValueChange={(v) => setScene(v === 'all' ? '' : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="应用场景" />
@@ -252,7 +243,11 @@ export function SystemPluginManagerView() {
               <Search className="h-4 w-4 mr-2" /> 搜索
             </Button>
           </div>
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <Button onClick={openUpload} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Upload className="h-4 w-4 mr-2" /> 上传插件
+          </Button>
+        </div>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
             <Table>
           <TableHeader className="bg-[#f7f8fa] sticky top-0 z-10 border-b border-gray-200 shadow-sm">
             <TableRow className="hover:bg-transparent border-none h-11">
@@ -297,7 +292,7 @@ export function SystemPluginManagerView() {
                   </TableCell>
                   <TableCell>{row.enable ? '启用' : '禁用'}</TableCell>
                   <TableCell className="max-w-[200px] truncate" title={row.description}>{row.description ?? '-'}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatTime(row.createTime)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatTime(row.createdAt)}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" onClick={() => openEdit(row)}>
                       <Pencil className="h-3 w-3 mr-1" /> 编辑
@@ -318,7 +313,6 @@ export function SystemPluginManagerView() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* 上传插件 */}
       <Dialog open={uploadModalOpen} onOpenChange={setUploadModalOpen}>

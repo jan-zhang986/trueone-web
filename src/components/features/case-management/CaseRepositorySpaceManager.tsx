@@ -130,8 +130,8 @@ export function CaseRepositorySpaceManager({
               ? '系统默认示例用例库，全量关联现存测试用例集与业务模块树'
               : '功能业务测试用例库',
           creator: 'admin',
-          createTime: Date.now(),
-          updateTime: Date.now(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
           caseCount: item === '示例用例库' ? 128 : 0,
           branches: ['master'],
         };
@@ -140,8 +140,8 @@ export function CaseRepositorySpaceManager({
         ...item,
         code: item.code || `repo-${idx + 1}`,
         creator: item.creator || item.createUser || 'admin',
-        createTime: item.createTime || Date.now(),
-        updateTime: item.updateTime || item.createTime || Date.now(),
+        createdAt: item.createdAt || Date.now(),
+        updatedAt: item.updatedAt || item.createdAt || Date.now(),
         caseCount: item.caseCount ?? 0,
       };
     });
@@ -549,7 +549,7 @@ export function CaseRepositorySpaceManager({
                       </div>
                       <div className="flex items-center gap-1 text-slate-400 text-[11px] flex-shrink-0">
                         <Clock className="w-3 h-3" />
-                        <span>{formatDate(repo.updateTime)}</span>
+                        <span>{formatDate(repo.updatedAt)}</span>
                       </div>
                     </div>
 
@@ -657,7 +657,7 @@ export function CaseRepositorySpaceManager({
                           </div>
                         </TableCell>
                         <TableCell className="py-3 text-xs text-slate-500 font-mono">
-                          {formatDate(repo.updateTime)}
+                          {formatDate(repo.updatedAt)}
                         </TableCell>
                         <TableCell className="py-3 text-right pr-6">
                           <div className="flex items-center justify-end gap-1.5">

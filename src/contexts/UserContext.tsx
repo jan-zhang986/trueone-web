@@ -11,6 +11,9 @@ interface User {
   email?: string;
   lastOrganizationId?: string;
   lastProjectId?: string;
+  permissions?: string[];
+  userRoles?: any[];
+  userRoleRelations?: any[];
 }
 
 interface UserContextType {
@@ -146,6 +149,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           email: userInfo.email,
           lastOrganizationId: (userInfo as any).lastOrganizationId,
           lastProjectId: (userInfo as any).lastProjectId,
+          permissions: (userInfo as any).permissions ?? [],
+          userRoles: (userInfo as any).userRoles ?? [],
+          userRoleRelations: (userInfo as any).userRoleRelations ?? [],
         };
         setUser(userData);
       }

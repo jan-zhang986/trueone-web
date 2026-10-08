@@ -8,8 +8,8 @@ export interface MemberItem {
   email: string;
   phone?: string;
   enable: boolean;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   language?: string;
   lastOrganizationId?: string;
   source?: string;

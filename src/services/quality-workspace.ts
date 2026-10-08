@@ -71,7 +71,7 @@ export interface QualityWorkItemComment {
   content?: string;
   createUser?: string;
   createUserName?: string;
-  createTime?: number | string;
+  createdAt?: number | string;
   uploadFileIds?: string[];
   attachments?: any[];
   files?: any[];
@@ -94,8 +94,8 @@ export interface WorkItemProposal {
   metadata?: Record<string, any>;
   createUser?: string;
   updateUser?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   [key: string]: any;
 }
 
@@ -115,7 +115,7 @@ export interface ProposalComment {
   content?: string;
   createUser?: string;
   createUserName?: string;
-  createTime?: number | string;
+  createdAt?: number | string;
   [key: string]: any;
 }
 
@@ -219,7 +219,7 @@ export interface QualityAnalysisReviewRecord {
   reviewStatus?: string;
   content?: string;
   createUser?: string;
-  createTime?: number;
+  createdAt?: number;
 }
 
 export interface QualityAnalysis {
@@ -303,8 +303,8 @@ export interface QualityReport {
   metadata?: Record<string, any>;
   createUser?: string;
   updateUser?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export const qualityWorkspaceService = {
@@ -609,5 +609,25 @@ export const qualityWorkspaceService = {
     data?: { replaceExisting?: boolean; maxItems?: number; useLlm?: boolean }
   ) => {
     return http.post(`/api/quality-workspace/${workspaceId}/prd/node/${nodeId}/generate-items`, data ?? {});
+  },
+
+  /** 查询测试计划-需求与测试差分对账大图 */
+  getDiffMatrix: async (workspaceId: string) => {
+    return http.get(`/api/quality-workspace/${workspaceId}/diff-matrix`);
+  },
+
+  /** 同步本地CLI或Git资产推入对账矩阵 */
+  syncDiffMatrix: async (workspaceId: string, data: any) => {
+    return http.post(`/api/quality-workspace/${workspaceId}/diff-matrix/sync`, data);
+  },
+
+  /** 用例执行结果与运行时证据上报 */
+  reportCaseExecution: async (workspaceId: string, data: any) => {
+    return http.post(`/api/quality-workspace/${workspaceId}/diff-matrix/case/report`, data);
+  },
+
+  /** 云端自主执行 AST 解析与对账矩阵同步 */
+  autoParseDiffMatrix: async (workspaceId: string, data?: { repoPath?: string }) => {
+    return http.post(`/api/quality-workspace/${workspaceId}/diff-matrix/auto-parse`, data || {});
   },
 };

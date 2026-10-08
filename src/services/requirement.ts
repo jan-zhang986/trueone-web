@@ -19,8 +19,8 @@ export interface Requirement {
   workspaceIds?: string[];
   caseIds?: string[];
   qualitySummary?: Record<string, any>;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   [key: string]: any;
 }
 

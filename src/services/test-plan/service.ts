@@ -292,8 +292,8 @@ export interface ViewItem {
   scopeId?: string;
   searchMode?: string;
   pos?: number;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface ViewList {
@@ -313,8 +313,8 @@ export interface ViewDetail extends ViewParams {
   userId?: string;
   viewType?: string;
   internal?: boolean;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 /** 获取视图列表（系统视图 + 我的视图） */

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="c"></canvas>
+<script>
+const img = new Image();
+img.crossOrigin = "anonymous";
+img.onload = () => {
+  const canvas = document.getElementById('c');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, img.width, img.height);
+  const pixels = data.data;
+
+  // Let's log some sample corner pixels
+  const samples = [];
+  for (let y = 0; y < 30; y += 5) {
+    for (let x = 0; x < 30; x += 5) {
+      const idx = (y * img.width + x) * 4;
+      samples.push(`(${x},${y}): ${pixels[idx]},${pixels[idx+1]},${pixels[idx+2]}`);
+    }
+  }
+  console.log('Sample background pixels:\n' + samples.join('\n'));
+};
+img.src = "file:///Users/zhangjian/.gemini/antigravity/brain/bc7ae273-1c48-4de4-b0c5-2c167eb5307f/.user_uploaded/media_1790567722300.jpg";
+</script>
+</body>
+</html>

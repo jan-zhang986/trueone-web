@@ -134,7 +134,7 @@ function ReviewExecuteCommentItem({
           )}
         </div>
         <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-          <span>{item.createTime ? new Date(item.createTime).toLocaleString('zh-CN') : '-'}</span>
+          <span>{item.createdAt ? new Date(item.createdAt).toLocaleString('zh-CN') : '-'}</span>
           {type === 'reviewComment' && item.reviewName && (
             <button
               type="button"
@@ -174,7 +174,7 @@ function CaseCommentItem({ item }: { item: any }) {
           <RichTextContent content={text} className="[&_p]:my-0.5 [&_ul]:my-1 text-sm" />
         </div>
         <div className="mt-1 text-xs text-gray-500">
-          {item.createTime ? new Date(item.createTime).toLocaleString('zh-CN') : '-'}
+          {item.createdAt ? new Date(item.createdAt).toLocaleString('zh-CN') : '-'}
         </div>
       </div>
     </div>
@@ -219,7 +219,7 @@ export function TabComments({ caseId, projectId, unifiedCase = false, refreshKey
           ...reviewList.map((i: any) => ({ ...i, _commentType: 'review' as const })),
           ...executeList.map((i: any) => ({ ...i, _commentType: 'execute' as const })),
         ];
-        return combined.sort((a: any, b: any) => (b.createTime ?? 0) - (a.createTime ?? 0));
+        return combined.sort((a: any, b: any) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
       })()
     : activeTab === 'caseComment' ? caseList : activeTab === 'reviewComment' ? reviewList : executeList;
 

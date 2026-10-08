@@ -880,7 +880,7 @@ export function TestPlanCaseDetailPage() {
                                                 </div>
                                                 <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
                                                     <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">创建时间</div>
-                                                    <div className="text-sm text-gray-900">{detail.createTime != null ? formatTimestampBeijing(detail.createTime) : '-'}</div>
+                                                    <div className="text-sm text-gray-900">{detail.createdAt != null ? formatTimestampBeijing(detail.createdAt) : '-'}</div>
                                                 </div>
                                             </div>
                                         </TabsContent>
@@ -1144,7 +1144,7 @@ export function TestPlanCaseDetailPage() {
                                                             <div className="flex-1 min-w-0 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
                                                                 <div className="flex justify-between items-start gap-2 mb-2">
                                                                     {getResultBadge(item.status)}
-                                                                    <span className="text-xs text-gray-400 shrink-0">{formatTimestampBeijing(item.createTime)}</span>
+                                                                    <span className="text-xs text-gray-400 shrink-0">{formatTimestampBeijing(item.createdAt)}</span>
                                                                 </div>
                                                                 <div className="text-xs text-gray-500 mb-1">执行人：{executorNameMap.get(item.createUser) ?? item.createUser ?? '-'}</div>
                                                                 {(item.content || item.contentText) && <ExecutionContentDisplay item={item} />}

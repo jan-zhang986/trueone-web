@@ -191,18 +191,9 @@ export function SystemResourcePoolView() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">资源池管理</h3>
-            <p className="text-sm text-muted-foreground">管理系统测试资源池配置</p>
-          </div>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" /> 创建资源池
-          </Button>
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1 max-w-sm">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="搜索资源池名称"
@@ -216,6 +207,10 @@ export function SystemResourcePoolView() {
               <Search className="h-4 w-4 mr-2" /> 搜索
             </Button>
           </div>
+          <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-4 w-4 mr-2" /> 创建资源池
+          </Button>
+        </div>
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <Table>
           <TableHeader className="bg-[#f7f8fa] sticky top-0 z-10 border-b border-gray-200 shadow-sm">
@@ -248,7 +243,7 @@ export function SystemResourcePoolView() {
                   </TableCell>
                   <TableCell>{row.maxConcurrentNumber ?? '-'}</TableCell>
                   <TableCell className="max-w-[200px] truncate" title={row.description}>{row.description ?? '-'}</TableCell>
-                  <TableCell className="text-muted-foreground">{formatTime(row.createTime)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatTime(row.createdAt)}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" onClick={() => openEdit(row)}>
                       <Pencil className="h-3 w-3 mr-1" /> 编辑
@@ -275,7 +270,6 @@ export function SystemResourcePoolView() {
             </div>
           )}
         </div>
-      </div>
 
       {/* 创建/编辑资源池 */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

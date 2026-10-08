@@ -404,8 +404,8 @@ export function MainContent({ selectedTopMenu }: MainContentProps) {
         },
         responseConfig: {},
         createUser: node.email || '',
-        createTime: node.createTime,
-        updateTime: node.updateTime,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
       };
     } else if (node.nodeType === 'SQL') {
       const sql = endpointData.sql || '';
@@ -426,8 +426,8 @@ export function MainContent({ selectedTopMenu }: MainContentProps) {
         },
         responseConfig: {},
         createUser: node.email || '',
-        createTime: node.createTime,
-        updateTime: node.updateTime,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
       };
     } else if (node.nodeType === 'DUBBO') {
       // DUBBO 类型：提取接口名称、方法名、应用名等字段
@@ -468,8 +468,8 @@ export function MainContent({ selectedTopMenu }: MainContentProps) {
         },
         responseConfig: {},
         createUser: node.email || '',
-        createTime: node.createTime,
-        updateTime: node.updateTime,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
       };
     } else if (node.nodeType === 'ROCKETMQ') {
       // ROCKETMQ 类型：提取 topic、tag、key、messageBody/body 等字段
@@ -501,8 +501,8 @@ export function MainContent({ selectedTopMenu }: MainContentProps) {
         },
         responseConfig: {},
         createUser: node.email || '',
-        createTime: node.createTime,
-        updateTime: node.updateTime,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
       };
     } else {
       // 其他未知类型
@@ -518,8 +518,8 @@ export function MainContent({ selectedTopMenu }: MainContentProps) {
         requestConfig: endpointData,
         responseConfig: {},
         createUser: node.email || '',
-        createTime: node.createTime,
-        updateTime: node.updateTime,
+        createdAt: node.createdAt,
+        updatedAt: node.updatedAt,
       };
     }
   };

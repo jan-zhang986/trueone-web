@@ -38,8 +38,8 @@ export interface MetadataDefinition {
   scriptContent?: string | null;
   tags?: string[];
   createUser: string;
-  createTime: number;
-  updateTime: number;
+  createdAt: number;
+  updatedAt: number;
   deletedTime?: number | null;
   isCase?: boolean; // 是否为测试数据
 }
@@ -194,7 +194,7 @@ export interface MetadataFileResource {
   checksum?: string;
   category?: string;
   createUser?: string;
-  createTime?: number;
+  createdAt?: number;
   deletedTime?: number | null;
 }
 
@@ -419,8 +419,8 @@ export interface PluginSyncNode {
   email: string;
   nodeType: 'HTTP' | 'SQL' | 'DUBBO' | 'ROCKETMQ';
   endpointData: any;
-  createTime: number;
-  updateTime: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**

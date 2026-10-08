@@ -122,7 +122,7 @@ const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
   tags: 96,
   reviewStatus: 88,
   createUser: 88,
-  createTime: 144,
+  createdAt: 144,
 };
 
 /** 可拖拽列宽的表头 */
@@ -225,7 +225,7 @@ export function TestPlanAssociateFeatureCaseDrawer({
   /** 勾选的模块（整模块关联，对齐原项目 ms-associate-case 树节点 checkable） */
   const [checkedModuleIds, setCheckedModuleIds] = useState<Set<string>>(new Set());
   /** 表格排序 */
-  const [sortField, setSortField] = useState<'num' | 'name' | 'createTime' | null>(null);
+  const [sortField, setSortField] = useState<'num' | 'name' | 'createdAt' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   /** 表格筛选（多选） */
   const [caseLevelFilter, setCaseLevelFilter] = useState<string[]>([]);
@@ -335,7 +335,7 @@ export function TestPlanAssociateFeatureCaseDrawer({
     return f;
   }, [caseLevelFilter, reviewStatusFilter, createUserFilter]);
 
-  const handleSort = useCallback((field: 'num' | 'name' | 'createTime') => {
+  const handleSort = useCallback((field: 'num' | 'name' | 'createdAt') => {
     setSortField((prev) => {
       if (prev === field) {
         setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
@@ -899,10 +899,10 @@ export function TestPlanAssociateFeatureCaseDrawer({
                           </Popover>
                         </div>
                       </ResizableTh>
-                      <ResizableTh columnKey="createTime" width={getColumnWidth('createTime')} onResize={handleColumnResize}>
-                        <button type="button" className="flex items-center gap-0.5 hover:text-gray-900 w-full text-left" onClick={() => handleSort('createTime')}>
+                      <ResizableTh columnKey="createdAt" width={getColumnWidth('createdAt')} onResize={handleColumnResize}>
+                        <button type="button" className="flex items-center gap-0.5 hover:text-gray-900 w-full text-left" onClick={() => handleSort('createdAt')}>
                           创建时间
-                          {sortField === 'createTime' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-600" /> : <ArrowDown className="w-3 h-3 text-blue-600" />) : <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
+                          {sortField === 'createdAt' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-600" /> : <ArrowDown className="w-3 h-3 text-blue-600" />) : <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
                         </button>
                       </ResizableTh>
                     </TableRow>
@@ -930,7 +930,7 @@ export function TestPlanAssociateFeatureCaseDrawer({
                         const wTags = getColumnWidth('tags');
                         const wReview = getColumnWidth('reviewStatus');
                         const wCreateUser = getColumnWidth('createUser');
-                        const wCreateTime = getColumnWidth('createTime');
+                        const wCreateTime = getColumnWidth('createdAt');
                         return (
                           <TableRow key={row.id} className="h-9">
                             <TableCell className="w-10 px-2">
@@ -974,7 +974,7 @@ export function TestPlanAssociateFeatureCaseDrawer({
                               {row.createUserName ?? row.createUser ?? '-'}
                             </TableCell>
                             <TableCell className="text-xs text-gray-500 tabular-nums whitespace-nowrap truncate" style={{ width: wCreateTime, minWidth: wCreateTime, maxWidth: wCreateTime }}>
-                              {formatTimestampBeijing(row.createTime)}
+                              {formatTimestampBeijing(row.createdAt)}
                             </TableCell>
                           </TableRow>
                         );

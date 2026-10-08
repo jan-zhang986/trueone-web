@@ -680,7 +680,7 @@ export function MockFactoryPage({ onClose }: MockFactoryPageProps) {
                                       const actualIndex = (history.historyPage - 1) * history.historyPageSize + index;
                                       const reqJson = item.req || item.content?.req || {};
                                       const respJson = item.resp || item.content?.resp || {};
-                                      const createTime = item.createAt || item.createTime || '';
+                                      const createdAt = item.createAt || item.createdAt || '';
                                       const reqStr = JSON.stringify(reqJson);
                                       const respStr = JSON.stringify(respJson);
                                       const isReqExpanded = history.expandedJson?.type === 'req' && history.expandedJson.index === actualIndex;
@@ -689,7 +689,7 @@ export function MockFactoryPage({ onClose }: MockFactoryPageProps) {
                                       return (
                                         <tr key={item.id || actualIndex} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/80 transition-colors">
                                           <td className="px-4 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">
-                                            {history.formatDateTime(createTime)}
+                                            {history.formatDateTime(createdAt)}
                                           </td>
                                           <td className="px-4 py-3">
                                             <Popover open={isReqExpanded} onOpenChange={(open) => {
@@ -1156,7 +1156,7 @@ export function MockFactoryPage({ onClose }: MockFactoryPageProps) {
                             const actualIndex = (history.historyPage - 1) * history.historyPageSize + index;
                             const reqJson = item.req || item.content?.req || {};
                             const respJson = item.resp || item.content?.resp || {};
-                            const createTime = item.createAt || item.createTime || '';
+                            const createdAt = item.createAt || item.createdAt || '';
                             const reqStr = JSON.stringify(reqJson);
                             const respStr = JSON.stringify(respJson);
                             const isReqExpanded = history.expandedJson?.type === 'req' && history.expandedJson.index === actualIndex;
@@ -1165,7 +1165,7 @@ export function MockFactoryPage({ onClose }: MockFactoryPageProps) {
                             return (
                               <tr key={item.id || actualIndex} className="border-b hover:bg-gray-50">
                                 <td className="p-3 font-mono text-xs whitespace-nowrap">
-                                  {history.formatDateTime(createTime)}
+                                  {history.formatDateTime(createdAt)}
                                 </td>
                                 <td className="p-3">
                                   <Popover open={isReqExpanded} onOpenChange={(open) => {

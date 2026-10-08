@@ -57,7 +57,7 @@ interface Member {
   email: string;
   phone?: string;
   userRoles?: Array<{ id: string; name: string }>;
-  createTime?: number;
+  createdAt?: number;
 }
 
 interface MembersManagementPageProps {

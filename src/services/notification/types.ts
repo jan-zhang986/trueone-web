@@ -22,7 +22,7 @@ export interface MessageHistoryItem {
   receiver: string;
   subject: string;
   status: string;
-  createTime: string;
+  createdAt: string;
   operator: string;
   operation: string;
   resourceId: string;

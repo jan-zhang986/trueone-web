@@ -28,8 +28,8 @@ export interface Robot {
   appKey?: string;
   appSecret?: string;
   enable: boolean;
-  createTime: string;
-  updateTime: string;
+  createdAt: string;
+  updatedAt: string;
   createUser: string;
   updateUser: string;
   description?: string;
@@ -46,8 +46,8 @@ export interface MessageConfig {
   robotId: string | null;
   recipients: RecipientType[];
   templateId: string;
-  createTime: string;
-  updateTime: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 消息模板数据模型
@@ -63,8 +63,8 @@ export interface MessageTemplate {
   useDefaultSubject: boolean;
   useDefaultTemplate: boolean;
   variables: TemplateVariable[];
-  createTime: string;
-  updateTime: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 模板变量数据模型

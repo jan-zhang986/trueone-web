@@ -22,8 +22,8 @@ export interface DefinedFieldItem {
   internal: boolean;
   scopeType: string;
   scopeId: string;
-  createTime: number;
-  updateTime: number;
+  createdAt: number;
+  updatedAt: number;
   createUser?: string;
   refId?: string | null;
   enableOptionKey?: boolean | null;
@@ -52,8 +52,8 @@ export interface OrganizeTemplateItem {
   name: string;
   remark: string;
   internal: boolean;
-  updateTime: number;
-  createTime: number;
+  updatedAt: number;
+  createdAt: number;
   createUser?: string;
   scopeType: string;
   scopeId: string;

@@ -417,10 +417,10 @@ export function QualityWorkItemDrawer({
                   {comments.map((comment) => {
                     const files = comment.attachments || comment.files || comment.uploadFileIds || [];
                     return (
-                      <Card key={comment.commentId || comment.id || `${comment.createTime}-${comment.content}`} className="rounded-3xl border-slate-200 p-4 shadow-sm">
+                      <Card key={comment.commentId || comment.id || `${comment.createdAt}-${comment.content}`} className="rounded-3xl border-slate-200 p-4 shadow-sm">
                         <div className="flex items-center justify-between gap-3 text-xs text-slate-400">
                           <span className="font-bold text-slate-600">{comment.createUserName || comment.createUser || '协作者'}</span>
-                          <span>{formatTime(comment.createTime)}</span>
+                          <span>{formatTime(comment.createdAt)}</span>
                         </div>
                         <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{comment.content || '证据附件'}</div>
                         {!!files.length && (
@@ -482,7 +482,7 @@ export function QualityWorkItemDrawer({
                             <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
                               <span>目标 Case：{proposal.targetCaseId || current?.caseId || '合并时创建'}</span>
                               <span>创建人：{proposal.createUser || '未知'}</span>
-                              <span>更新：{formatTime(proposal.updateTime || proposal.createTime)}</span>
+                              <span>更新：{formatTime(proposal.updatedAt || proposal.createdAt)}</span>
                             </div>
                             {proposal.reason && <p className="mt-3 text-sm leading-6 text-slate-600">{proposal.reason}</p>}
                             <Button
@@ -554,10 +554,10 @@ export function QualityWorkItemDrawer({
                               <div className="mb-2 text-xs font-black uppercase tracking-wide text-slate-400">评审意见</div>
                               <div className="space-y-2">
                                 {proposalComments.map((comment) => (
-                                  <div key={comment.commentId || comment.id || `${comment.createTime}-${comment.content}`} className="rounded-2xl bg-slate-50 p-3">
+                                  <div key={comment.commentId || comment.id || `${comment.createdAt}-${comment.content}`} className="rounded-2xl bg-slate-50 p-3">
                                     <div className="flex items-center justify-between text-xs text-slate-400">
                                       <span className="font-bold text-slate-600">{comment.createUserName || comment.createUser || '评审人'}</span>
-                                      <span>{formatTime(comment.createTime)}</span>
+                                      <span>{formatTime(comment.createdAt)}</span>
                                     </div>
                                     <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{comment.content}</div>
                                   </div>
@@ -647,7 +647,7 @@ export function QualityWorkItemDrawer({
                         <Clock3 className="h-4 w-4 text-slate-400" />
                         {record.execResult || record.result || record.status || '执行记录'}
                       </div>
-                      <span className="text-xs text-slate-400">{formatTime(record.createTime || record.execTime || record.updateTime)}</span>
+                      <span className="text-xs text-slate-400">{formatTime(record.createdAt || record.execTime || record.updatedAt)}</span>
                     </div>
                     <pre className="mt-3 max-h-44 overflow-auto rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
                       {safeJson(record)}

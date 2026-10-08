@@ -7,7 +7,7 @@ export interface UserInfo {
 export interface TestReport {
   id: string;
   name: string;
-  createTime: string;
+  createdAt: string;
   executor: string;
   totalTests: number;
   successTests: number;
@@ -31,5 +31,5 @@ export interface TestReport {
   summary?: string;
   environmentId?: string;
   environmentName?: string;
-  updateTime?: number;
+  updatedAt?: number;
 }

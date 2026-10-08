@@ -588,7 +588,7 @@ export function ProjectPermissionView({ projectId }: ProjectPermissionViewProps)
                                                                         </div>
                                                                     </TableCell>
                                                                     <TableCell className="text-center text-sm text-gray-500 tabular-nums">
-                                                                        {m.createTime ? new Date(m.createTime).toLocaleDateString('zh-CN') : '—'}
+                                                                        {m.createdAt ? new Date(m.createdAt).toLocaleDateString('zh-CN') : '—'}
                                                                     </TableCell>
                                                                     <TableCell className="text-right pr-8">
                                                                         <Button

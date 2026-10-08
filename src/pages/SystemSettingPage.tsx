@@ -8,16 +8,17 @@ import { Sliders } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { SETTING_BASE_PATH } from '@/routes';
 import { Card, CardContent } from '@/components/ui/card';
-import { SystemUserView, SystemLogView, SystemUserGroupView, SystemOrganizationProjectView, SystemParameterView, SystemTaskCenterView, OrgMemberView, SystemResourcePoolView, SystemPluginManagerView, OrgServiceIntegrationView, OrgLogView, OrgTemplateView, OrgProjectView } from '@/components/features/system-setting';
-import { User, Users, Landmark, Settings, FileText, Component, Box, Activity, Share2, FileCode, FolderTree, History } from 'lucide-react';
+import { SystemUserView, SystemLogView, SystemUserGroupView, SystemOrganizationProjectView, SystemParameterView, SystemTaskCenterView, OrgMemberView, SystemResourcePoolView, SystemPluginManagerView, OrgServiceIntegrationView, OrgLogView, OrgTemplateView, OrgProjectView, SystemMenuView } from '@/components/features/system-setting';
+import { User, Users, Landmark, Settings, FileText, Component, Box, Activity, Share2, FileCode, FolderTree, History, Menu } from 'lucide-react';
 
 /** 系统-三级子菜单 */
 const SYSTEM_THIRD_ITEMS = [
   { id: 'system-user', label: '用户', icon: User },
   { id: 'system-usergroup', label: '用户组', icon: Users },
   { id: 'system-organization', label: '组织与项目', icon: Landmark },
+  { id: 'system-menu', label: '菜单管理', icon: FolderTree },
   { id: 'system-parameter', label: '系统参数', icon: Settings },
-  { id: 'system-log', label: '操作日志', icon: History },
+  { id: 'system-log', label: '审计日志', icon: History },
 ];
 
 /** 组织-三级子菜单（与参考项目 organization 下 children 一致：member、usergroup、project、serviceIntegration、template、taskCenter、log） */
@@ -28,7 +29,7 @@ const ORGANIZATION_THIRD_ITEMS = [
   { id: 'org-serviceIntegration', label: '服务集成', icon: Share2 },
   { id: 'org-template', label: '模板管理', icon: FileCode },
   { id: 'org-taskCenter', label: '任务中心', icon: Activity },
-  { id: 'org-log', label: '成员日志', icon: FileText },
+  { id: 'org-log', label: '组织日志', icon: FileText },
 ];
 
 const DEFAULT_SYSTEM_SUB = 'system-user';
@@ -39,18 +40,20 @@ const SUB_LABELS: Record<string, string> = {
   'system-user': '用户',
   'system-usergroup': '用户组',
   'system-organization': '组织与项目',
+  'system-menu': '菜单管理',
   'system-parameter': '系统参数',
+
   'system-resourcePool': '资源池',
   'system-taskCenter': '任务中心',
   'system-pluginManager': '插件管理',
-  'system-log': '日志',
+  'system-log': '审计日志',
   'org-member': '成员',
   'org-usergroup': '用户组',
   'org-project': '项目',
   'org-serviceIntegration': '服务集成',
   'org-template': '模板管理',
   'org-taskCenter': '任务中心',
-  'org-log': '日志',
+  'org-log': '组织日志',
 };
 
 interface SystemSettingPageProps {
@@ -111,7 +114,10 @@ export function SystemSettingPage({ selectedTopMenu }: SystemSettingPageProps) {
         return <SystemUserGroupView scope="organization" />;
       case 'system-organization':
         return <SystemOrganizationProjectView />;
+      case 'system-menu':
+        return <SystemMenuView />;
       case 'system-parameter':
+
         return <SystemParameterView />;
       case 'system-taskCenter':
         return <SystemTaskCenterView scope="system" />;
@@ -148,55 +154,49 @@ export function SystemSettingPage({ selectedTopMenu }: SystemSettingPageProps) {
     <div className="flex h-full w-full min-w-0 overflow-hidden bg-gray-50">
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <div className="flex-1 overflow-auto p-8 bg-gray-50/20 custom-scrollbar animate-in fade-in duration-300">
-          {/* 头部：图标 + 标题（与拨测管理一级卡片页一致） */}
-          <div className="flex flex-col gap-1 px-1 mb-6">
+          {/* 头部：简洁标题与三级子菜单 */}
+          <div className="flex flex-col gap-4 mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-100 ring-4 ring-blue-50 shrink-0">
-                <Sliders className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-100 shrink-0">
+                <Sliders className="w-4 h-4" />
               </div>
-              <div>
-                <h2 className="text-2xl font-black tracking-tight text-gray-900">
-                  {selectedTopMenu === 'system' ? '系统设置' : '组织管理'}
-                </h2>
-                <p className="text-sm text-gray-500 mt-0.5">管理系统核心配置、权限与资源</p>
-              </div>
+              <h2 className="text-xl font-bold tracking-tight text-gray-900">
+                {selectedTopMenu === 'system' ? '系统设置' : '组织管理'}
+              </h2>
             </div>
+
+            {/* 三级子菜单 */}
+            {thirdLevelItems.length > 1 && (
+              <div className="border-b border-gray-200">
+                <nav className="flex gap-6" aria-label="子菜单">
+                  {thirdLevelItems.map((item) => {
+                    const isActive = selectedSub === item.id;
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSubId(item.id)}
+                        className={cn(
+                          'pb-2.5 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-1.5',
+                          isActive
+                            ? 'text-primary border-primary font-semibold'
+                            : 'text-gray-600 border-transparent hover:text-gray-900'
+                        )}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+            )}
           </div>
 
-          {/* 三级子菜单：当子项多于 1 个时，显示为顶部 Tab（与拨测管理一致） */}
-          {thirdLevelItems.length > 1 && (
-            <div className="border-b border-gray-200 mb-4">
-              <nav className="flex gap-6" aria-label="子菜单">
-                {thirdLevelItems.map((item) => {
-                  const isActive = selectedSub === item.id;
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setSubId(item.id)}
-                      className={cn(
-                        'pb-3 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-2',
-                        isActive
-                          ? 'text-primary border-primary'
-                          : 'text-gray-600 border-transparent hover:text-gray-900'
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          )}
-
-          {/* 一级卡片：仅此一层卡片包裹子视图内容 */}
-          <Card className="border-none shadow-[0_30px_60px_rgba(0,0,0,0.04)] rounded-[2rem] bg-white ring-1 ring-gray-100 overflow-hidden">
+          {/* 内容卡片：去除内部重复标题，纯粹展示功能内容 */}
+          <Card className="border-none shadow-[0_10px_30px_rgba(0,0,0,0.03)] rounded-2xl bg-white ring-1 ring-gray-100 overflow-hidden">
             <CardContent className="p-6">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-              </div>
               {renderContent()}
             </CardContent>
           </Card>

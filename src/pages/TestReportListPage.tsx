@@ -257,7 +257,7 @@ export function TestReportListPage({ onViewReport: propOnViewReport, isSubPage =
         return {
           id: report.reportId,
           name: report.reportName,
-          createTime: formatTimestamp(report.createTime),
+          createdAt: formatTimestamp(report.createdAt),
           executor: executorName,
           totalTests: report.totalTests || 0,
           successTests: report.successTests || 0,
@@ -291,7 +291,7 @@ export function TestReportListPage({ onViewReport: propOnViewReport, isSubPage =
           summary: report.summary,
           environmentId: report.environmentId,
           environmentName: report.environmentName,
-          updateTime: report.updateTime,
+          updatedAt: report.updatedAt,
         };
       });
 
@@ -936,7 +936,7 @@ export function TestReportListPage({ onViewReport: propOnViewReport, isSubPage =
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        创建于 {report.createTime}
+                        创建于 {report.createdAt}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 text-gray-300 font-mono">

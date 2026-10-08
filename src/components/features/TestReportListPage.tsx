@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 interface TestReport {
   id: string;
   name: string;
-  createTime: string;
+  createdAt: string;
   executor: string;
   totalTests: number;
   successTests: number;
@@ -57,7 +57,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-03-001',
       name: '电商平台完整功能测试',
-      createTime: '2024-12-03 15:30:25',
+      createdAt: '2024-12-03 15:30:25',
       executor: '张三',
       totalTests: 1247,
       successTests: 1151,
@@ -71,7 +71,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-03-002',
       name: '用户认证模块测试',
-      createTime: '2024-12-03 14:15:10',
+      createdAt: '2024-12-03 14:15:10',
       executor: '李四',
       totalTests: 456,
       successTests: 448,
@@ -85,7 +85,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-03-003',
       name: '订单支付流程测试',
-      createTime: '2024-12-03 13:45:00',
+      createdAt: '2024-12-03 13:45:00',
       executor: '王五',
       totalTests: 789,
       successTests: 701,
@@ -99,7 +99,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-03-004',
       name: '商品管理系统测试',
-      createTime: '2024-12-03 16:00:00',
+      createdAt: '2024-12-03 16:00:00',
       executor: '赵六',
       totalTests: 534,
       successTests: 0,
@@ -113,7 +113,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-02-001',
       name: '移动端适配测试',
-      createTime: '2024-12-02 18:20:30',
+      createdAt: '2024-12-02 18:20:30',
       executor: '孙七',
       totalTests: 623,
       successTests: 615,
@@ -127,7 +127,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-02-002',
       name: '数据库性能压测',
-      createTime: '2024-12-02 16:10:15',
+      createdAt: '2024-12-02 16:10:15',
       executor: '周八',
       totalTests: 892,
       successTests: 734,
@@ -141,7 +141,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-02-003',
       name: 'API接口兼容性测试',
-      createTime: '2024-12-02 14:05:45',
+      createdAt: '2024-12-02 14:05:45',
       executor: '吴九',
       totalTests: 1023,
       successTests: 0,
@@ -155,7 +155,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-01-001',
       name: '用户体验流程测试',
-      createTime: '2024-12-01 17:30:00',
+      createdAt: '2024-12-01 17:30:00',
       executor: '郑十',
       totalTests: 345,
       successTests: 338,
@@ -169,7 +169,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     {
       id: 'RPT-2024-12-01-002',
       name: '第三方集成测试',
-      createTime: '2024-12-01 15:20:30',
+      createdAt: '2024-12-01 15:20:30',
       executor: '张三',
       totalTests: 567,
       successTests: 512,
@@ -191,7 +191,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
     
     let matchDate = true;
     if (dateRange !== 'all') {
-      const reportDate = new Date(report.createTime);
+      const reportDate = new Date(report.createdAt);
       const today = new Date();
       const diffDays = Math.floor((today.getTime() - reportDate.getTime()) / (1000 * 60 * 60 * 24));
       
@@ -381,7 +381,7 @@ export function TestReportListPage({ onViewReport }: TestReportListPageProps) {
                       <div className="text-xs text-gray-500 mb-1">创建时间</div>
                       <div className="text-sm text-gray-900 flex items-center gap-1">
                         <Calendar className="w-3 h-3 text-gray-400" />
-                        {report.createTime}
+                        {report.createdAt}
                       </div>
                     </div>
                     <div>

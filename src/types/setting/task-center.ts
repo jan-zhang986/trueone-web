@@ -33,7 +33,7 @@ export interface TaskCenterTaskItem {
   triggerMode?: ExecuteTriggerMode;
   projectId?: string;
   organizationId?: string;
-  createTime?: number;
+  createdAt?: number;
   createUser?: string;
   startTime?: number;
   endTime?: number;
@@ -61,7 +61,7 @@ export interface TaskCenterSystemTaskItem {
   enable: boolean;
   createUserId?: string;
   createUserName?: string;
-  createTime?: number;
+  createdAt?: number;
   [key: string]: unknown;
 }
 

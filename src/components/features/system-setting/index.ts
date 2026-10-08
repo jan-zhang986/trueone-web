@@ -12,5 +12,7 @@ export { OrgLogView } from './OrgLogView';
 export { OrgTemplateView } from './OrgTemplateView';
 export { ProjectTemplateView } from './ProjectTemplateView';
 export { OrgProjectView } from './OrgProjectView';
+export { SystemMenuView } from './SystemMenuView';
 export { MemberDrawer } from './MemberDrawer';
 export { ProjectDrawer } from './ProjectDrawer';
+

@@ -449,7 +449,7 @@ export function RequirementQualityPage() {
                       <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400">
                         <span className="max-w-[60px] truncate">{item.ownerId || '未设置'}</span>
                         <span className="h-1 w-1 rounded-full bg-slate-200" />
-                        <span>{formatTime(item.updateTime)}</span>
+                        <span>{formatTime(item.updatedAt)}</span>
                       </div>
                     </div>
                   </Card>
@@ -614,7 +614,7 @@ export function RequirementQualityPage() {
                   <div className="flex justify-between gap-4"><span className="text-slate-400">负责人</span><span className="font-bold text-slate-700">{selected.ownerId || '未设置'}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-slate-400">迭代/版本</span><span className="font-bold text-slate-700">{selected.iterationId || '未设置'}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-slate-400">外部ID</span><span className="font-bold text-slate-700">{selected.sourceRequirementId || selected.requirementId}</span></div>
-                  <div className="flex justify-between gap-4"><span className="text-slate-400">更新时间</span><span className="font-bold text-slate-700">{formatTime(selected.updateTime)}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-slate-400">更新时间</span><span className="font-bold text-slate-700">{formatTime(selected.updatedAt)}</span></div>
                   {selected.url ? (
                     <a className="block truncate rounded-2xl bg-slate-50 px-4 py-3 text-blue-600 hover:underline" href={selected.url} target="_blank" rel="noreferrer">{selected.url}</a>
                   ) : null}

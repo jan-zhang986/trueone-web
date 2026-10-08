@@ -67,8 +67,8 @@ export interface Environment {
   xxljobInfo?: XxlJobInfo;
   mqInfo?: MqInfo;
   dubboInfo?: DubboInfo;
-  createTime?: string;
-  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
   createUser?: string;
   updateUser?: string;
 }

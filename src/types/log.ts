@@ -41,7 +41,7 @@ export interface OperationLog {
   module: string;
   type: OperationType;
   content: string;
-  createTime: string;
+  createdAt: string;
   sourceId?: string;
   details?: Record<string, any>;
 }

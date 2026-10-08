@@ -348,12 +348,6 @@ export function SystemTaskCenterView({
     <div className="space-y-6">
       <div>
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">
-              {fixedTab === 'execute' ? '用例任务' : fixedTab === 'detail' ? '用例任务详情' : fixedTab === 'schedule' ? '系统后台任务' : '任务中心'}
-            </h3>
-            <p className="text-sm text-muted-foreground">{scope === 'system' ? '系统任务管理' : '组织任务管理'}</p>
-          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -428,7 +422,7 @@ export function SystemTaskCenterView({
                     <TableCell>{getResultLabel(row.result)}</TableCell>
                     <TableCell>{row.triggerMode === 'SCHEDULE' ? '定时' : row.triggerMode === 'MANUAL' ? '手动' : row.triggerMode ?? '-'}</TableCell>
                     <TableCell>{row.createUserName ?? row.createUser ?? '-'}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatTime(row.createTime)}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatTime(row.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       {['RUNNING', 'RERUNNING'].includes(row.status) && (
                         <Button variant="outline" size="sm" onClick={() => setConfirmAction({ type: 'stop', item: row })}>
@@ -597,7 +591,7 @@ export function SystemTaskCenterView({
                     <TableCell>
                       <Switch checked={row.enable} onCheckedChange={(v) => handleScheduleSwitch(row, v)} />
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{formatTime(row.createTime)}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatTime(row.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="destructive" size="sm" onClick={() => setConfirmAction({ type: 'deleteSchedule', item: row })}>
                         <Trash2 className="h-3 w-3 mr-1" /> 删除

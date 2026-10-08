@@ -625,7 +625,7 @@ export function TestPlanReportListPage({ onViewReport }: TestPlanReportListPageP
                       {row.triggerMode === 'MANUAL' ? '手动' : row.triggerMode === 'SCHEDULE' ? '定时' : row.triggerMode === 'BATCH' ? '批量执行' : row.triggerMode === 'API' ? '接口调用' : row.triggerMode ?? '-'}
                     </TableCell>
                     <TableCell className="text-gray-600">{row.createUserName ?? row.createUser ?? '-'}</TableCell>
-                    <TableCell className="text-gray-600 text-sm">{formatTimestampBeijing(row.createTime)}</TableCell>
+                    <TableCell className="text-gray-600 text-sm">{formatTimestampBeijing(row.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-0.5">
                         <Button

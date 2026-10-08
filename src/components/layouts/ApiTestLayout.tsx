@@ -25,6 +25,9 @@ import { AgentSettingsPage } from '@/pages/AgentSettingsPage';
 import { AgentListPage } from '@/pages/AgentListPage';
 import { WelcomePage } from '@/pages/WelcomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { IframeViewer } from '@/components/common/IframeViewer';
+import { getCachedUserMenuByKey } from '@/services/setting/menu';
+
 
 /** 一级菜单与规范路径的映射，避免重复点击或从其他 path 切换时路径被拼接/错乱 */
 const MENU_CANONICAL_PATH: Record<string, string> = {
@@ -420,6 +423,11 @@ export function ApiTestLayout() {
     return 'metadata';
   };
 
+  // 当处于 welcome 欢迎首页时，全屏沉浸式呈现极客门户（无白边、无侧边栏干扰）
+  if (selectedMenuItem === 'welcome') {
+    return <WelcomePage onEnterWorkspace={() => handleMenuItemSelect('quality-workspace')} />;
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       <TopNavigation
@@ -497,9 +505,14 @@ export function ApiTestLayout() {
           <div className="flex-1 w-full h-full relative overflow-hidden">
             <AgentSettingsPage />
           </div>
-        ) : (
-          <NotFoundPage />
-        )}
+        ) : (() => {
+          const dynamicMenu = getCachedUserMenuByKey(selectedMenuItem);
+          if (dynamicMenu && dynamicMenu.menuType === 'IFRAME' && dynamicMenu.path) {
+            return <IframeViewer url={dynamicMenu.path} title={dynamicMenu.title} />;
+          }
+          return <NotFoundPage />;
+        })()}
+
 
         {/* AI助手 - 暂时隐藏 */}
         {/* <AIAssistant currentContext={getCurrentContext()} /> */}

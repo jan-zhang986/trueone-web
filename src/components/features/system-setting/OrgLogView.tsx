@@ -163,16 +163,8 @@ export function OrgLogView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">操作日志</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {organizationId
-              ? '查看组织操作记录和审计日志'
-              : '请先在顶部导航选择组织，再查询该组织的操作日志'}
-          </p>
-        </div>
         <div className="space-y-4">
           {!organizationId && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 px-4 py-3 text-sm">
@@ -287,7 +279,7 @@ export function OrgLogView() {
             ) : (
               list.map((row, index) => (
                 <TableRow key={row.id || `log-${index}`} className="group transition-colors [&_td]:transition-colors [&_td]:group-hover:bg-[#f2f3f5] border-b border-gray-200 h-11">
-                  <TableCell className="whitespace-nowrap">{formatLogTime(row.createTime)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{formatLogTime(row.createdAt)}</TableCell>
                   <TableCell>{row.userName ?? '-'}</TableCell>
                   <TableCell>{row.type ?? '-'}</TableCell>
                   <TableCell>{row.content ?? '-'}</TableCell>

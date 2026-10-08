@@ -64,8 +64,8 @@ interface BugItem {
     platform?: string;
     createUser?: string;
     createUserName?: string;
-    createTime?: number;
-    updateTime?: number;
+    createdAt?: number;
+    updatedAt?: number;
     tags?: string[];
     customFields?: BugCustomField[];
     feishuStoryId?: string;
@@ -824,7 +824,7 @@ export function BugManagementPage() {
                                         <TableCell>{bug.relationCaseCount ?? '-'}</TableCell>
                                         <TableCell>{bug.platform || '-'}</TableCell>
                                         <TableCell className="text-gray-600 text-sm">
-                                            {bug.createTime ? new Date(bug.createTime).toLocaleString('zh-CN', {
+                                            {bug.createdAt ? new Date(bug.createdAt).toLocaleString('zh-CN', {
                                                 year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
                                             }) : '-'}
                                         </TableCell>

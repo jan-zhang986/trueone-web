@@ -166,7 +166,7 @@ export function CaseReviewList({
   const [appliedFilterConditions, setAppliedFilterConditions] = useState<Array<{ field: string; op: string; value: string }>>([]);
 
   /** 表头排序：与 spotter reviewTable 一致，后端 sort 为 Map<字段名(camelCase), 'asc'|'desc'> */
-  const [tableSort, setTableSort] = useState<{ field: 'num' | 'name' | 'createTime'; order: 'asc' | 'desc' } | null>(null);
+  const [tableSort, setTableSort] = useState<{ field: 'num' | 'name' | 'createdAt'; order: 'asc' | 'desc' } | null>(null);
   /** 表头筛选：后端 filter 为 Map<string, string[]>，支持 status、reviewPassRule、createUser、reviewers */
   const [tableFilter, setTableFilter] = useState<Record<string, string[]>>({});
   /** 评审人筛选项（具有评审权限的用户），打开 Popover 时加载 */
@@ -230,13 +230,13 @@ export function CaseReviewList({
     { value: 'tags', label: '标签' },
     { value: 'description', label: '描述' },
     { value: 'cycle', label: '评审周期' },
-    { value: 'createTime', label: '创建时间' },
+    { value: 'createdAt', label: '创建时间' },
   ], []);
   const [tableSettingsOpen, setTableSettingsOpen] = useState(false);
   const REVIEW_TABLE_COLUMNS_KEY = 'case-review-table-visible-columns';
   const defaultVisibleColumns: Record<string, boolean> = {
     num: true, name: true, caseCount: true, status: true, passRate: true, reviewPassRule: true,
-    reviewers: true, createUserName: true, moduleName: true, tags: true, description: true, cycle: true, createTime: true,
+    reviewers: true, createUserName: true, moduleName: true, tags: true, description: true, cycle: true, createdAt: true,
   };
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     try {
@@ -366,7 +366,7 @@ export function CaseReviewList({
   useEffect(() => { fetchReviewList(); }, [currentPage, pageSize, searchKeyword, selectedModuleId, showType, offspringIds, tableSort, tableFilter]);
 
   /** 表头排序切换：asc -> desc -> 取消，与 spotter/测试计划一致 */
-  const toggleSort = (field: 'num' | 'name' | 'createTime') => {
+  const toggleSort = (field: 'num' | 'name' | 'createdAt') => {
     setTableSort((prev) => {
       if (prev?.field !== field) return { field, order: 'asc' as const };
       if (prev.order === 'asc') return { field, order: 'desc' as const };
@@ -1201,17 +1201,17 @@ export function CaseReviewList({
                       {visibleColumns.tags && <TableHead className="w-[170px] px-4 py-2.5 text-sm font-medium text-gray-600">标签</TableHead>}
                       {visibleColumns.description && <TableHead className="w-[150px] px-4 py-2.5 text-sm font-medium text-gray-600">描述</TableHead>}
                       {visibleColumns.cycle && <TableHead className="w-[280px] px-4 py-2.5 text-sm font-medium text-gray-600">评审周期</TableHead>}
-                      {visibleColumns.createTime && (
+                      {visibleColumns.createdAt && (
                         <TableHead className="w-[180px] px-4 py-2.5 text-sm font-medium text-gray-600">
                           <button
                             type="button"
                             className="flex items-center gap-1 hover:text-gray-900 font-medium w-full text-left"
-                            onClick={() => toggleSort('createTime')}
+                            onClick={() => toggleSort('createdAt')}
                           >
                             创建时间
-                            {tableSort?.field === 'createTime' && tableSort.order === 'asc' ? (
+                            {tableSort?.field === 'createdAt' && tableSort.order === 'asc' ? (
                               <ArrowUp className="w-3.5 h-3.5 text-[#165DFF]" />
-                            ) : tableSort?.field === 'createTime' && tableSort.order === 'desc' ? (
+                            ) : tableSort?.field === 'createdAt' && tableSort.order === 'desc' ? (
                               <ArrowDown className="w-3.5 h-3.5 text-[#165DFF]" />
                             ) : (
                               <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
@@ -1332,9 +1332,9 @@ export function CaseReviewList({
                               {cycleStr}
                             </TableCell>
                           )}
-                          {visibleColumns.createTime && (
+                          {visibleColumns.createdAt && (
                             <TableCell className="px-4 py-2.5 text-sm text-gray-500 tabular-nums">
-                              {item.createTime ? new Date(item.createTime as string | number).toLocaleString('zh-CN') : '-'}
+                              {item.createdAt ? new Date(item.createdAt as string | number).toLocaleString('zh-CN') : '-'}
                             </TableCell>
                           )}
                           <TableCell className="px-4 py-2.5 text-right pr-4 sticky right-0 bg-white shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] z-10">
@@ -1865,7 +1865,7 @@ export function CaseReviewList({
                   { key: 'tags', label: '标签' },
                   { key: 'description', label: '描述' },
                   { key: 'cycle', label: '评审周期' },
-                  { key: 'createTime', label: '创建时间' },
+                  { key: 'createdAt', label: '创建时间' },
                 ].map(({ key, label }) => (
                   <div key={key} className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-2 min-w-0">

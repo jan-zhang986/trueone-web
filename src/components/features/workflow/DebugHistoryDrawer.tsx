@@ -229,8 +229,8 @@ export const DebugHistoryDrawer: React.FC<DebugHistoryDrawerProps> = ({
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="text-xs text-gray-500">
-                            {(item.startTime || item.createTime)
-                              ? new Date(item.startTime || item.createTime || 0).toLocaleString('zh-CN')
+                            {(item.startTime || item.createdAt)
+                              ? new Date(item.startTime || item.createdAt || 0).toLocaleString('zh-CN')
                               : '时间未知'}
                           </div>
                           {(item.duration || item.durationMs) && (

@@ -13,8 +13,8 @@ export interface ProjectBasicInfo {
   organizationId: string;
   name: string;
   description: string;
-  createTime: string;
-  updateTime: number;
+  createdAt: string;
+  updatedAt: number;
   updateUser: string;
   createUser: string;
   deleteTime?: number;
@@ -36,8 +36,8 @@ export interface ProjectAdmin {
   email: string;
   password?: string;
   enable: boolean;
-  createTime: string;
-  updateTime: number;
+  createdAt: string;
+  updatedAt: number;
   language: string;
   lastOrganizationId: string;
   phone: string;
@@ -70,8 +70,8 @@ export interface ProjectMemberItem {
   email: string;
   password?: string;
   enable: boolean;
-  createTime: number | string;
-  updateTime: number | string;
+  createdAt: number | string;
+  updatedAt: number | string;
   language: string;
   lastOrganizationId: string;
   phone: string;
@@ -91,8 +91,8 @@ export interface ProjectUserGroup {
   description: string;
   internal: boolean;
   type: string;
-  createTime: number | string;
-  updateTime: number | string;
+  createdAt: number | string;
+  updatedAt: number | string;
   createUser: string;
   scopeId: string;
 }
@@ -121,7 +121,7 @@ export interface ProjectVersion {
   publishTime?: number;
   latest?: boolean;
   projectId: string;
-  createTime?: number;
+  createdAt?: number;
   createUser?: string;
 }
 
@@ -139,8 +139,8 @@ export interface EnvironmentListItem {
   name: string;
   id: string;
   description: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   createUser?: string;
   updateUser?: string;
   pos?: number;
@@ -246,7 +246,7 @@ export interface ProjectFileItem {
   tags: string[];
   description: string;
   updateUser: string;
-  updateTime: number;
+  updatedAt: number;
   previewSrc?: string;
   size: number;
   enable: boolean;
@@ -258,7 +258,7 @@ export interface ProjectFileItem {
   moduleName?: string;
   moduleId?: string;
   createUser?: string;
-  createTime?: number;
+  createdAt?: number;
 }
 
 export interface FileUploadParams {
@@ -336,8 +336,8 @@ export interface CommonScriptItem {
   description: string;
   type: ScriptLanguage;
   status: string;
-  createTime: number;
-  updateTime: number;
+  createdAt: number;
+  updatedAt: number;
   createUser: string;
   updateUser: string;
   createUserName: string;
@@ -373,7 +373,7 @@ export interface ScriptTestParams {
 export interface ScriptChangeHistory {
   id: string;
   projectId: string;
-  createTime: string;
+  createdAt: string;
   createUser: string;
   sourceId: string;
   type: string;
@@ -400,9 +400,9 @@ export interface Robot {
   appKey?: string;
   appSecret?: string;
   createUser: string;
-  createTime: number;
+  createdAt: number;
   updateUser?: string;
-  updateTime?: number;
+  updatedAt?: number;
 }
 
 export interface RobotCreateParams {

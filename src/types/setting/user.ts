@@ -8,8 +8,8 @@ export interface UserRoleListItem {
   description?: string;
   internal?: boolean;
   type?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   createUser?: string;
   scopeId?: string;
 }
@@ -19,8 +19,8 @@ export interface OrganizationListItem {
   num?: number;
   name: string;
   description?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   createUser?: string;
   updateUser?: string;
   deleted?: boolean;
@@ -35,8 +35,8 @@ export interface UserListItem {
   email: string;
   password?: string;
   enable: boolean;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   language?: string;
   lastOrganizationId?: string;
   phone?: string;

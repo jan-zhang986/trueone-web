@@ -468,21 +468,10 @@ export function SystemOrganizationProjectView() {
           </div>
           {tab === 'organization' ? (
             <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-block">
-                      <Button disabled variant="outline" size="sm" className="h-9 px-4 rounded-lg text-gray-400">
-                        <Plus className="w-3.5 h-3.5 mr-1.5" />
-                        创建组织
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="rounded-lg border shadow-md text-xs">
-                    内置版本暂不支持直接创建组织
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button onClick={openOrgCreate} size="sm" className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                创建组织
+              </Button>
               <Button variant="outline" size="sm" className="h-9 px-3 rounded-lg" onClick={() => loadOrgList()} disabled={orgLoading} aria-label="刷新组织列表">
                 <RefreshCw className={cn("w-4 h-4", orgLoading && "animate-spin")} />
               </Button>
@@ -558,8 +547,8 @@ export function SystemOrganizationProjectView() {
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate text-muted-foreground" title={row.description}>{row.description || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{row.createUser ?? '-'}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.createTime)}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.updateTime)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.createdAt)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.updatedAt)}</TableCell>
                         <TableCell className="text-right pr-4 space-x-1">
                         {row.deleted ? (
                           <Button variant="ghost" size="sm" onClick={() => setConfirmAction({ type: 'revokeOrg', item: row })} className="h-8 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[11px]">
@@ -648,8 +637,8 @@ export function SystemOrganizationProjectView() {
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate text-muted-foreground" title={row.description}>{row.description ?? '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{row.createUser ?? '-'}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.createTime)}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.updateTime)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.createdAt)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatTime(row.updatedAt)}</TableCell>
                         <TableCell className="text-right pr-4 space-x-1">
                         {row.deleted ? (
                           <Button variant="ghost" size="sm" onClick={() => setConfirmAction({ type: 'revokeProject', item: row })} className="h-8 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold text-[11px]">

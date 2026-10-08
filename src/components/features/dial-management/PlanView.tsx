@@ -268,8 +268,8 @@ export function PlanView() {
                     <div>openId : {String(alarmFeatures?.openId ?? '-')}</div>
                     <div>通知人 : {String(alarmFeatures?.userName ?? '-')}</div>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">{formatTime(row.createTime ?? row.createdAt)}</TableCell>
-                  <TableCell className="text-sm text-gray-600">{formatTime(row.updateTime ?? row.updatedAt)}</TableCell>
+                  <TableCell className="text-sm text-gray-600">{formatTime(row.createdAt ?? row.createdAt)}</TableCell>
+                  <TableCell className="text-sm text-gray-600">{formatTime(row.updatedAt ?? row.updatedAt)}</TableCell>
                 </TableRow>
                 );
               })

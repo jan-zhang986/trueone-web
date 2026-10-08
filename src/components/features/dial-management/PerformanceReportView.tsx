@@ -212,7 +212,7 @@ export function PerformanceReportView() {
     return undefined;
   };
 
-  const createTimeKeys = ['createTime', 'create_time', 'createdAt', 'created_at', 'gmtCreate', 'gmt_create', 'ctime'];
+  const createTimeKeys = ['createdAt', 'create_time', 'createdAt', 'created_at', 'gmtCreate', 'gmt_create', 'ctime'];
   const taskIdKeys = ['task_id', 'taskId', 'id'];
   /** 与原项目一致：performance_score / accessibility_score / best_practices_score / seo_score（0-1 小数，展示时 *100） */
   const perfScoreKeys = ['performance_score', 'performanceScore', 'performance'];

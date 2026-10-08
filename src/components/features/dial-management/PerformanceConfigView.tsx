@@ -56,7 +56,7 @@ function formatConfigTime(v: unknown): string {
 
 /** 获取配置行的创建时间（兼容多种字段名） */
 function getCreateTime(row: Record<string, unknown>): string {
-  const v = row.createTime ?? row.create_time ?? row.createdAt ?? row.created_at ?? row.gmtCreate ?? row.gmt_create ?? row.ctime;
+  const v = row.createdAt ?? row.create_time ?? row.createdAt ?? row.created_at ?? row.gmtCreate ?? row.gmt_create ?? row.ctime;
   return formatConfigTime(v);
 }
 
@@ -599,7 +599,7 @@ export function PerformanceConfigView() {
         is_active: form.is_active,
         open_id: form.open_id.trim(),
       };
-      if (editRow.createTime !== undefined) payload.createTime = editRow.createTime;
+      if (editRow.createdAt !== undefined) payload.createdAt = editRow.createdAt;
       if (editRow.create_time !== undefined) payload.create_time = editRow.create_time;
       if (editRow.updatedAt !== undefined) payload.updatedAt = editRow.updatedAt;
       if (editRow.updated_at !== undefined) payload.updated_at = editRow.updated_at;

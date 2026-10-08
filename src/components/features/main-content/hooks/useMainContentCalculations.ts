@@ -197,8 +197,8 @@ export function useMainContentCalculations(
         description: def.description,
         creator: def.createUser,
         version: `v${def.version}`,
-        createdAt: new Date(def.createTime).toLocaleString('zh-CN'),
-        updatedAt: new Date(def.updateTime).toLocaleString('zh-CN'),
+        createdAt: new Date(def.createdAt).toLocaleString('zh-CN'),
+        updatedAt: new Date(def.updatedAt).toLocaleString('zh-CN'),
       };
     });
   }, [definitions, filteredDefinitions, moduleTree, hasActiveSearch]);

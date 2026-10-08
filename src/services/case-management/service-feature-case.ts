@@ -899,8 +899,8 @@ export interface CaseRepositoryItem {
   creator?: string;
   createUser?: string;
   updateUser?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   branches?: string[];
   caseCount?: number;
 }

@@ -490,7 +490,7 @@ export function OrgMemberView() {
                       title={row.enable ? '已启用' : '已禁用'}
                     />
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{formatTime(row.createTime)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatTime(row.createdAt)}</TableCell>
                   <TableCell className="text-right pr-4 space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(row)} className="h-8 rounded-lg text-blue-600 hover:bg-blue-50 font-bold text-[11px]">
                       <Pencil className="h-3.5 w-3.5 mr-1" /> 编辑

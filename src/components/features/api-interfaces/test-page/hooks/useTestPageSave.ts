@@ -108,8 +108,8 @@ export function useTestPageSave({
           tags: typeof result === 'string' ? editor.state.tags : (result as MetadataDefinition).tags || editor.state.tags || [],
           requestConfig: typeof result === 'string' ? requestConfig : (result as MetadataDefinition).requestConfig || requestConfig,
           createUser: typeof result === 'string' ? '' : (result as MetadataDefinition).createUser || '',
-          createTime: typeof result === 'string' ? Date.now() : (result as MetadataDefinition).createTime || Date.now(),
-          updateTime: typeof result === 'string' ? Date.now() : (result as MetadataDefinition).updateTime || Date.now(),
+          createdAt: typeof result === 'string' ? Date.now() : (result as MetadataDefinition).createdAt || Date.now(),
+          updatedAt: typeof result === 'string' ? Date.now() : (result as MetadataDefinition).updatedAt || Date.now(),
         };
         editor.loadFromDefinition(updatedDefinition);
         loadedDefinitionIdRef.current = newDefinitionId;

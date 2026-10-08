@@ -30,8 +30,8 @@ export interface OrgProjectTableItem {
   organizationId?: string;
   organizationName?: string;
   num?: number;
-  updateTime?: number;
-  createTime?: number;
+  updatedAt?: number;
+  createdAt?: number;
   memberCount?: number;
   projectCount?: number;
   createUser?: string;

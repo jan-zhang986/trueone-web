@@ -21,8 +21,8 @@ export interface CaseItem {
   lastExecuteResult?: string;
   tags?: string[] | any;
   customFields?: any[];
-  createTime?: number | string;
-  updateTime?: number | string;
+  createdAt?: number | string;
+  updatedAt?: number | string;
   deleteTime?: number | string;
   createUser?: string;
   updateUser?: string;
@@ -82,7 +82,7 @@ export interface CreateOrUpdateCaseRequest {
   [key: string]: any;
 }
 
-export type CaseRealizationType = 'MANUAL' | 'API' | 'UI_AUTOMATION' | 'FLOW' | 'PERF';
+export type CaseRealizationType = 'MANUAL' | 'API' | 'UI_AUTOMATION' | 'FLOW' | 'PERF' | 'CODE';
 
 export interface CaseRealizationSummary {
   caseId: string;
@@ -93,6 +93,7 @@ export interface CaseRealizationSummary {
   uiAutomationCount?: number;
   perfCount?: number;
   flowCount?: number;
+  codeCount?: number;
   automationCount?: number;
   enabledCount?: number;
   readyCount?: number;
@@ -115,7 +116,15 @@ export interface CaseRealization {
   lastRunTime?: number | string;
   lastDurationMs?: number;
   workflowDefinition?: Record<string, any> | null;
+  // CODE 原生测试代码实现载体字段
+  gitRepo?: string;
+  gitBranch?: string;
+  gitFilePath?: string;
+  functionName?: string;
+  scriptLanguage?: 'python' | 'java' | 'go' | 'typescript';
+  diffCoveragePercent?: number;
 }
+
 
 /** 用例详情（API 返回） */
 export interface CaseDetail {
@@ -183,8 +192,8 @@ export interface ReviewItem {
   reviewers?: string[] | { userName: string }[];
   tags?: string[];
   description?: string;
-  createTime?: number | string;
-  updateTime?: number | string;
+  createdAt?: number | string;
+  updatedAt?: number | string;
   createUser?: string;
   updateUser?: string;
   createUserName?: string;

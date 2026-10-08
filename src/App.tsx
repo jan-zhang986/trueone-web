@@ -22,6 +22,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const tokenExists = hasToken();
   const location = useLocation();
 
+  // 门户首页为公开展示页面：访问 / 或 /welcome（且无内部业务菜单参数时）直接免鉴权开放展示
+  const searchParams = new URLSearchParams(location.search);
+  const menu = searchParams.get('menu');
+  const isPortal = location.pathname === '/welcome' || (location.pathname === '/' && (!menu || menu === 'welcome'));
+  if (isPortal) {
+    return <>{children}</>;
+  }
+
   // 开发模式：默认免登录；见 utils/devAuthBypass.ts
   const bypassAuth = isDevAuthBypass();
 

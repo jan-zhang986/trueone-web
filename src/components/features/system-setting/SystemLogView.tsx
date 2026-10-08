@@ -2,7 +2,7 @@
  * 系统设置-日志 列表与筛选（迁移自 AegisOne 系统设置-日志）
  */
 import { useState, useEffect, useCallback } from 'react';
-import { Search, RotateCcw, History } from 'lucide-react';
+import { Search, RotateCcw, ShieldCheck, Building2, FolderKanban } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { systemLogService } from '@/services/setting/log';
-import type { LogItem } from '@/types/setting/log';
+import type { LogItem, OptionsItem } from '@/types/setting/log';
 import { cn } from '@/utils/cn';
 
 const DEFAULT_PAGE_SIZE = 15;
@@ -101,11 +101,28 @@ export function SystemLogView() {
   const [operUser, setOperUser] = useState('');
   const [type, setType] = useState('');
   const [content, setContent] = useState('');
+  const [orgList, setOrgList] = useState<OptionsItem[]>([]);
+  const [projList, setProjList] = useState<OptionsItem[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('all');
+  const [selectedProjId, setSelectedProjId] = useState<string>('all');
   const [list, setList] = useState<LogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(false);
+
+  // 初始化加载组织与项目选项列表
+  useEffect(() => {
+    systemLogService
+      .getSystemLogOptions()
+      .then((res) => {
+        setOrgList(res.organizationList || []);
+        setProjList(res.projectList || []);
+      })
+      .catch(() => {
+        // 静默容错
+      });
+  }, []);
 
   const loadList = useCallback(async (pageNum: number = page) => {
     setLoading(true);
@@ -118,7 +135,9 @@ export function SystemLogView() {
         content: content.trim() || undefined,
         startTime,
         endTime: endTime + 1000, // 含结束秒
-        level: 'SYSTEM',
+        level: selectedProjId !== 'all' ? 'PROJECT' : selectedOrgId !== 'all' ? 'ORGANIZATION' : 'SYSTEM',
+        organizationIds: selectedOrgId !== 'all' ? [selectedOrgId] : undefined,
+        projectIds: selectedProjId !== 'all' ? [selectedProjId] : undefined,
         keyword: '',
         filter: {},
         combine: {},
@@ -134,7 +153,7 @@ export function SystemLogView() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, operUser, type, content, startTime, endTime]);
+  }, [page, pageSize, operUser, type, content, startTime, endTime, selectedOrgId, selectedProjId]);
 
   useEffect(() => {
     loadList(page);
@@ -150,32 +169,70 @@ export function SystemLogView() {
     setOperUser('');
     setType('');
     setContent('');
+    setSelectedOrgId('all');
+    setSelectedProjId('all');
     setPage(1);
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="pb-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-              <History className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">操作日志</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">查看系统操作记录和审计日志</p>
-            </div>
-          </div>
-        </div>
-        <div>
-          {/* 搜索栏：单行紧凑布局 */}
+    <div className="space-y-4">
+      {/* 搜索栏：紧凑布局并支持组织/项目范围检索 */}
           <div
             className={cn(
-              'flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-gray-50/50 p-4',
+              'flex flex-wrap items-end gap-3 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4',
               'focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-200'
             )}
           >
             <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+              {/* 所属组织范围 */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground whitespace-nowrap">所属组织</Label>
+                <Select
+                  value={selectedOrgId}
+                  onValueChange={(val) => {
+                    setSelectedOrgId(val);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-[140px] bg-white border-gray-200 text-sm">
+                    <SelectValue placeholder="全部组织" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部组织</SelectItem>
+                    {orgList.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 所属项目范围 */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground whitespace-nowrap">所属项目</Label>
+                <Select
+                  value={selectedProjId}
+                  onValueChange={(val) => {
+                    setSelectedProjId(val);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-[140px] bg-white border-gray-200 text-sm">
+                    <SelectValue placeholder="全部项目" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部项目</SelectItem>
+                    {projList.map((proj) => (
+                      <SelectItem key={proj.id} value={proj.id}>
+                        {proj.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 操作人 */}
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground whitespace-nowrap">操作人</Label>
                 <Input
@@ -183,13 +240,15 @@ export function SystemLogView() {
                   value={operUser}
                   onChange={(e) => setOperUser(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="h-9 w-[160px] bg-white border-gray-200"
+                  className="h-9 w-[130px] bg-white border-gray-200 text-sm"
                 />
               </div>
+
+              {/* 操作类型 */}
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground whitespace-nowrap">操作类型</Label>
                 <Select value={type || 'all'} onValueChange={(v) => setType(v === 'all' ? '' : v)}>
-                  <SelectTrigger className="h-9 w-[120px] bg-white border-gray-200">
+                  <SelectTrigger className="h-9 w-[110px] bg-white border-gray-200 text-sm">
                     <SelectValue placeholder="全部" />
                   </SelectTrigger>
                   <SelectContent>
@@ -202,6 +261,8 @@ export function SystemLogView() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* 操作内容/模块 */}
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground whitespace-nowrap">操作名称</Label>
                 <Input
@@ -210,15 +271,17 @@ export function SystemLogView() {
                   onChange={(e) => setContent(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   maxLength={255}
-                  className="h-9 w-[180px] bg-white border-gray-200"
+                  className="h-9 w-[150px] bg-white border-gray-200 text-sm"
                 />
               </div>
+
+              {/* 时间范围 */}
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground whitespace-nowrap">时间范围</Label>
                 <div className="flex items-center gap-1.5">
                   <Input
                     type="datetime-local"
-                    className="h-9 w-[170px] text-sm bg-white border-gray-200"
+                    className="h-9 w-[165px] text-xs bg-white border-gray-200"
                     value={new Date(startTime).toISOString().slice(0, 16)}
                     onChange={(e) => {
                       const v = e.target.value ? new Date(e.target.value).getTime() : startTime;
@@ -228,7 +291,7 @@ export function SystemLogView() {
                   <span className="text-muted-foreground text-xs">至</span>
                   <Input
                     type="datetime-local"
-                    className="h-9 w-[170px] text-sm bg-white border-gray-200"
+                    className="h-9 w-[165px] text-xs bg-white border-gray-200"
                     value={new Date(endTime).toISOString().slice(0, 16)}
                     onChange={(e) => {
                       const v = e.target.value ? new Date(e.target.value).getTime() : endTime;
@@ -239,18 +302,16 @@ export function SystemLogView() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button onClick={handleSearch} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4">
+              <Button onClick={handleSearch} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 font-medium">
                 <Search className="h-4 w-4 mr-1.5" />
                 查询
               </Button>
-              <Button variant="outline" size="sm" onClick={handleReset} className="h-9 px-4">
+              <Button variant="outline" size="sm" onClick={handleReset} className="h-9 px-4 font-medium border-gray-200 hover:bg-gray-100">
                 <RotateCcw className="h-4 w-4 mr-1.5" />
                 重置
               </Button>
             </div>
           </div>
-        </div>
-      </div>
 
       <div>
         <div className="p-4 flex flex-col gap-0">
@@ -323,7 +384,7 @@ export function SystemLogView() {
                           </span>
                         </TableCell>
                         <TableCell className="text-muted-foreground whitespace-nowrap text-gray-600">
-                          {formatLogTime(row.createTime)}
+                          {formatLogTime(row.createdAt)}
                         </TableCell>
                       </TableRow>
                     );

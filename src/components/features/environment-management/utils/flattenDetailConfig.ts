@@ -12,8 +12,8 @@ export function getFlattenedDetailConfig(env: Environment): Record<string, unkno
     variables: { ...(env.variables || {}) },
     createUser: env.createUser,
     updateUser: env.updateUser,
-    createTime: env.createTime,
-    updateTime: env.updateTime,
+    createdAt: env.createdAt,
+    updatedAt: env.updatedAt,
   };
   const v = flat.variables as Record<string, unknown>;
   if (env.domain) v.url = env.domain;

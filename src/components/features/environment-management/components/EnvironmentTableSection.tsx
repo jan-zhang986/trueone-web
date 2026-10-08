@@ -92,10 +92,10 @@ export function EnvironmentTableSection({
                       {env.domain || '-'}
                     </TableCell>
                     <TableCell className="text-gray-500 whitespace-nowrap">
-                      {env.createTime ? new Date(env.createTime).toLocaleString('zh-CN') : '-'}
+                      {env.createdAt ? new Date(env.createdAt).toLocaleString('zh-CN') : '-'}
                     </TableCell>
                     <TableCell className="text-gray-500 whitespace-nowrap">
-                      {env.updateTime ? new Date(env.updateTime).toLocaleString('zh-CN') : '-'}
+                      {env.updatedAt ? new Date(env.updatedAt).toLocaleString('zh-CN') : '-'}
                     </TableCell>
                     <TableCell className="text-gray-500">{env.createUser ?? '-'}</TableCell>
                     <TableCell className="text-gray-500">{env.updateUser ?? '-'}</TableCell>

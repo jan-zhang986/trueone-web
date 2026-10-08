@@ -190,7 +190,7 @@ interface PlanDetailFeatureCaseProps {
     /** 从执行页返回时恢复：每页条数 */
     initialPageSize?: number | null;
     /** 从执行页返回时恢复：排序字段 */
-    initialSortField?: 'num' | 'name' | 'createTime' | null;
+    initialSortField?: 'num' | 'name' | 'createdAt' | null;
     /** 从执行页返回时恢复：排序方向 */
     initialSortOrder?: 'asc' | 'desc';
 }
@@ -236,8 +236,8 @@ export function PlanDetailFeatureCase({ planId, projectId, canEdit, onRefresh, e
     const [executeUserFilter, setExecuteUserFilter] = useState<string[]>([]);
     /** 执行人下拉内搜索关键词（仅筛选选项列表） */
     const [executorSearchKeyword, setExecutorSearchKeyword] = useState('');
-    /** 表格排序：num=ID, name=用例名称, createTime=创建时间 */
-    const [sortField, setSortField] = useState<'num' | 'name' | 'createTime' | null>(null);
+    /** 表格排序：num=ID, name=用例名称, createdAt=创建时间 */
+    const [sortField, setSortField] = useState<'num' | 'name' | 'createdAt' | null>(null);
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     /** 执行人下拉选项（项目成员） */
     const [executorOptions, setExecutorOptions] = useState<{ id: string; name: string }[]>([]);
@@ -624,7 +624,7 @@ export function PlanDetailFeatureCase({ planId, projectId, canEdit, onRefresh, e
     };
 
     /** 点击表头切换排序（ID、用例名称、创建时间） */
-    const handleSort = (field: 'num' | 'name' | 'createTime') => {
+    const handleSort = (field: 'num' | 'name' | 'createdAt') => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
@@ -1073,10 +1073,10 @@ export function PlanDetailFeatureCase({ planId, projectId, canEdit, onRefresh, e
                                 <button
                                     type="button"
                                     className="flex items-center gap-1 hover:text-gray-900"
-                                    onClick={() => handleSort('createTime')}
+                                    onClick={() => handleSort('createdAt')}
                                 >
                                     创建时间
-                                    {sortField === 'createTime' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
+                                    {sortField === 'createdAt' ? (sortOrder === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ChevronsUpDown className="w-3 h-3 text-gray-300" />}
                                 </button>
                             </TableHead>
                             <TableHead className="w-[140px] font-medium text-gray-500">更新时间</TableHead>
@@ -1195,10 +1195,10 @@ export function PlanDetailFeatureCase({ planId, projectId, canEdit, onRefresh, e
                                         {item.createUserName || '-'}
                                     </TableCell>
                                     <TableCell className="py-0 text-gray-400 tabular-nums">
-                                        {item.createTime ? formatTimestampBeijing(item.createTime) : '-'}
+                                        {item.createdAt ? formatTimestampBeijing(item.createdAt) : '-'}
                                     </TableCell>
                                     <TableCell className="py-0 text-gray-400 tabular-nums">
-                                        {item.updateTime ? formatTimestampBeijing(item.updateTime) : '-'}
+                                        {item.updatedAt ? formatTimestampBeijing(item.updatedAt) : '-'}
                                     </TableCell>
                                     {/* 操作列：「执行」文字按钮 + 「···」菜单（修改执行人 + 移出活动） */}
                                     <TableCell className="py-0 text-center">

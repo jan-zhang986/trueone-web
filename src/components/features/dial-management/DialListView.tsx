@@ -117,10 +117,10 @@ export function DialListView({ dialSub }: DialListViewProps) {
             const apiActions = features?.apiActions as Record<string, unknown> | undefined;
             const url =
               webActions?.url ?? llmActions?.url ?? apiActions?.url ?? (item.url as string) ?? '';
-            const createTime =
-              item.createTime ?? item.createdAt ?? item.create_time ?? item.gmtCreate ?? '';
-            const updateTime =
-              item.updateTime ?? item.updatedAt ?? item.update_time ?? item.gmtModified ?? '';
+            const createdAt =
+              item.createdAt ?? item.createdAt ?? item.create_time ?? item.gmtCreate ?? '';
+            const updatedAt =
+              item.updatedAt ?? item.updatedAt ?? item.update_time ?? item.gmtModified ?? '';
             return {
               ...item,
               status: item.isActive === 0 ? '禁用' : '启用',
@@ -130,8 +130,8 @@ export function DialListView({ dialSub }: DialListViewProps) {
               menuName: menu?.name ?? '',
               accountName: accountFeatures?.user ?? '',
               dialUrl: typeof url === 'string' ? url : String(url ?? ''),
-              createTime,
-              updateTime,
+              createdAt,
+              updatedAt,
             };
           })
         );
@@ -397,10 +397,10 @@ export function DialListView({ dialSub }: DialListViewProps) {
                     <div>通知人 : {String(row.userName ?? '-')}</div>
                   </TableCell>
                   <TableCell className="text-sm text-gray-500 whitespace-nowrap">
-                    {formatDialTime(row.createTime)}
+                    {formatDialTime(row.createdAt)}
                   </TableCell>
                   <TableCell className="text-sm text-gray-500 whitespace-nowrap">
-                    {formatDialTime(row.updateTime)}
+                    {formatDialTime(row.updatedAt)}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-2">

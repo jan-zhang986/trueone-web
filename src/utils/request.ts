@@ -231,10 +231,37 @@ request.interceptors.request.use(
   }
 );
 
+function normalizeTimeAliases(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      normalizeTimeAliases(obj[i]);
+    }
+    return obj;
+  }
+  if ('createdAt' in obj && !('createTime' in obj)) {
+    obj.createTime = obj.createdAt;
+  } else if ('createTime' in obj && !('createdAt' in obj)) {
+    obj.createdAt = obj.createTime;
+  }
+  if ('updatedAt' in obj && !('updateTime' in obj)) {
+    obj.updateTime = obj.updatedAt;
+  } else if ('updateTime' in obj && !('updatedAt' in obj)) {
+    obj.updatedAt = obj.updateTime;
+  }
+  for (const k of Object.keys(obj)) {
+    if (obj[k] && typeof obj[k] === 'object') {
+      normalizeTimeAliases(obj[k]);
+    }
+  }
+  return obj;
+}
+
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    const { data } = response;
+    let { data } = response;
+    normalizeTimeAliases(data);
 
     // 根据后端返回的数据结构处理
     // 如果后端统一返回格式为 { code, data, message }

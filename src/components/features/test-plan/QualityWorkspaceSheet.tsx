@@ -84,7 +84,7 @@ export function QualityWorkspaceSheet({
   const [scopeNote, setScopeNote] = useState('');
 
   const isEdit = Boolean(workspaceId);
-  const title = isEdit ? '编辑质量工作台' : '创建质量工作台';
+  const title = isEdit ? '编辑测试计划' : '创建测试计划';
 
   const normalizedInitial = useMemo(() => initialValues || {}, [initialValues]);
 
@@ -113,11 +113,11 @@ export function QualityWorkspaceSheet({
 
   const handleSubmit = async () => {
     if (!projectId) {
-      toast.error('当前项目不存在，无法创建质量工作台');
+      toast.error('当前项目不存在，无法创建测试计划');
       return;
     }
     if (!name.trim()) {
-      toast.error('请输入质量工作台名称');
+      toast.error('请输入测试计划名称');
       return;
     }
     setLoading(true);
@@ -167,17 +167,17 @@ export function QualityWorkspaceSheet({
       toast.success(
         prdUrl.trim()
           ? isEdit
-            ? '质量工作台已更新，飞书 PRD 索引将在后台同步'
-            : '质量工作台已创建，飞书 PRD 索引将在后台同步'
+            ? '测试计划已更新，飞书 PRD 索引将在后台同步'
+            : '测试计划已创建，飞书 PRD 索引将在后台同步'
           : isEdit
-            ? '质量工作台已更新'
-            : '质量工作台已创建'
+            ? '测试计划已更新'
+            : '测试计划已创建'
       );
       onOpenChange(false);
       onSuccess?.(savedId || workspaceId || undefined);
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.message || '保存质量工作台失败');
+      toast.error(error?.message || '保存测试计划失败');
     } finally {
       setLoading(false);
     }
@@ -192,14 +192,14 @@ export function QualityWorkspaceSheet({
           </div>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
-            质量工作台承载一次迭代/版本上线的测试分析、评审、检查项执行、复测回归和准出结论。
+            测试计划承载一次迭代/版本上线的测试分析、评审、检查项执行、复测回归和准出结论。
           </SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-5">
           <div className="space-y-2">
-            <Label>工作台名称</Label>
-            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="例如：2026.05 支付域迭代质量工作台" />
+            <Label>计划名称</Label>
+            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="例如：2026.05 支付域迭代测试计划" />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

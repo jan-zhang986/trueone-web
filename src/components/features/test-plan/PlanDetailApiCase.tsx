@@ -525,7 +525,7 @@ export function PlanDetailApiCase({ planId, projectId, canEdit, embedInPlanTree,
                                         {item.executeUser || '-'}
                                     </TableCell>
                                     <TableCell className="text-gray-500 tabular-nums font-mono text-xs">
-                                        {item.updateTime || '2026-01-13 11:10:26'}
+                                        {item.updatedAt || '2026-01-13 11:10:26'}
                                     </TableCell>
                                     <TableCell className="text-center">
                                         {(() => {

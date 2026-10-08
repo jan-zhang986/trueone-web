@@ -220,8 +220,62 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
-        // 用户列表 API 代理
-        '/system/user': {
+        // 系统设置与参数 API 代理
+        '/system': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 用户组与权限 API 代理
+        '/user/role': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 消息管理与通知 API 代理
+        '/notice': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 平台设置 API 代理
+        '/setting': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 显示设置 API 代理
+        '/display': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 组织管理 API 代理
+        '/organization': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 服务集成 API 代理
+        '/service': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 操作日志与系统日志 API 代理
+        '/operation': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 用例资产 API 代理
+        '/functional': {
+          target: AEGIS_BACKEND_URL,
+          changeOrigin: true,
+          secure: false,
+        },
+        // 缺陷管理 API 代理
+        '/bug': {
           target: AEGIS_BACKEND_URL,
           changeOrigin: true,
           secure: false,

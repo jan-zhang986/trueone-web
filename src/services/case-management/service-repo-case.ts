@@ -18,8 +18,8 @@ export interface CaseRepoItem {
   gitPlatform?: string;
   testsDir?: string;
   localPath?: string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface RepoTreeNode {

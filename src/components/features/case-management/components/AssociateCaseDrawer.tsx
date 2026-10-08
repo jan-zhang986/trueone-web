@@ -220,7 +220,7 @@ export function AssociateCaseDrawer({
   /** 模块树展开的节点 id 集合 */
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   /** 表格排序 */
-  const [sortField, setSortField] = useState<'num' | 'name' | 'createTime' | null>(null);
+  const [sortField, setSortField] = useState<'num' | 'name' | 'createdAt' | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   /** 表格筛选（多选） */
   const [caseLevelFilter, setCaseLevelFilter] = useState<string[]>([]);
@@ -333,7 +333,7 @@ export function AssociateCaseDrawer({
     return f;
   }, [caseLevelFilter, reviewStatusFilter, createUserFilter]);
 
-  const handleSort = useCallback((field: 'num' | 'name' | 'createTime') => {
+  const handleSort = useCallback((field: 'num' | 'name' | 'createdAt') => {
     setSortField((prev) => {
       if (prev === field) {
         setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));

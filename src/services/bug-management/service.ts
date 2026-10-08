@@ -215,7 +215,7 @@ export function syncBugOpenSource(projectId: string) {
 /**
  * 同步缺陷企业版
  */
-export function syncBugEnterprise(data: { projectId: string; pre: boolean; createTime: number }) {
+export function syncBugEnterprise(data: { projectId: string; pre: boolean; createdAt: number }) {
   return http.post(bugUrls.getSyncBugEnterpriseUrl, data);
 }
 

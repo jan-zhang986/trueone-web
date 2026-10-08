@@ -327,7 +327,7 @@ export function CaseDetailDrawer({
                                                 <Calendar className="w-3 h-3" />
                                                 创建时间
                                             </div>
-                                            <div className="text-sm text-gray-900 font-mono">{detail?.createTime || '-'}</div>
+                                            <div className="text-sm text-gray-900 font-mono">{detail?.createdAt || '-'}</div>
                                         </div>
                                     </div>
 
@@ -520,7 +520,7 @@ export function CaseDetailDrawer({
                                                                 {item.status}
                                                             </Badge>
                                                         </div>
-                                                        <span className="text-xs text-gray-400">{formatTimestampBeijing(item.createTime)}</span>
+                                                        <span className="text-xs text-gray-400">{formatTimestampBeijing(item.createdAt)}</span>
                                                     </div>
                                                     <div className="text-xs text-gray-500 mb-1">执行人: {executorNameMap.get(item.createUser) ?? item.createUser ?? '-'}</div>
                                                     {item.content && (

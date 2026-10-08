@@ -10,8 +10,8 @@ export interface ApiDocInfoSectionProps {
   url: string;
   getTypeBadgeColor: (t: string) => string;
   formatTime: (ts?: number | null) => string;
-  createTime?: number;
-  updateTime?: number;
+  createdAt?: number;
+  updatedAt?: number;
   createUser?: string;
   userNameMap: Map<string, string>;
   directoryLabel: string;
@@ -30,8 +30,8 @@ export function ApiDocInfoSection({
   url,
   getTypeBadgeColor,
   formatTime,
-  createTime,
-  updateTime,
+  createdAt,
+  updatedAt,
   createUser,
   userNameMap,
   directoryLabel,
@@ -114,11 +114,11 @@ export function ApiDocInfoSection({
         <div className="flex items-center gap-6 text-xs text-gray-500 flex-wrap">
           <div>
             <span className="text-gray-400">创建时间：</span>
-            <span>{formatTime(createTime)}</span>
+            <span>{formatTime(createdAt)}</span>
           </div>
           <div>
             <span className="text-gray-400">修改时间：</span>
-            <span>{formatTime(updateTime)}</span>
+            <span>{formatTime(updatedAt)}</span>
           </div>
           <div>
             <span className="text-gray-400">负责人：</span>
