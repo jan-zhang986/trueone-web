@@ -132,7 +132,12 @@ function mapBackendCaseToItem(c: UnifiedTestCase): UnifiedTestCaseItem {
   };
 }
 
-export function RepoCaseExplorer() {
+export interface RepoCaseExplorerProps {
+  initialRepoId?: string;
+  initialRepoName?: string;
+}
+
+export function RepoCaseExplorer({ initialRepoId, initialRepoName }: RepoCaseExplorerProps = {}) {
   // 仓库与分支
   const [repoList, setRepoList] = useState<CaseRepoItem[]>([]);
   const [currentRepoId, setCurrentRepoId] = useState<string>('');
@@ -193,19 +198,46 @@ export function RepoCaseExplorer() {
       const list = Array.isArray(res) ? res : (res as any)?.data || [];
       if (list.length > 0) {
         setRepoList(list);
-        if (!currentRepoId || !list.some((r: CaseRepoItem) => r.id === currentRepoId)) {
-          setCurrentRepoId(list[0].id);
-          setSelectedBranch(list[0].defaultBranch || 'main');
+        let target = list[0];
+        if (initialRepoId) {
+          const found = list.find((r: CaseRepoItem) => r.id === initialRepoId);
+          if (found) target = found;
+        } else if (initialRepoName) {
+          const found = list.find((r: CaseRepoItem) => r.name === initialRepoName);
+          if (found) target = found;
+        } else if (currentRepoId) {
+          const found = list.find((r: CaseRepoItem) => r.id === currentRepoId);
+          if (found) target = found;
         }
+        setCurrentRepoId(target.id);
+        setSelectedBranch(target.defaultBranch || 'main');
       }
     } catch (e) {
       console.error('加载用例库列表失败', e);
     }
-  }, [currentRepoId]);
+  }, [currentRepoId, initialRepoId, initialRepoName]);
 
   useEffect(() => {
     fetchRepositories();
   }, [fetchRepositories]);
+
+  useEffect(() => {
+    if (repoList.length > 0) {
+      if (initialRepoId) {
+        const found = repoList.find((r) => r.id === initialRepoId);
+        if (found && found.id !== currentRepoId) {
+          setCurrentRepoId(found.id);
+          setSelectedBranch(found.defaultBranch || 'main');
+        }
+      } else if (initialRepoName) {
+        const found = repoList.find((r) => r.name === initialRepoName);
+        if (found && found.id !== currentRepoId) {
+          setCurrentRepoId(found.id);
+          setSelectedBranch(found.defaultBranch || 'main');
+        }
+      }
+    }
+  }, [initialRepoId, initialRepoName, repoList, currentRepoId]);
 
   // 2. 获取目录树
   const fetchTree = useCallback(async (repoId: string, branch: string) => {

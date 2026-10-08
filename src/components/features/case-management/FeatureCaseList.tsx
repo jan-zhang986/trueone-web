@@ -973,7 +973,7 @@ export function FeatureCaseList({
           onMergeClick={() => setMergeDrawerOpen(true)}
         />
         <div className="flex-1 min-h-0 overflow-hidden">
-          <RepoCaseExplorer />
+          <RepoCaseExplorer initialRepoName={repositoryId} />
         </div>
       </div>
     );
