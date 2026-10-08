@@ -1,77 +1,46 @@
-# AegisOne Web (AegisOne 自动化测试平台前端)
+# TrueOne Web (`trueone-web`)
 
-> **One** 代表一站式测试解决方案（All-in-One Testing Platform）
+TrueOne 质量平台现代化前端大盘，基于 React 18 + TypeScript + Vite + Tailwind CSS 构建。
 
-基于 React 18 + TypeScript + Vite + Tailwind CSS + Radix UI 构建的现代化 API 与工作流测试平台前端。AegisOne Web 提供完整的用例管理、测试计划、测试工厂、脑图评审、WebSocket 实时打屏与数据可视化等一站式测试解决方案。
+## 🎯 核心特性
 
-与服务端 [`aegis-next-server`](https://github.com/jan-zhang986/vanguard-testops) 及执行引擎 [`aegis-runner`](https://github.com/jan-zhang986/aegis-runner) 完全打通。
+1. **活体测试计划因果三联屏 (`LivingTestPlanMatrixView`)**：
+   - **左屏（需求规约）**：直读 Markdown PRD，逐行条款锚定；
+   - **中屏（因果分析与风险盲区）**：FMEA 失效分析，自动高亮 13 个关键 GAP 阻断盲区；
+   - **右屏（真实测试切片与证据链）**：无任何 Mock 假数据，直接展示通过 AST 提取的真实测试源码与运行时 DB 差分证据。
+2. **云端自动解析与对账一键触发**：
+   - 顶栏直接调用 `trueone-anubis` 后端的 AST 分析引擎，秒级重新装配 56 个业务章节与 121 个测试用例。
+3. **全流程质量管理**：
+   - 覆盖接口测试、测试计划、用例库资产、缺陷追踪与工作流编排。
 
 ---
 
-## 📖 项目亮点
-
-- 🎯 **One Platform** - 一个平台，覆盖接口测试、UI 自动化、工作流编排与报告全生命周期
-- 🔄 **Real-Time Streaming** - 基于 WebSocket 实现节点级别的执行日志与步骤状态实时高亮打屏
-- ⚡ **High Performance** - 采用 React 18 虚拟列表、Vite 极速热重载与现代化单页路由
-
----
-
-## 📋 前置要求
+## 📋 运行前置要求
 
 - Node.js >= 18.0.0
-- npm >= 9.0.0 或 pnpm >= 8.0.0
+- pnpm >= 8.0.0
 
 ---
 
-## 🚀 快速开始
+## 🚀 本地开发与启动
 
 ```bash
-# 1. 克隆或进入项目目录
-cd aegis-next-web
+# 1. 安装依赖
+pnpm install
 
-# 2. 安装所有依赖
-npm install
+# 2. 启动开发服务器 (默认端口 5174 或 5173)
+pnpm dev --port 5174
 
-# 3. 启动开发服务器
-npm run dev
+# 3. 生产环境打包构建
+pnpm build
 ```
 
-浏览器打开 `http://localhost:5173` 即可体验。
+浏览器访问：`http://localhost:5174`
 
 ---
 
-## 🛠️ 项目目录结构
+## 🔗 相关生态组件
 
-```
-aegis-next-web/
-├── src/
-│   ├── assets/              # 静态资源 (图片、图标)
-│   ├── components/          # React 组件
-│   │   ├── features/        # 功能业务组件 (Workflow, Case, Plan, Bug, Setting)
-│   │   ├── layouts/         # 页面布局组件 (TopNavigation, LeftSidebar)
-│   │   └── ui/              # Radix UI + Tailwind 基础原子组件
-│   ├── config/              # 路由与全局配置
-│   ├── hooks/               # 自定义 React Hooks (useWebSocket, useCaseList 等)
-│   ├── pages/               # 页面级入口组件
-│   ├── services/            # API 请求服务 (Axios / Fetch)
-│   ├── types/               # TypeScript 类型定义
-│   └── utils/               # 工具函数 (auth, request, tracking)
-├── index.html               # 页面入口
-├── vite.config.ts           # Vite 构建配置
-└── tailwind.config.js       # Tailwind CSS 样式配置
-```
-
----
-
-## 🎯 可用命令
-
-```bash
-# 启动本地开发服务器
-npm run dev
-
-# 执行 TypeScript 类型检查与代码构建
-npm run build
-
-# 本地预览构建产物
-npm run preview
-```
+- **`trueone-anubis`**：Go 核心后端与 AST 对账引擎
+- **`trueone-cli`**：面向 AI 与研发的 Test-as-Code 脚手架
+- **`trueone-sdk`**：多语言统一契约与事件上报 SDK
