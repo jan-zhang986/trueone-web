@@ -322,13 +322,7 @@ export function CaseRepositorySpaceManager({
   };
 
   const handleDeleteRepo = async (repo: CaseRepositoryItem) => {
-    const caseCount = repo.caseCount ?? 0;
-    if (caseCount > 0) {
-      toast.error(`用例库「${repo.name}」中包含 ${caseCount} 条测试用例，无法删除！请先迁移或删除库内用例。`);
-      return;
-    }
-
-    if (!window.confirm(`确定要删除测试用例库「${repo.name}」吗？删除后无法恢复。`)) {
+    if (!window.confirm(`确定要删除测试用例库「${repo.name}」吗？删除后将解除与该 Git 代码工程的关联。`)) {
       return;
     }
 

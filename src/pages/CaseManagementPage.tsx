@@ -424,12 +424,6 @@ export function CaseManagementPage({
   };
 
   const handleDeleteRepoSubmit = async (repo: CaseRepositoryItem) => {
-    const caseCount = repo.caseCount ?? 0;
-    if (caseCount > 0) {
-      toast.error(`用例库「${repo.name}」包含 ${caseCount} 条测试用例，无法删除！请先迁移或删除库内用例。`);
-      return;
-    }
-
     try {
       await caseManagementService.deleteCaseRepository(repo.id);
 
