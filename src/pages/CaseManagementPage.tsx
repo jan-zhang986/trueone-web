@@ -639,18 +639,51 @@ export function CaseManagementPage({
 
             <div className="h-4 w-px bg-gray-200" />
 
-            {/* 当前用例库名称标识 */}
+            {/* 当前用例库 Dropdown 选择器 */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-gray-500">当前用例库:</span>
-              <button
-                type="button"
-                onClick={() => setRepoViewMode('hub')}
-                title="点击切换/返回用例库管理"
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-md transition-all cursor-pointer"
-              >
-                <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>{selectedRepo}</span>
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    title="点击切换当前代码用例库"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-md transition-all cursor-pointer shadow-2xs"
+                  >
+                    <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{selectedRepo}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel className="text-xs text-gray-500 font-semibold">
+                    切换用例库 ({repoItems.length})
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {repoItems.map((r) => (
+                    <DropdownMenuItem
+                      key={r.id || r.name}
+                      onClick={() => handleRepoChange(r.name)}
+                      className={`flex items-center justify-between text-xs cursor-pointer ${
+                        selectedRepo === r.name ? 'bg-blue-50 text-blue-700 font-bold' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{r.name}</span>
+                      </div>
+                      {selectedRepo === r.name && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setRepoViewMode('hub')}
+                    className="text-xs text-blue-600 font-medium cursor-pointer flex items-center gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>管理与关联新用例库...</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {currentRepoObj?.gitUrl && (
                 <a
                   href={currentRepoObj.gitUrl.replace(/\.git$/, '')}

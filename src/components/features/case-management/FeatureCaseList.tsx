@@ -955,7 +955,6 @@ export function FeatureCaseList({
           setVersionId(newBranch);
           onVersionChange?.(newBranch);
         }}
-        onAiGenerate={onAiGenerate}
         onCreateCase={onCreateCase ? () => onCreateCase(selectedModuleId) : undefined}
       />
     </div>

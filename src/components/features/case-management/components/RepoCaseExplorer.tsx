@@ -142,7 +142,6 @@ export interface RepoCaseExplorerProps {
   initialRepoName?: string;
   branch?: string;
   onBranchChange?: (branch: string) => void;
-  onAiGenerate?: () => void;
   onCreateCase?: () => void;
 }
 
@@ -151,7 +150,6 @@ export function RepoCaseExplorer({
   initialRepoName,
   branch,
   onBranchChange,
-  onAiGenerate,
   onCreateCase,
 }: RepoCaseExplorerProps = {}) {
   // 仓库与分支
@@ -691,125 +689,12 @@ export function RepoCaseExplorer({
 
   return (
     <div className="flex flex-col h-full w-full bg-[#F8FAFC] text-slate-800 overflow-hidden font-sans select-none antialiased">
-      {/* ================= 1. 顶部 Header (大仓与分支中枢 + 批量操作) ================= */}
-      <div className="h-13 shrink-0 bg-white border-b border-slate-200/80 px-5 flex items-center justify-between z-20 shadow-2xs">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <FolderGit2 className="w-5 h-5 text-indigo-600" />
-            <span className="font-bold text-sm text-slate-900">代码仓库用例中心</span>
-          </div>
-
-          <div className="h-4 w-px bg-slate-200" />
-
-          {/* 仓库下拉选择器 */}
-          <div className="flex items-center gap-2">
-            <select
-              value={currentRepoId}
-              onChange={(e) => setCurrentRepoId(e.target.value)}
-              className="text-xs bg-slate-100 hover:bg-slate-200/70 border border-slate-200 rounded-lg px-2.5 py-1 font-medium text-slate-800 outline-none cursor-pointer"
-            >
-              {repoList.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-
-            {/* 分支选择器 */}
-            <select
-              value={selectedBranch}
-              onChange={(e) => handleBranchSelectChange(e.target.value)}
-              className="text-xs bg-indigo-50/80 border border-indigo-200 rounded-lg px-2 py-1 font-mono font-semibold text-indigo-700 outline-none cursor-pointer"
-            >
-              {branchOptions.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-
-            {/* 关联新代码仓按钮 */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsCreateRepoModalOpen(true)}
-              className="h-7 text-xs gap-1 border-dashed border-slate-300 text-slate-600 hover:text-indigo-600"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>关联代码仓</span>
-            </Button>
-
-            {/* 同步扫描按钮 */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSyncRepo}
-              disabled={isSyncing}
-              className="h-7 text-xs gap-1 text-slate-500 hover:text-slate-900"
-              title="重新扫描并解析代码工程中的用例"
-            >
-              <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-indigo-600' : ''}`} />
-              <span>{isSyncing ? '扫描解析中...' : '同步代码仓'}</span>
-            </Button>
-
-            {/* AI 生成用例快捷按钮 */}
-            {onAiGenerate && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onAiGenerate}
-                className="h-7 text-xs gap-1 border-violet-200 bg-violet-50/50 text-violet-700 hover:bg-violet-100 font-medium"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-violet-600" />
-                <span>AI 生成用例</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* 顶部右侧: 左栏目录展开/收起 + 批量执行 */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsLeftTreeOpen(!isLeftTreeOpen)}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-1 rounded-lg border border-slate-200/80 transition-colors font-medium"
-          >
-            {isLeftTreeOpen ? (
-              <>
-                <PanelLeftClose className="w-3.5 h-3.5" />
-                <span>收起目录树</span>
-              </>
-            ) : (
-              <>
-                <PanelLeftOpen className="w-3.5 h-3.5 text-blue-600" />
-                <span>展开目录树</span>
-              </>
-            )}
-          </button>
-
-          <Button
-            size="sm"
-            onClick={handleBatchExecute}
-            disabled={selectedCaseIds.length === 0}
-            className={`h-8 text-xs rounded-lg px-3.5 gap-1.5 font-medium shadow-sm transition-all ${
-              selectedCaseIds.length > 0
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>
-              {selectedCaseIds.length > 0 ? `批量执行选中 (${selectedCaseIds.length})` : '批量执行'}
-            </span>
-          </Button>
-        </div>
-      </div>
-
-      {/* ================= 2. 主体工作区 (左侧目录树 + 右侧用例表格) ================= */}
+      {/* ================= 主体工作区 (左侧目录树 + 右侧用例表格) ================= */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
         {/* 左侧：📁 Git 仓库目录树 (Repo Tree) */}
         {isLeftTreeOpen && (
           <div className="w-64 xl:w-72 shrink-0 bg-white border-r border-slate-200/80 flex flex-col min-h-0 z-10 animate-in slide-in-from-left-2 duration-150">
-            <div className="h-10 px-4 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
+            <div className="h-11 px-4 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
               <div className="flex items-center gap-1.5">
                 <FolderTree className="w-3.5 h-3.5 text-blue-600" />
                 <span>工程测试目录 (tests/)</span>
@@ -844,32 +729,53 @@ export function RepoCaseExplorer({
           </div>
         )}
 
-        {/* 右侧：📋 统一用例列表大表格 (Table View) */}
+        {/* 右侧：📋 统一用例列表与单层极简工具栏 */}
         <div className="flex-1 flex flex-col min-h-0 bg-white">
-          {/* 筛选与状态条 */}
-          <div className="h-11 shrink-0 bg-slate-50/70 border-b border-slate-200/70 px-4 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-3 flex-1 max-w-lg">
-              <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+          {/* 单层极简工具栏 (去除了重复的仓库/分支/AI按钮) */}
+          <div className="h-11 shrink-0 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between text-xs z-10">
+            {/* 左侧：收起/展开目录树 + 搜索框 + 优先级过滤 */}
+            <div className="flex items-center gap-2.5 flex-1 max-w-2xl">
+              <button
+                onClick={() => setIsLeftTreeOpen(!isLeftTreeOpen)}
+                className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 px-2 py-1 rounded-md border border-slate-200 transition-colors font-medium cursor-pointer shrink-0"
+                title={isLeftTreeOpen ? '收起左侧目录树' : '展开左侧目录树'}
+              >
+                {isLeftTreeOpen ? (
+                  <>
+                    <PanelLeftClose className="w-3.5 h-3.5 text-slate-500" />
+                    <span>收起目录</span>
+                  </>
+                ) : (
+                  <>
+                    <PanelLeftOpen className="w-3.5 h-3.5 text-blue-600" />
+                    <span>展开目录</span>
+                  </>
+                )}
+              </button>
+
+              <div className="h-3.5 w-px bg-slate-200 shrink-0" />
+
+              <div className="relative flex-1 max-w-sm">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <Input
                   placeholder="搜索用例编号、标题、关联需求、函数名..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
-                  className="h-7.5 pl-8 text-xs bg-white border-slate-200 rounded-lg"
+                  className="h-7.5 pl-8 pr-3 text-xs bg-slate-50/60 hover:bg-white focus:bg-white border-slate-200 rounded-lg transition-colors"
                 />
               </div>
 
               {/* 优先级过滤 */}
-              <div className="flex items-center gap-1 text-slate-500">
+              <div className="flex items-center gap-1 shrink-0 text-slate-500">
                 <span className="text-[11px]">优先级:</span>
-                <div className="flex items-center bg-white p-0.5 rounded-md border border-slate-200 text-[11px]">
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px]">
                   {['ALL', 'P0', 'P1', 'P2'].map((p) => (
                     <button
                       key={p}
                       onClick={() => setPriorityFilter(p)}
-                      className={`px-2 py-0.5 rounded ${
+                      className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                         priorityFilter === p
-                          ? 'bg-slate-100 font-bold text-slate-900 shadow-2xs'
+                          ? 'bg-white font-bold text-slate-900 shadow-2xs'
                           : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -880,11 +786,50 @@ export function RepoCaseExplorer({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-slate-400 text-[11px] font-mono">
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />}
-              <span>当前目录下共 {cases.length} 条用例</span>
-              <span>·</span>
-              <span className="text-blue-600 font-semibold">已勾选 {selectedCaseIds.length} 项</span>
+            {/* 右侧：同步代码仓 + 批量执行 + 计数统计 */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="hidden md:flex items-center gap-1.5 text-slate-400 text-[11px] font-mono">
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />}
+                <span>共 {cases.length} 条用例</span>
+                {selectedCaseIds.length > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="text-blue-600 font-semibold">已选 {selectedCaseIds.length} 项</span>
+                  </>
+                )}
+              </div>
+
+              <div className="h-3.5 w-px bg-slate-200" />
+
+              {/* 同步扫描按钮 */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSyncRepo}
+                disabled={isSyncing}
+                className="h-7.5 text-xs gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer"
+                title="重新扫描并解析代码工程中的用例"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
+                <span>{isSyncing ? '扫描中...' : '同步代码仓'}</span>
+              </Button>
+
+              {/* 批量执行按钮 */}
+              <Button
+                size="sm"
+                onClick={handleBatchExecute}
+                disabled={selectedCaseIds.length === 0}
+                className={`h-7.5 text-xs rounded-md px-3 gap-1.5 font-medium shadow-2xs transition-all cursor-pointer ${
+                  selectedCaseIds.length > 0
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60'
+                }`}
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>
+                  {selectedCaseIds.length > 0 ? `批量执行 (${selectedCaseIds.length})` : '批量执行'}
+                </span>
+              </Button>
             </div>
           </div>
 
