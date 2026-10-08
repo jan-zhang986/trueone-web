@@ -187,7 +187,7 @@ export function CaseListToolbar({
 
         <Tabs
           value={showType}
-          onValueChange={(v) => v && onShowTypeChange(v as 'list' | 'repo' | 'minder')}
+          onValueChange={(v) => v && onShowTypeChange(v as 'repo' | 'minder')}
           className="bg-gray-100/80 p-0.5 rounded-md border border-gray-200/50"
         >
           <TabsList className="bg-transparent h-7 p-0">
@@ -196,33 +196,10 @@ export function CaseListToolbar({
                 <TooltipTrigger asChild>
                   <TabsTrigger value="repo" className="h-6 px-2 text-[11px] font-medium gap-1.5 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
                     <FolderGit2 className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>代码仓库用例</span>
+                    <span>代码仓库用例中心</span>
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent>基于代码仓库的统一用例 (支持列表表格与文件树)</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger value="list" className="h-6 px-2 text-[11px] font-medium gap-1.5 data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:font-semibold data-[state=active]:shadow-xs">
-                    <List className="w-3.5 h-3.5 text-blue-600" />
-                    <span>传统模块列表</span>
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent>传统模块树与表格列表</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger value="minder" className="h-6 w-7 p-0 data-[state=active]:bg-white data-[state=active]:shadow-xs">
-                    <Network className="w-3.5 h-3.5" />
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent>思维导图视图</TooltipContent>
+                <TooltipContent>基于 Git 代码仓库的统一用例 (实时目录树与 AST 解析)</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </TabsList>

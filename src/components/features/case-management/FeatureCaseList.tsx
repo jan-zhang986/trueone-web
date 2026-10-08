@@ -945,158 +945,19 @@ export function FeatureCaseList({
     );
   }
 
-  if (showType === 'repo') {
-    return (
-      <div className="flex-1 flex flex-col bg-gray-50 min-h-0 overflow-hidden">
-        <CaseListToolbar
-          searchInput={searchInput}
-          searchKeyword={searchKeyword}
-          loading={loading}
-          showType={showType}
-          viewId={viewId}
-          customViews={customViews}
-          hasActiveFilter={!!filter?.conditions?.length}
-          onSearchInputChange={setSearchInput}
-          onSearch={handleSearch}
-          onClearSearch={handleClearSearch}
-          onRefresh={fetchCaseList}
-          onShowTypeChange={setShowType}
-          onColumnSettingsClick={() => setColumnSettingsOpen(true)}
-          onViewChange={(id) => { setViewId(id); resetPage(); }}
-          onFilterClick={() => setFilterDrawerOpen(true)}
-          onClearFilter={() => { setFilter(undefined); setViewId('all_data'); resetPage(); }}
-          onCreateCase={onCreateCase ? () => onCreateCase(selectedModuleId) : undefined}
-          onImportOpen={() => setImportOpen(true)}
-          onAiGenerate={onAiGenerate}
-          projectId={projectId}
-          showVersionControls={showLegacyVersionControls}
-          versionId={versionId}
-          onVersionChange={setVersionId}
-          onVersionSelect={setCurrentVersion}
-          onMergeClick={() => setMergeDrawerOpen(true)}
-        />
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <RepoCaseExplorer
-            initialRepoName={repositoryId}
-            branch={versionId}
-            onBranchChange={(newBranch) => {
-              setVersionId(newBranch);
-              onVersionChange?.(newBranch);
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
+  // 全面统一为代码仓库用例中心 (Git-driven Test as Code / SSOT)
   return (
     <div className="flex-1 flex flex-col bg-gray-50 min-h-0 overflow-hidden">
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-          <ModuleTreePanel
-            moduleTree={moduleTree}
-            modulesCount={modulesCount}
-            expandedNodes={expandedNodes}
-            selectedModuleId={selectedModuleId}
-            moduleSearchKeyword={moduleSearchKeyword}
-            allModuleCount={allModuleCount}
-            onModuleSearchChange={setModuleSearchKeyword}
-            onModuleSelect={handleModuleSelect}
-            onToggleExpand={toggleNodeExpand}
-            isExpandAll={isExpandAll}
-            onExpandAll={expandAll}
-            onCollapseAll={collapseAll}
-            onCreateCase={onCreateCase ? () => onCreateCase(selectedModuleId) : undefined}
-            onNavigateToRecycle={onNavigateToRecycle}
-            recycleCount={recycleCount}
-            projectId={projectId}
-            onAddSubModule={async (parentId, name) => {
-              if (spaceId) {
-                await metadataModuleService.createModule({
-                  projectId,
-                  name,
-                  parentId: parentId === 'NONE' ? 'ROOT' : parentId,
-                  moduleType: 'WORKFLOW',
-                  typeId: spaceId,
-                });
-              } else {
-                await caseManagementService.createCaseModuleTree({ projectId, name, parentId: parentId === 'NONE' ? 'NONE' : parentId });
-              }
-              toast.success('添加成功');
-              fetchModuleTree();
-              fetchModulesCount();
-            }}
-            onRenameModule={async (nodeId, name) => {
-              if (spaceId) {
-                await metadataModuleService.updateModule({ id: nodeId, name });
-              } else {
-                await caseManagementService.updateCaseModuleTree({ id: nodeId, name });
-              }
-              toast.success('重命名成功');
-              fetchModuleTree();
-              fetchModulesCount();
-            }}
-            onDeleteModule={async (nodeId) => {
-              if (spaceId) {
-                await metadataModuleService.deleteModule(nodeId);
-              } else {
-                await caseManagementService.deleteCaseModuleTree(nodeId);
-              }
-              toast.success('删除成功');
-              if (selectedModuleId === nodeId) setSelectedModuleId('all');
-              fetchModuleTree();
-              fetchModulesCount();
-              fetchCaseList();
-            }}
-            onCopyModule={spaceId ? undefined : async (sourceId, targetId) => {
-              try {
-                await caseManagementService.copyModuleWithCases({
-                  projectId,
-                  sourceModuleId: sourceId,
-                  targetModuleId: targetId,
-                });
-                toast.success('复制模块成功');
-                fetchModuleTree();
-                fetchModulesCount();
-                fetchCaseList();
-              } catch (err: any) {
-                const msg =
-                  err?.message ||
-                  err?.response?.data?.message ||
-                  err?.response?.data?.msg ||
-                  '复制模块失败';
-                toast.error(msg);
-                throw err;
-              }
-            }}
-            onMoveModule={spaceId ? undefined : async (dragNodeId, dropNodeId, dropPosition) => {
-              await caseManagementService.moveCaseModuleTree({
-                dragNodeId,
-                dropNodeId,
-                dropPosition,
-              });
-              toast.success('移动模块成功');
-              if (selectedModuleId === dragNodeId) setSelectedModuleId('all');
-              fetchModuleTree();
-              fetchModulesCount();
-              fetchCaseList();
-            }}
-          />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={80} className="flex flex-col min-h-0">
-          {rightContent}
-        </ResizablePanel>
-      </ResizablePanelGroup>
-
-      {showLegacyVersionControls && (
-        <VersionMergeDrawer
-          open={mergeDrawerOpen}
-          onOpenChange={setMergeDrawerOpen}
-          projectId={projectId}
-          onSuccess={fetchCaseList}
-        />
-      )}
+      <RepoCaseExplorer
+        initialRepoName={repositoryId}
+        branch={versionId}
+        onBranchChange={(newBranch) => {
+          setVersionId(newBranch);
+          onVersionChange?.(newBranch);
+        }}
+        onAiGenerate={onAiGenerate}
+        onCreateCase={onCreateCase ? () => onCreateCase(selectedModuleId) : undefined}
+      />
     </div>
   );
 }

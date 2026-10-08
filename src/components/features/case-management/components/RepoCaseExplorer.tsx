@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +138,8 @@ export interface RepoCaseExplorerProps {
   initialRepoName?: string;
   branch?: string;
   onBranchChange?: (branch: string) => void;
+  onAiGenerate?: () => void;
+  onCreateCase?: () => void;
 }
 
 export function RepoCaseExplorer({
@@ -144,6 +147,8 @@ export function RepoCaseExplorer({
   initialRepoName,
   branch,
   onBranchChange,
+  onAiGenerate,
+  onCreateCase,
 }: RepoCaseExplorerProps = {}) {
   // 仓库与分支
   const [repoList, setRepoList] = useState<CaseRepoItem[]>([]);
@@ -740,6 +745,19 @@ export function RepoCaseExplorer({
               <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-indigo-600' : ''}`} />
               <span>{isSyncing ? '扫描解析中...' : '同步代码仓'}</span>
             </Button>
+
+            {/* AI 生成用例快捷按钮 */}
+            {onAiGenerate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onAiGenerate}
+                className="h-7 text-xs gap-1 border-violet-200 bg-violet-50/50 text-violet-700 hover:bg-violet-100 font-medium"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+                <span>AI 生成用例</span>
+              </Button>
+            )}
           </div>
         </div>
 
