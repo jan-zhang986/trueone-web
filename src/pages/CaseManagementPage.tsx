@@ -769,13 +769,6 @@ export function CaseManagementPage({
               </DropdownMenu>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 border border-emerald-200/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              当前运行环境: {selectedVersion === 'master' ? 'Master 主干测试机' : `基线快照 ${selectedVersion}`}
-            </span>
-          </div>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -795,7 +788,6 @@ export function CaseManagementPage({
             onCopyCase={(item: CaseItem, selectedModuleId?: string) => goToCaseDetail(item.id, 'copy', selectedModuleId)}
             onCreateCase={(selectedModuleId?: string) => goToCaseDetail(null, 'add', selectedModuleId)}
             onNavigateToRecycle={goToRecycle}
-            onAiGenerate={() => onNavigate?.(currentMenu, 'case-generation')}
           />
         </div>
       </div>
