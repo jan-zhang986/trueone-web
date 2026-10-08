@@ -515,11 +515,6 @@ export function CaseRepositorySpaceManager({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             {renderBranchBadge(repo)}
-                            {repo.code && (
-                              <span className="font-mono text-[10px] text-slate-400 truncate">
-                                #{repo.code}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -665,7 +660,7 @@ export function CaseRepositorySpaceManager({
             <Table>
               <TableHeader className="bg-slate-50/80 border-b border-slate-200/70">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[240px] text-xs font-bold text-slate-600 py-3">用例库名称 & 编码</TableHead>
+                  <TableHead className="w-[220px] text-xs font-bold text-slate-600 py-3">用例库名称</TableHead>
                   <TableHead className="w-[260px] text-xs font-bold text-slate-600 py-3">绑定的 Git 仓库 (Git URL)</TableHead>
                   <TableHead className="text-xs font-bold text-slate-600 py-3">描述</TableHead>
                   <TableHead className="w-[140px] text-xs font-bold text-slate-600 py-3">分支与基线</TableHead>
@@ -699,7 +694,6 @@ export function CaseRepositorySpaceManager({
                                 <span className="text-xs font-bold text-slate-900 truncate">{repo.name}</span>
                                 {isSelected && <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-1 rounded font-semibold">当前在用</span>}
                               </div>
-                              {repo.code && <span className="font-mono text-[10px] text-slate-400 block truncate">#{repo.code}</span>}
                             </div>
                           </div>
                         </TableCell>
@@ -889,33 +883,6 @@ export function CaseRepositorySpaceManager({
                     className="h-8 rounded-lg bg-white border-blue-200 text-xs font-mono focus-visible:ring-blue-500"
                   />
                 </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">
-                  仓库编码 (Code)
-                </Label>
-                <Input
-                  value={formCode}
-                  onChange={(e) => setFormCode(e.target.value)}
-                  placeholder="例如：trade-core-repo"
-                  className="h-9 rounded-xl bg-slate-50 border-slate-200 text-xs font-mono focus-visible:bg-white"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">
-                  创建人
-                </Label>
-                <Input
-                  value={formCreator}
-                  onChange={(e) => setFormCreator(e.target.value)}
-                  placeholder="admin"
-                  disabled={modalMode === 'edit'}
-                  className="h-9 rounded-xl bg-slate-50 border-slate-200 text-xs focus-visible:bg-white disabled:opacity-60"
-                />
               </div>
             </div>
 
