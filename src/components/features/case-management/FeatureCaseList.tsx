@@ -72,6 +72,8 @@ interface FeatureCaseListProps {
   externalSelectedModuleId?: string;
   /** 选中的版本基线 / 分支 */
   versionId?: string;
+  /** 版本基线 / 分支变更回调 */
+  onVersionChange?: (versionId: string) => void;
 }
 
 export function FeatureCaseList({
@@ -90,6 +92,7 @@ export function FeatureCaseList({
   hideModuleTree = false,
   externalSelectedModuleId,
   versionId: propVersionId,
+  onVersionChange,
 }: FeatureCaseListProps) {
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(() => urlSearchParams.get('keyword') || '');
@@ -973,7 +976,14 @@ export function FeatureCaseList({
           onMergeClick={() => setMergeDrawerOpen(true)}
         />
         <div className="flex-1 min-h-0 overflow-hidden">
-          <RepoCaseExplorer initialRepoName={repositoryId} />
+          <RepoCaseExplorer
+            initialRepoName={repositoryId}
+            branch={versionId}
+            onBranchChange={(newBranch) => {
+              setVersionId(newBranch);
+              onVersionChange?.(newBranch);
+            }}
+          />
         </div>
       </div>
     );

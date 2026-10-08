@@ -22,6 +22,7 @@ import {
 import type { CaseItem } from '@/components/features/case-management';
 import { TestSuiteManager, GateBindingManager } from '@/components/features/test-asset';
 import { caseManagementService, projectManagementService } from '@/services';
+import { repoCaseService } from '@/services/case-management/service-repo-case';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { CaseRepositoryItem } from '@/services/case-management/service-feature-case';
-import { Layers3, Plus, FolderPlus, GitBranch, GitMerge, FolderGit2, Check, PackageCheck, Sparkles, ChevronDown, LayoutGrid, ArrowLeft, Globe, ExternalLink } from 'lucide-react';
+import { Layers3, Plus, FolderPlus, GitBranch, GitMerge, FolderGit2, Check, PackageCheck, Sparkles, ChevronDown, LayoutGrid, ArrowLeft, Globe, ExternalLink, Tag } from 'lucide-react';
 import { VersionMergeDrawer } from '@/components/features/case-management/components/VersionMergeDrawer';
 
 interface CaseManagementPageProps {
@@ -172,13 +173,51 @@ export function CaseManagementPage({
     return repoItems.find((r) => r.name === selectedRepo || r.id === selectedRepo) || repoItems[0];
   }, [repoItems, selectedRepo]);
 
-  // 当前 Repo 与项目的分支版本列表
+  // 选中的用例库的真实 Git 分支和 Tag 列表
+  const [gitBranches, setGitBranches] = useState<string[]>([]);
+  const [gitTags, setGitTags] = useState<string[]>([]);
+
+  const fetchRepoGitBranches = useCallback(async (repoId?: string) => {
+    if (!repoId) return;
+    try {
+      const res: any = await repoCaseService.getRepositoryBranches(repoId);
+      const data = res?.data || res;
+      if (data?.branches && Array.isArray(data.branches)) {
+        setGitBranches(data.branches);
+        if (data.tags && Array.isArray(data.tags)) {
+          setGitTags(data.tags);
+        }
+        // 如果当前选中的版本不在分支列表里，或为空/默认master，自动对齐到仓库默认分支
+        const defaultBranch = data.defaultBranch || data.branches[0] || 'main';
+        setSelectedVersion((prev) => {
+          if (!prev || prev === 'master' || !data.branches.includes(prev)) {
+            localStorage.setItem('currentCaseVersion', defaultBranch);
+            return defaultBranch;
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
+      console.warn('获取 Git 分支失败:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentRepoObj?.id) {
+      fetchRepoGitBranches(currentRepoObj.id);
+    }
+  }, [currentRepoObj?.id, fetchRepoGitBranches]);
+
+  // 当前 Repo 与项目的分支版本列表 (优先使用真实的 Git 分支与 Tag)
   const currentBranches = useMemo(() => {
+    if (gitBranches.length > 0) {
+      return Array.from(new Set([...gitBranches, ...gitTags]));
+    }
     const listNames = projectVersions.map((v: any) => v.name || v.id).filter(Boolean);
     const repoBranches = (currentRepoObj?.branches || []).filter((b: string) => b !== 'v1.0.0' && b !== 'v2.0.0');
-    const combined = ['master', ...listNames, ...repoBranches];
+    const combined = [currentRepoObj?.defaultBranch || 'main', ...listNames, ...repoBranches];
     return Array.from(new Set(combined));
-  }, [projectVersions, currentRepoObj]);
+  }, [gitBranches, gitTags, projectVersions, currentRepoObj]);
 
   const handleCreateBranchSubmit = async () => {
     const trimmed = newBranchName.trim();
@@ -192,26 +231,27 @@ export function CaseManagementPage({
     }
 
     try {
-      await projectManagementService.addVersion({
-        projectId,
-        name: trimmed,
-        description: newBranchDesc || '',
-        latest: false,
-        status: 'open',
-      });
-      await fetchVersions();
-      toast.success(`成功创建并切换新版本分支: ${trimmed}`);
+      if (currentRepoObj?.id) {
+        await repoCaseService.createRepositoryBranch(currentRepoObj.id, {
+          branchName: trimmed,
+          baseBranch: newBranchBase || currentRepoObj.defaultBranch || 'main',
+          desc: newBranchDesc,
+        });
+      }
+      try {
+        await projectManagementService.addVersion({
+          projectId,
+          name: trimmed,
+          description: newBranchDesc || '',
+          latest: false,
+          status: 'open',
+        });
+      } catch (_) {}
+      await fetchRepoGitBranches(currentRepoObj?.id);
+      toast.success(`成功在 Git 仓库创建并切出新分支: ${trimmed}`);
     } catch (e: any) {
       console.error('创建版本分支失败:', e);
-      const updatedBranches = [...(currentRepoObj?.branches || ['master']), trimmed];
-      setRepoItems((prev) =>
-        prev.map((item) =>
-          item.id === currentRepoObj?.id || item.name === selectedRepo
-            ? { ...item, branches: updatedBranches }
-            : item
-        )
-      );
-      toast.success(`成功拉取并切出新版本分支: ${trimmed}`);
+      toast.error(`创建版本分支失败: ${e?.message || '网络异常'}`);
     }
 
     setSelectedVersion(trimmed);
@@ -635,13 +675,13 @@ export function CaseManagementPage({
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md transition-colors shadow-2xs">
                     <GitBranch className="w-4 h-4 text-emerald-600" />
-                    <span>{selectedVersion === 'master' ? 'master (主干分支)' : selectedVersion}</span>
+                    <span>{selectedVersion}</span>
                     <ChevronDown className="w-4 h-4 text-gray-400" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-64">
                   <DropdownMenuLabel className="text-xs text-gray-500 font-semibold flex items-center justify-between">
-                    <span>分支与基线 Tag ({currentBranches.length})</span>
+                    <span>Git 分支与基线 Tag ({currentBranches.length})</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {currentBranches.map((ver) => (
@@ -653,8 +693,19 @@ export function CaseManagementPage({
                       }`}
                     >
                       <span className="flex items-center gap-1.5">
-                        <GitBranch className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>{ver} {ver === 'master' ? '(主干分支)' : ver.startsWith('v') ? '(Release Baseline)' : '(Feature Branch)'}</span>
+                        {gitTags.includes(ver) ? (
+                          <Tag className="w-3.5 h-3.5 text-amber-600" />
+                        ) : (
+                          <GitBranch className="w-3.5 h-3.5 text-emerald-600" />
+                        )}
+                        <span>
+                          {ver}{' '}
+                          {ver === currentRepoObj?.defaultBranch
+                            ? '(默认主干)'
+                            : gitTags.includes(ver)
+                            ? '(Release Tag)'
+                            : '(Git 分支)'}
+                        </span>
                       </span>
                       {selectedVersion === ver && <Check className="w-4 h-4 text-blue-600" />}
                     </DropdownMenuItem>
@@ -663,7 +714,7 @@ export function CaseManagementPage({
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
-                      setNewBranchBase(selectedVersion);
+                      setNewBranchBase(selectedVersion || currentRepoObj?.defaultBranch || 'main');
                       setIsCreateBranchModalOpen(true);
                     }}
                     className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1.5 cursor-pointer"
@@ -838,6 +889,7 @@ export function CaseManagementPage({
         projectId={projectId}
         spaceId={spaceId ?? undefined}
         versionId={selectedVersion}
+        onVersionChange={handleVersionChange}
         initialSelectedModuleId={params.moduleId ?? undefined}
         onViewCase={(item, selectedModuleId) => {
           const updates: Record<string, string | null> = { caseId: item.id, mode: null, success: null, recycle: null };

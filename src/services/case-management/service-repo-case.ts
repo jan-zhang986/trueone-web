@@ -171,4 +171,26 @@ export const repoCaseService = {
       params: { branch },
     });
   },
+
+  /**
+   * 实时获取用例库的 Git 真实分支与 Tag 列表
+   */
+  getRepositoryBranches: (id: string) => {
+    return http.get<{
+      defaultBranch: string;
+      branches: string[];
+      tags?: string[];
+    }>(`/api/case/repository/${id}/branches`);
+  },
+
+  /**
+   * 为用例库创建新分支
+   */
+  createRepositoryBranch: (
+    id: string,
+    data: { branchName: string; baseBranch?: string; desc?: string }
+  ) => {
+    return http.post<boolean>(`/api/case/repository/${id}/branches`, data);
+  },
 };
+

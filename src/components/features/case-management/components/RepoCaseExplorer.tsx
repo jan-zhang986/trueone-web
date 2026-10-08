@@ -135,13 +135,28 @@ function mapBackendCaseToItem(c: UnifiedTestCase): UnifiedTestCaseItem {
 export interface RepoCaseExplorerProps {
   initialRepoId?: string;
   initialRepoName?: string;
+  branch?: string;
+  onBranchChange?: (branch: string) => void;
 }
 
-export function RepoCaseExplorer({ initialRepoId, initialRepoName }: RepoCaseExplorerProps = {}) {
+export function RepoCaseExplorer({
+  initialRepoId,
+  initialRepoName,
+  branch,
+  onBranchChange,
+}: RepoCaseExplorerProps = {}) {
   // 仓库与分支
   const [repoList, setRepoList] = useState<CaseRepoItem[]>([]);
   const [currentRepoId, setCurrentRepoId] = useState<string>('');
-  const [selectedBranch, setSelectedBranch] = useState<string>('main');
+  const [selectedBranch, setSelectedBranch] = useState<string>(branch || 'main');
+  const [liveBranches, setLiveBranches] = useState<string[]>([]);
+
+  // 当外部传入 branch 变更时同步
+  useEffect(() => {
+    if (branch && branch !== selectedBranch) {
+      setSelectedBranch(branch);
+    }
+  }, [branch]);
 
   // 左侧目录树状态
   const [repoTree, setRepoTree] = useState<RepoTreeNode | null>(null);
@@ -183,13 +198,44 @@ export function RepoCaseExplorer({ initialRepoId, initialRepoName }: RepoCaseExp
     return repoList.find((r) => r.id === currentRepoId) || null;
   }, [repoList, currentRepoId]);
 
-  // 可选分支列表
+  // 实时从后端获取 Git 真实分支与 Tags
+  useEffect(() => {
+    if (!currentRepoId) return;
+    repoCaseService
+      .getRepositoryBranches(currentRepoId)
+      .then((res: any) => {
+        const data = res?.data || res;
+        const allList: string[] = [];
+        if (data?.branches && Array.isArray(data.branches)) {
+          allList.push(...data.branches);
+        }
+        if (data?.tags && Array.isArray(data.tags)) {
+          allList.push(...data.tags);
+        }
+        if (allList.length > 0) {
+          setLiveBranches(Array.from(new Set(allList)));
+        }
+      })
+      .catch((err) => {
+        console.warn('获取 Git 分支失败:', err);
+      });
+  }, [currentRepoId]);
+
+  // 可选分支列表 (优先使用后端实时拉取的真实 Git 分支)
   const branchOptions = useMemo(() => {
+    if (liveBranches.length > 0) {
+      return liveBranches;
+    }
     if (currentRepo?.branches && currentRepo.branches.length > 0) {
       return currentRepo.branches;
     }
-    return ['main', 'master', 'feature/auth-cases'];
-  }, [currentRepo]);
+    return ['main', 'master'];
+  }, [liveBranches, currentRepo]);
+
+  const handleBranchSelectChange = (newBranch: string) => {
+    setSelectedBranch(newBranch);
+    onBranchChange?.(newBranch);
+  };
 
   // 1. 获取仓库列表
   const fetchRepositories = useCallback(async () => {
@@ -661,7 +707,7 @@ export function RepoCaseExplorer({ initialRepoId, initialRepoName }: RepoCaseExp
             {/* 分支选择器 */}
             <select
               value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
+              onChange={(e) => handleBranchSelectChange(e.target.value)}
               className="text-xs bg-indigo-50/80 border border-indigo-200 rounded-lg px-2 py-1 font-mono font-semibold text-indigo-700 outline-none cursor-pointer"
             >
               {branchOptions.map((b) => (
