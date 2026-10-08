@@ -903,6 +903,10 @@ export interface CaseRepositoryItem {
   updatedAt?: number;
   branches?: string[];
   caseCount?: number;
+  gitUrl?: string;
+  gitPlatform?: string;
+  testsDir?: string;
+  localPath?: string;
 }
 
 export function getCaseRepositories(projectId?: string, spaceId?: string) {
@@ -911,14 +915,34 @@ export function getCaseRepositories(projectId?: string, spaceId?: string) {
   });
 }
 
-export function createCaseRepository(data: { name: string; code?: string; defaultBranch?: string; description?: string; creator?: string }) {
+export function createCaseRepository(data: {
+  name: string;
+  code?: string;
+  defaultBranch?: string;
+  description?: string;
+  creator?: string;
+  gitUrl?: string;
+  gitPlatform?: string;
+  testsDir?: string;
+  localPath?: string;
+}) {
   return http.post<CaseRepositoryItem>('/api/case/repository/create', data);
 }
 
-export function updateCaseRepository(data: { id: string; name?: string; code?: string; defaultBranch?: string; description?: string }) {
+export function updateCaseRepository(data: {
+  id: string;
+  name?: string;
+  code?: string;
+  defaultBranch?: string;
+  description?: string;
+  branches?: string[];
+  gitUrl?: string;
+  gitPlatform?: string;
+  testsDir?: string;
+}) {
   return http.post<CaseRepositoryItem>('/api/case/repository/update', data);
 }
 
 export function deleteCaseRepository(id: string) {
-  return http.delete<boolean>(`/api/case/repository/delete/${id}`);
+  return http.post<boolean>(`/api/case/repository/delete/${id}`);
 }

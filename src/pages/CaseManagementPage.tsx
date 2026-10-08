@@ -43,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { CaseRepositoryItem } from '@/services/case-management/service-feature-case';
-import { Layers3, Plus, FolderPlus, GitBranch, GitMerge, FolderGit2, Check, PackageCheck, Sparkles, ChevronDown, LayoutGrid, ArrowLeft } from 'lucide-react';
+import { Layers3, Plus, FolderPlus, GitBranch, GitMerge, FolderGit2, Check, PackageCheck, Sparkles, ChevronDown, LayoutGrid, ArrowLeft, Globe, ExternalLink } from 'lucide-react';
 import { VersionMergeDrawer } from '@/components/features/case-management/components/VersionMergeDrawer';
 
 interface CaseManagementPageProps {
@@ -293,6 +293,10 @@ export function CaseManagementPage({
     description?: string;
     defaultBranch?: string;
     creator?: string;
+    gitUrl?: string;
+    gitPlatform?: string;
+    testsDir?: string;
+    localPath?: string;
   }) => {
     const trimmed = data.name.trim();
     if (!trimmed) {
@@ -305,20 +309,28 @@ export function CaseManagementPage({
         name: trimmed,
         code: data.code,
         description: data.description,
-        defaultBranch: data.defaultBranch || 'master',
+        defaultBranch: data.defaultBranch || 'main',
         creator: data.creator || 'admin',
+        gitUrl: data.gitUrl,
+        gitPlatform: data.gitPlatform,
+        testsDir: data.testsDir || 'tests',
+        localPath: data.localPath,
       });
 
       const newItem: CaseRepositoryItem = {
-        id: created?.id || `repo-${Date.now()}`,
+        id: (created as any)?.id || `repo-${Date.now()}`,
         name: trimmed,
         code: data.code || `code-${Date.now() % 10000}`,
-        defaultBranch: data.defaultBranch || 'master',
+        defaultBranch: data.defaultBranch || 'main',
         description: data.description || '新建功能业务用例库',
         creator: data.creator || 'admin',
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        caseCount: 0,
+        caseCount: (created as any)?.caseCount || 0,
+        gitUrl: data.gitUrl,
+        gitPlatform: data.gitPlatform,
+        testsDir: data.testsDir || 'tests',
+        branches: ['main', 'master'],
       };
 
       setRepoItems((prev) => {
@@ -328,7 +340,7 @@ export function CaseManagementPage({
 
       setSelectedRepo(trimmed);
       localStorage.setItem('currentCaseRepo', trimmed);
-      toast.success(`成功创建用例库: ${trimmed}`);
+      toast.success(`成功创建并绑定 Git 用例库: ${trimmed}`);
       setRepoViewMode('detail');
     } catch (err: any) {
       console.error(err);
@@ -336,12 +348,15 @@ export function CaseManagementPage({
         id: `repo-${Date.now()}`,
         name: trimmed,
         code: data.code || `code-${Date.now() % 10000}`,
-        defaultBranch: data.defaultBranch || 'master',
+        defaultBranch: data.defaultBranch || 'main',
         description: data.description || '新建功能业务用例库',
         creator: data.creator || 'admin',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         caseCount: 0,
+        gitUrl: data.gitUrl,
+        gitPlatform: data.gitPlatform,
+        testsDir: data.testsDir || 'tests',
       };
       setRepoItems((prev) => [newItem, ...prev.filter((i) => i.name !== trimmed)]);
       setSelectedRepo(trimmed);
@@ -357,6 +372,10 @@ export function CaseManagementPage({
     code?: string;
     description?: string;
     defaultBranch?: string;
+    branches?: string[];
+    gitUrl?: string;
+    gitPlatform?: string;
+    testsDir?: string;
   }) => {
     const trimmed = data.name.trim();
     if (!trimmed) {
@@ -370,7 +389,10 @@ export function CaseManagementPage({
         name: trimmed,
         code: data.code,
         description: data.description,
-        defaultBranch: data.defaultBranch || 'master',
+        defaultBranch: data.defaultBranch || 'main',
+        gitUrl: data.gitUrl,
+        gitPlatform: data.gitPlatform,
+        testsDir: data.testsDir || 'tests',
       });
 
       setRepoItems((prev) =>
@@ -382,6 +404,8 @@ export function CaseManagementPage({
                 code: data.code || item.code,
                 description: data.description ?? item.description,
                 defaultBranch: data.defaultBranch || item.defaultBranch,
+                gitUrl: data.gitUrl !== undefined ? data.gitUrl : item.gitUrl,
+                testsDir: data.testsDir !== undefined ? data.testsDir : item.testsDir,
                 updatedAt: Date.now(),
               }
             : item
@@ -395,21 +419,7 @@ export function CaseManagementPage({
       toast.success(`成功更新用例库: ${trimmed}`);
     } catch (err: any) {
       console.error(err);
-      setRepoItems((prev) =>
-        prev.map((item) =>
-          item.id === data.id
-            ? {
-                ...item,
-                name: trimmed,
-                code: data.code || item.code,
-                description: data.description ?? item.description,
-                defaultBranch: data.defaultBranch || item.defaultBranch,
-                updatedAt: Date.now(),
-              }
-            : item
-        )
-      );
-      toast.success(`成功更新用例库: ${trimmed}`);
+      toast.error('更新用例库配置失败');
     }
   };
 
@@ -607,6 +617,19 @@ export function CaseManagementPage({
                 <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
                 <span>{selectedRepo}</span>
               </button>
+              {currentRepoObj?.gitUrl && (
+                <a
+                  href={currentRepoObj.gitUrl.replace(/\.git$/, '')}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`绑定的 Git 仓库: ${currentRepoObj.gitUrl}`}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono text-slate-700 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded-md transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="max-w-[200px] truncate">{currentRepoObj.gitUrl.replace(/^https?:\/\//, '')}</span>
+                  <ExternalLink className="w-3 h-3 text-slate-400" />
+                </a>
+              )}
             </div>
 
             <div className="h-4 w-px bg-gray-200" />

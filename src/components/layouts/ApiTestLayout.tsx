@@ -117,6 +117,7 @@ export function ApiTestLayout() {
                         : menuFromRootTab ?? rawMenu;
   const FEATURE_CASE_TAB = 'feature-case' as const;
   const SPACE_TAB = 'space' as const;
+  const REALIZATION_TAB = 'realization' as const;
   const CASE_MANAGEMENT_TABS = ['feature-case', 'space', 'realization'] as const;
 
   const rawTopMenu = testFactoryReportPathMatch ? 'test-report' : (searchParams.get('tab') || 'api');

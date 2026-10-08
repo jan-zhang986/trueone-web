@@ -164,7 +164,7 @@ export function RepoCaseExplorer() {
   // 关联新代码仓 Modal
   const [isCreateRepoModalOpen, setIsCreateRepoModalOpen] = useState<boolean>(false);
   const [newRepoName, setNewRepoName] = useState<string>('');
-  const [newRepoPath, setNewRepoPath] = useState<string>('/Users/zhangjian/vanguard-platform/aegis-runner');
+  const [newRepoPath, setNewRepoPath] = useState<string>('https://github.com/jan-zhang986/trueone-anubis.git');
   const [newRepoBranch, setNewRepoBranch] = useState<string>('main');
 
   // 控制台日志
@@ -309,16 +309,19 @@ export function RepoCaseExplorer() {
       toast.error('请输入用例库名称');
       return;
     }
+    const trimmedPath = newRepoPath.trim();
+    const isGit = trimmedPath.startsWith('http') || trimmedPath.startsWith('git@') || trimmedPath.includes('github.com');
     try {
       const created = await repoCaseService.createRepository({
         name: newRepoName.trim(),
-        localPath: newRepoPath.trim(),
+        gitUrl: isGit ? trimmedPath : undefined,
+        localPath: !isGit ? trimmedPath : undefined,
         defaultBranch: newRepoBranch.trim() || 'main',
         testsDir: 'tests',
-        gitPlatform: 'local',
+        gitPlatform: isGit ? (trimmedPath.includes('github.com') ? 'github' : 'gitlab') : 'local',
       });
       const newRepo = (created as any)?.data || created;
-      toast.success('成功关联代码工程用例库！');
+      toast.success('成功关联云端/本地代码工程用例库！');
       setIsCreateRepoModalOpen(false);
       setNewRepoName('');
       await fetchRepositories();
@@ -1113,14 +1116,14 @@ export function RepoCaseExplorer() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700">代码工程路径 (本地测试目录或 Git URL)</label>
+              <label className="font-semibold text-slate-700">Git 仓库地址 (Git URL) 或本地工程路径</label>
               <Input
-                placeholder="/Users/zhangjian/vanguard-platform/aegis-runner"
+                placeholder="https://github.com/jan-zhang986/trueone-anubis.git"
                 value={newRepoPath}
                 onChange={(e) => setNewRepoPath(e.target.value)}
                 className="h-8 text-xs font-mono"
               />
-              <p className="text-[11px] text-slate-400">系统将自动扫描该工程下的 tests/ 目录并静态提取 @aegis 用例</p>
+              <p className="text-[11px] text-slate-400">支持云端 GitHub / GitLab 仓库或本地工程目录，系统将解析 tests/ 目录下的测试用例</p>
             </div>
 
             <div className="space-y-1.5">

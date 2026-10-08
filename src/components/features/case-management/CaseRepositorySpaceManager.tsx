@@ -41,6 +41,8 @@ import {
   Pencil,
   Trash2,
   GitFork,
+  ExternalLink,
+  Globe,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CaseRepositoryItem } from '@/services/case-management/service-feature-case';
@@ -55,6 +57,10 @@ export interface CaseRepositorySpaceManagerProps {
     description?: string;
     defaultBranch?: string;
     creator?: string;
+    gitUrl?: string;
+    gitPlatform?: string;
+    testsDir?: string;
+    localPath?: string;
   }) => Promise<void> | void;
   onUpdateRepoSubmit?: (data: {
     id: string;
@@ -63,6 +69,9 @@ export interface CaseRepositorySpaceManagerProps {
     description?: string;
     defaultBranch?: string;
     branches?: string[];
+    gitUrl?: string;
+    gitPlatform?: string;
+    testsDir?: string;
   }) => Promise<void> | void;
   onDeleteRepoSubmit?: (repo: CaseRepositoryItem) => Promise<void> | void;
   onCreateBranchSubmit?: (repo: CaseRepositoryItem, branchName: string, baseBranch: string, desc?: string) => Promise<void> | void;
@@ -113,7 +122,9 @@ export function CaseRepositorySpaceManager({
   const [formName, setFormName] = useState('');
   const [formCode, setFormCode] = useState('');
   const [formCreator, setFormCreator] = useState('admin');
-  const [formBranch, setFormBranch] = useState('master');
+  const [formBranch, setFormBranch] = useState('main');
+  const [formGitUrl, setFormGitUrl] = useState('');
+  const [formTestsDir, setFormTestsDir] = useState('tests');
   const [formDesc, setFormDesc] = useState('');
 
   // Standardize repo objects
@@ -124,7 +135,7 @@ export function CaseRepositorySpaceManager({
           id: `repo-${idx}`,
           name: item,
           code: item === '示例用例库' ? 'demo-case-repo' : `repo-${idx + 1}`,
-          defaultBranch: 'master',
+          defaultBranch: 'main',
           description:
             item === '示例用例库'
               ? '系统默认示例用例库，全量关联现存测试用例集与业务模块树'
@@ -133,7 +144,10 @@ export function CaseRepositorySpaceManager({
           createdAt: Date.now(),
           updatedAt: Date.now(),
           caseCount: item === '示例用例库' ? 128 : 0,
-          branches: ['master'],
+          branches: ['main', 'master'],
+          gitUrl: item === '示例用例库' ? 'https://github.com/jan-zhang986/trueone-anubis.git' : '',
+          gitPlatform: 'github',
+          testsDir: 'tests',
         };
       }
       return {
@@ -143,6 +157,9 @@ export function CaseRepositorySpaceManager({
         createdAt: item.createdAt || Date.now(),
         updatedAt: item.updatedAt || item.createdAt || Date.now(),
         caseCount: item.caseCount ?? 0,
+        gitUrl: item.gitUrl || item.localPath || '',
+        gitPlatform: item.gitPlatform || (item.gitUrl?.includes('github.com') ? 'github' : 'local'),
+        testsDir: item.testsDir || 'tests',
       };
     });
   }, [repoList]);
@@ -156,7 +173,8 @@ export function CaseRepositorySpaceManager({
         r.name.toLowerCase().includes(term) ||
         (r.code || '').toLowerCase().includes(term) ||
         (r.creator || '').toLowerCase().includes(term) ||
-        (r.description || '').toLowerCase().includes(term)
+        (r.description || '').toLowerCase().includes(term) ||
+        (r.gitUrl || '').toLowerCase().includes(term)
     );
   }, [normalizedRepos, searchTerm]);
 
@@ -283,7 +301,9 @@ export function CaseRepositorySpaceManager({
     setFormName('');
     setFormCode('');
     setFormCreator('admin');
-    setFormBranch('master');
+    setFormBranch('main');
+    setFormGitUrl('');
+    setFormTestsDir('tests');
     setFormDesc('');
     setIsModalOpen(true);
   };
@@ -294,7 +314,9 @@ export function CaseRepositorySpaceManager({
     setFormName(repo.name);
     setFormCode(repo.code || '');
     setFormCreator(repo.creator || 'admin');
-    setFormBranch(repo.defaultBranch || 'master');
+    setFormBranch(repo.defaultBranch || 'main');
+    setFormGitUrl(repo.gitUrl || repo.localPath || '');
+    setFormTestsDir(repo.testsDir || 'tests');
     setFormDesc(repo.description || '');
     setIsModalOpen(true);
   };
@@ -330,6 +352,12 @@ export function CaseRepositorySpaceManager({
       return;
     }
 
+    const trimmedGitUrl = formGitUrl.trim();
+    if (modalMode === 'create' && !trimmedGitUrl) {
+      toast.error('请输入 Git 仓库地址 (如 https://github.com/owner/repo.git)');
+      return;
+    }
+
     try {
       setLoading(true);
       if (modalMode === 'edit' && editingRepoId) {
@@ -339,7 +367,9 @@ export function CaseRepositorySpaceManager({
             name: trimmedName,
             code: formCode.trim() || undefined,
             description: formDesc.trim() || undefined,
-            defaultBranch: formBranch.trim() || 'master',
+            defaultBranch: formBranch.trim() || 'main',
+            gitUrl: trimmedGitUrl || undefined,
+            testsDir: formTestsDir.trim() || 'tests',
           });
         } else {
           toast.success(`已成功更新用例库: ${trimmedName}`);
@@ -350,8 +380,10 @@ export function CaseRepositorySpaceManager({
             name: trimmedName,
             code: formCode.trim() || undefined,
             description: formDesc.trim() || undefined,
-            defaultBranch: formBranch.trim() || 'master',
+            defaultBranch: formBranch.trim() || 'main',
             creator: formCreator.trim() || 'admin',
+            gitUrl: trimmedGitUrl,
+            testsDir: formTestsDir.trim() || 'tests',
           });
         } else {
           toast.success(`已成功创建用例库: ${trimmedName}`);
@@ -536,6 +568,37 @@ export function CaseRepositorySpaceManager({
                     <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 min-h-[32px]">
                       {repo.description || '暂无描述信息'}
                     </p>
+
+                    {/* Git URL & Tests Dir Badge */}
+                    {repo.gitUrl ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[11px] text-slate-700 font-mono">
+                        <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span className="truncate flex-1 font-medium" title={repo.gitUrl}>
+                          {repo.gitUrl.replace(/^https?:\/\//, '')}
+                        </span>
+                        {repo.testsDir && (
+                          <span className="text-[10px] text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
+                            {repo.testsDir}/
+                          </span>
+                        )}
+                        {repo.gitUrl.startsWith('http') && (
+                          <a
+                            href={repo.gitUrl.replace(/\.git$/, '')}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-slate-400 hover:text-blue-600 p-0.5 rounded transition-colors shrink-0"
+                            title="在云端打开 Git 仓库"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 italic">
+                        <span>未绑定云端 Git 仓库</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Footer Meta info */}
@@ -602,19 +665,20 @@ export function CaseRepositorySpaceManager({
             <Table>
               <TableHeader className="bg-slate-50/80 border-b border-slate-200/70">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[280px] text-xs font-bold text-slate-600 py-3">用例库名称 & 编码</TableHead>
+                  <TableHead className="w-[240px] text-xs font-bold text-slate-600 py-3">用例库名称 & 编码</TableHead>
+                  <TableHead className="w-[260px] text-xs font-bold text-slate-600 py-3">绑定的 Git 仓库 (Git URL)</TableHead>
                   <TableHead className="text-xs font-bold text-slate-600 py-3">描述</TableHead>
                   <TableHead className="w-[140px] text-xs font-bold text-slate-600 py-3">分支与基线</TableHead>
-                  <TableHead className="w-[100px] text-xs font-bold text-slate-600 py-3">用例关联</TableHead>
-                  <TableHead className="w-[150px] text-xs font-bold text-slate-600 py-3">创建人</TableHead>
-                  <TableHead className="w-[160px] text-xs font-bold text-slate-600 py-3">更新时间</TableHead>
+                  <TableHead className="w-[90px] text-xs font-bold text-slate-600 py-3">用例关联</TableHead>
+                  <TableHead className="w-[120px] text-xs font-bold text-slate-600 py-3">创建人</TableHead>
+                  <TableHead className="w-[150px] text-xs font-bold text-slate-600 py-3">更新时间</TableHead>
                   <TableHead className="w-[190px] text-right text-xs font-bold text-slate-600 py-3 pr-6">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRepos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10 text-xs text-slate-400">
+                    <TableCell colSpan={8} className="text-center py-10 text-xs text-slate-400">
                       未找到符合条件的用例库
                     </TableCell>
                   </TableRow>
@@ -638,6 +702,29 @@ export function CaseRepositorySpaceManager({
                               {repo.code && <span className="font-mono text-[10px] text-slate-400 block truncate">#{repo.code}</span>}
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          {repo.gitUrl ? (
+                            <div className="flex items-center gap-1.5 max-w-[240px]">
+                              <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                              <span className="font-mono text-[11px] text-slate-700 truncate font-medium" title={repo.gitUrl}>
+                                {repo.gitUrl.replace(/^https?:\/\//, '')}
+                              </span>
+                              {repo.gitUrl.startsWith('http') && (
+                                <a
+                                  href={repo.gitUrl.replace(/\.git$/, '')}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-slate-400 hover:text-blue-600 ml-0.5 shrink-0 transition-colors"
+                                  title="在云端打开 Git 仓库"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 font-mono">未绑定 Git</span>
+                          )}
                         </TableCell>
                         <TableCell className="py-3 text-xs text-slate-500 max-w-xs truncate">
                           {repo.description || '暂无描述'}
@@ -715,7 +802,7 @@ export function CaseRepositorySpaceManager({
 
       {/* 新建/编辑用例库 Modal 对话框 */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl p-6">
+        <DialogContent className="sm:max-w-[540px] rounded-2xl p-6">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -727,8 +814,8 @@ export function CaseRepositorySpaceManager({
                 </DialogTitle>
                 <DialogDescription className="text-xs text-slate-500 mt-0.5">
                   {modalMode === 'create'
-                    ? '填写基本参数以创建独立的用例资产库。'
-                    : '修改用例库的基本参数配置。'}
+                    ? '绑定真实云端 Git 仓库，实现 Test-as-Code 驱动的测试资产库。'
+                    : '修改用例库与云端 Git 仓库的基本参数配置。'}
                 </DialogDescription>
               </div>
             </div>
@@ -747,6 +834,62 @@ export function CaseRepositorySpaceManager({
                 className="h-9 rounded-xl bg-slate-50 border-slate-200 text-xs focus-visible:bg-white"
                 required
               />
+            </div>
+
+            {/* 云端 Git 仓库核心绑定配置区 */}
+            <div className="rounded-xl border border-blue-200/90 bg-blue-50/50 p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <Globe className="w-4 h-4 text-blue-600" />
+                  <span>云端 Git 仓库绑定 (Test-as-Code)</span>
+                </div>
+                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                  GitHub / GitLab
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                  <span>Git 仓库地址 (Git URL)</span>
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={formGitUrl}
+                  onChange={(e) => setFormGitUrl(e.target.value)}
+                  placeholder="例如：https://github.com/jan-zhang986/trueone-anubis.git"
+                  className="h-9 rounded-xl bg-white border-blue-200 text-xs font-mono focus-visible:ring-blue-500"
+                  required
+                />
+                <p className="text-[11px] text-slate-500 leading-normal">
+                  必填。平台将直接读取该云端仓库的测试代码与用例目录树。
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">
+                    默认分支
+                  </Label>
+                  <Input
+                    value={formBranch}
+                    onChange={(e) => setFormBranch(e.target.value)}
+                    placeholder="main"
+                    className="h-8 rounded-lg bg-white border-blue-200 text-xs font-mono focus-visible:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700">
+                    测试套件根目录
+                  </Label>
+                  <Input
+                    value={formTestsDir}
+                    onChange={(e) => setFormTestsDir(e.target.value)}
+                    placeholder="tests"
+                    className="h-8 rounded-lg bg-white border-blue-200 text-xs font-mono focus-visible:ring-blue-500"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -778,25 +921,13 @@ export function CaseRepositorySpaceManager({
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
-                默认分支
-              </Label>
-              <Input
-                value={formBranch}
-                onChange={(e) => setFormBranch(e.target.value)}
-                placeholder="master"
-                className="h-9 rounded-xl bg-slate-50 border-slate-200 text-xs font-mono focus-visible:bg-white"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700">
                 描述
               </Label>
               <Textarea
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
                 placeholder="请输入关于此用例库范围或模块功能的说明..."
-                className="min-h-[80px] rounded-xl bg-slate-50 border-slate-200 text-xs focus-visible:bg-white"
+                className="min-h-[70px] rounded-xl bg-slate-50 border-slate-200 text-xs focus-visible:bg-white"
               />
             </div>
 

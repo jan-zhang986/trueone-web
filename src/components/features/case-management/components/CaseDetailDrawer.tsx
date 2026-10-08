@@ -378,6 +378,7 @@ export function CaseDetailDrawer({
   const [tagsSaving, setTagsSaving] = useState(false);
   const [levelSaving, setLevelSaving] = useState(false);
   const [moduleSaving, setModuleSaving] = useState(false);
+  const [viewApiAsPostman, setViewApiAsPostman] = useState(true);
   const [showRealizationChoiceDialog, setShowRealizationChoiceDialog] = useState(false);
   const [targetRealizationType, setTargetRealizationType] = useState<string>('FLOW');
   const [showSettingSheet, setShowSettingSheet] = useState(false);
