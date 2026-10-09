@@ -53,6 +53,7 @@ export interface DagNodeData {
   dependsOn: string[];
   configSummary?: string;
   config?: Record<string, any>;
+  resolvedConfig?: Record<string, any>;
   status?: 'passed' | 'failed' | 'running' | 'ready';
   durationMs?: number;
   output?: Record<string, any>;
@@ -61,6 +62,47 @@ export interface DagNodeData {
   expected?: string;
   isSelected?: boolean;
   onSelectNode?: (nodeId: string) => void;
+}
+
+// 点路径查找变量
+function getPathValue(pool: Record<string, any>, path: string): any {
+  if (path in pool) return pool[path];
+  const parts = path.split('.');
+  let curr: any = pool;
+  for (const part of parts) {
+    if (curr == null || typeof curr !== 'object') return undefined;
+    curr = curr[part];
+  }
+  return curr;
+}
+
+// 递归进行变量插值替换 (支持 {{ params.xxx }} 或 {{ 上游节点.output.xxx }})
+function resolveVariables(val: any, pool: Record<string, any>): any {
+  if (val == null) return val;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    const singleMatch = trimmed.match(/^\{\{\s*([a-zA-Z0-9_\.\-]+)\s*\}\}$/);
+    if (singleMatch) {
+      const path = singleMatch[1];
+      const resolved = getPathValue(pool, path);
+      if (resolved !== undefined) return resolved;
+    }
+    return val.replace(/\{\{\s*([a-zA-Z0-9_\.\-]+)\s*\}\}/g, (match, path) => {
+      const resolved = getPathValue(pool, path);
+      return resolved !== undefined ? String(resolved) : match;
+    });
+  }
+  if (Array.isArray(val)) {
+    return val.map((item) => resolveVariables(item, pool));
+  }
+  if (typeof val === 'object') {
+    const res: Record<string, any> = {};
+    for (const [k, v] of Object.entries(val)) {
+      res[k] = resolveVariables(v, pool);
+    }
+    return res;
+  }
+  return val;
 }
 
 // 自定义 DAG 节点卡片
@@ -265,6 +307,7 @@ interface WorkflowDagFlowViewProps {
       nodeName: string;
       status: string;
       durationMs?: number;
+      resolvedConfig?: Record<string, any>;
       output?: Record<string, any>;
       evidence?: Record<string, any>;
     }>;
@@ -280,7 +323,46 @@ export function WorkflowDagFlowView({
 }: WorkflowDagFlowViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [inspectorTab, setInspectorTab] = useState<'config' | 'output' | 'raw'>('config');
+  const [inspectorTab, setInspectorTab] = useState<'config' | 'output' | 'variables' | 'raw'>('config');
+  const [paramViewMode, setParamViewMode] = useState<'resolved' | 'template'>('resolved');
+
+  // 1. 全局变量池解析 (从 YAML 根节点 params 与 executionData.context 聚合)
+  const { declaredParams, systemParams } = useMemo(() => {
+    let params: Record<string, any> = {};
+    if (yamlContent) {
+      try {
+        const doc = YAML.parse(yamlContent);
+        if (doc && doc.params && typeof doc.params === 'object') {
+          params = doc.params;
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+    const sys = {
+      'sys.timestamp': Date.now(),
+      'sys.date': new Date().toISOString().slice(0, 10),
+      'sys.uuid': 'e2e-trace-89c0',
+    };
+    return { declaredParams: params, systemParams: sys };
+  }, [yamlContent]);
+
+  // 运行时的完整全局变量池
+  const activeVariablePool = useMemo(() => {
+    const pool: Record<string, any> = {
+      params: declaredParams,
+      ...declaredParams,
+      ...systemParams,
+    };
+    if (executionData?.context) {
+      Object.assign(pool, executionData.context);
+    }
+    return pool;
+  }, [declaredParams, systemParams, executionData]);
+
+  const varCount = useMemo(() => {
+    return Object.keys(declaredParams).length;
+  }, [declaredParams]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -330,11 +412,14 @@ export function WorkflowDagFlowView({
         ? 'failed'
         : matchStep?.status || (overallStatus === 'passed' ? 'passed' : 'ready');
 
+      const computedResolved = matchResult?.resolvedConfig || resolveVariables(n.config, activeVariablePool);
+
       return {
         ...n,
         stepNumber: n.stepNumber || idx + 1,
         status: status as any,
         durationMs: matchResult?.durationMs || n.durationMs || matchStep?.durationMs || (status === 'passed' ? 15 : undefined),
+        resolvedConfig: computedResolved,
         output: matchResult?.output || n.output,
         evidence: matchResult?.evidence || n.evidence,
         isSelected: n.id === selectedNodeId,
@@ -457,10 +542,19 @@ export function WorkflowDagFlowView({
           <span className="text-[11px] font-mono text-slate-500">
             {nodeCount} 个节点 · {edgeCount} 条拓扑连线
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium ml-2">
-            <Sparkles className="w-3 h-3 text-indigo-500" />
-            点击节点可检视完整参数与运行证据
-          </span>
+          <button
+            onClick={() => {
+              if (!selectedNodeId && parsedNodeList.length > 0) {
+                setSelectedNodeId(parsedNodeList[0].id);
+              }
+              setInspectorTab('variables');
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium text-[11px] border border-purple-200/80 transition-colors ml-2 cursor-pointer shadow-2xs"
+            title="查看当前用例的全局参数池与运行时变量"
+          >
+            <SlidersHorizontal className="w-3 h-3 text-purple-600" />
+            <span>全局变量池 ({varCount})</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 text-slate-500 text-[11px]">
@@ -562,7 +656,7 @@ export function WorkflowDagFlowView({
             </div>
 
             {/* 面板 Tab 切换 */}
-            <div className="px-4 border-b border-slate-100 flex gap-4 text-xs font-medium bg-white">
+            <div className="px-3 border-b border-slate-100 flex gap-2.5 text-xs font-medium bg-white">
               <button
                 onClick={() => setInspectorTab('config')}
                 className={`py-2 border-b-2 transition-colors cursor-pointer ${
@@ -581,8 +675,21 @@ export function WorkflowDagFlowView({
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <span>执行产物与证据</span>
+                <span>执行产物</span>
                 {activeNode.output && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+              </button>
+              <button
+                onClick={() => setInspectorTab('variables')}
+                className={`py-2 border-b-2 transition-colors cursor-pointer flex items-center gap-1 ${
+                  inspectorTab === 'variables'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>全局变量池</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-purple-100 text-purple-700 font-bold">
+                  {varCount}
+                </span>
               </button>
               <button
                 onClick={() => setInspectorTab('raw')}
@@ -592,94 +699,142 @@ export function WorkflowDagFlowView({
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                YAML 片段
+                YAML
               </button>
             </div>
 
             {/* 面板主体内容 */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
-              {inspectorTab === 'config' && (
-                <>
-                  {/* 1. HTTP 节点详情 */}
-                  {activeNode.type === 'HTTP' && (
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-[11px] font-semibold text-slate-500 mb-1">请求接口 (URL)</div>
-                        <div className="flex items-center gap-1.5 p-2 rounded-lg bg-slate-900 text-slate-100 font-mono text-[11px]">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white shrink-0">
-                            {activeNode.config?.method || 'POST'}
-                          </span>
-                          <span className="truncate flex-1">{activeNode.config?.url || '--'}</span>
-                          <button
-                            onClick={() => copyText(activeNode.config?.url || '', 'url')}
-                            className="text-slate-400 hover:text-white p-1 rounded"
-                            title="复制 URL"
-                          >
-                            {copiedKey === 'url' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                          </button>
-                        </div>
-                      </div>
+              {inspectorTab === 'config' && (() => {
+                const displayConfig = paramViewMode === 'resolved'
+                  ? (activeNode.resolvedConfig || activeNode.config || {})
+                  : (activeNode.config || {});
 
-                      {/* Headers */}
-                      <div>
-                        <div className="text-[11px] font-semibold text-slate-500 mb-1">请求头 (Headers)</div>
-                        {activeNode.config?.headers && Object.keys(activeNode.config.headers).length > 0 ? (
-                          <div className="rounded-lg border border-slate-200 overflow-hidden text-[11px] font-mono">
-                            {Object.entries(activeNode.config.headers).map(([k, v]) => (
-                              <div key={k} className="flex border-b border-slate-100 last:border-none px-2.5 py-1.5 bg-slate-50/50">
-                                <span className="w-32 text-slate-500 font-semibold truncate">{k}</span>
-                                <span className="text-slate-800 truncate flex-1">{String(v)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-[11px] text-slate-400 italic">默认请求头</div>
-                        )}
+                return (
+                  <>
+                    {/* 变量插值模式切换条 */}
+                    <div className="flex items-center justify-between p-2 bg-indigo-50/60 rounded-lg border border-indigo-100 text-[11px]">
+                      <div className="flex items-center gap-1.5 text-indigo-950 font-semibold">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>变量插值视图:</span>
                       </div>
-
-                      {/* Request Body */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-semibold text-slate-500">请求载荷 (Request Body)</span>
-                          {activeNode.config?.body && (
-                            <button
-                              onClick={() => copyText(JSON.stringify(activeNode.config?.body, null, 2), 'body')}
-                              className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1"
-                            >
-                              {copiedKey === 'body' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                              <span>复制代码</span>
-                            </button>
-                          )}
-                        </div>
-                        {activeNode.config?.body ? (
-                          <pre className="p-3 rounded-lg bg-[#0F172A] text-[#38BDF8] font-mono text-[11px] overflow-x-auto leading-5 max-h-48 border border-slate-800">
-                            {JSON.stringify(activeNode.config.body, null, 2)}
-                          </pre>
-                        ) : (
-                          <div className="text-[11px] text-slate-400 italic">无 Body 参数</div>
-                        )}
+                      <div className="flex items-center bg-white rounded-md p-0.5 border border-indigo-200/80 shadow-2xs">
+                        <button
+                          onClick={() => setParamViewMode('resolved')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                            paramViewMode === 'resolved'
+                              ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          ⚡ 变量填充后 (Resolved)
+                        </button>
+                        <button
+                          onClick={() => setParamViewMode('template')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                            paramViewMode === 'template'
+                              ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          📝 模板原貌 (Template)
+                        </button>
                       </div>
                     </div>
-                  )}
 
+                    {/* 1. HTTP 节点详情 */}
+                    {activeNode.type === 'HTTP' && (
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 mb-1">
+                            <span>请求接口 (URL)</span>
+                            {paramViewMode === 'resolved' && (
+                              <span className="text-[10px] text-emerald-600 font-mono flex items-center gap-1">
+                                <Check className="w-2.5 h-2.5" /> 变量已注入
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 p-2 rounded-lg bg-slate-900 text-slate-100 font-mono text-[11px]">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white shrink-0">
+                              {displayConfig?.method || 'POST'}
+                            </span>
+                            <span className="truncate flex-1">{displayConfig?.url || '--'}</span>
+                            <button
+                              onClick={() => copyText(displayConfig?.url || '', 'url')}
+                              className="text-slate-400 hover:text-white p-1 rounded cursor-pointer"
+                              title="复制 URL"
+                            >
+                              {copiedKey === 'url' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Headers */}
+                        <div>
+                          <div className="text-[11px] font-semibold text-slate-500 mb-1">请求头 (Headers)</div>
+                          {displayConfig?.headers && Object.keys(displayConfig.headers).length > 0 ? (
+                            <div className="rounded-lg border border-slate-200 overflow-hidden text-[11px] font-mono">
+                              {Object.entries(displayConfig.headers).map(([k, v]) => (
+                                <div key={k} className="flex border-b border-slate-100 last:border-none px-2.5 py-1.5 bg-slate-50/50">
+                                  <span className="w-32 text-slate-500 font-semibold truncate">{k}</span>
+                                  <span className="text-slate-800 truncate flex-1">{String(v)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-[11px] text-slate-400 italic">默认请求头</div>
+                          )}
+                        </div>
+
+                        {/* Request Body */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-semibold text-slate-500">请求载荷 (Request Body)</span>
+                            {displayConfig?.body && (
+                              <button
+                                onClick={() => copyText(JSON.stringify(displayConfig?.body, null, 2), 'body')}
+                                className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                {copiedKey === 'body' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                <span>复制代码</span>
+                              </button>
+                            )}
+                          </div>
+                          {displayConfig?.body ? (
+                            <pre className="p-3 rounded-lg bg-[#0F172A] text-[#38BDF8] font-mono text-[11px] overflow-x-auto leading-5 max-h-56 border border-slate-800">
+                              {JSON.stringify(displayConfig.body, null, 2)}
+                            </pre>
+                          ) : (
+                            <div className="text-[11px] text-slate-400 italic">空负载 (No Body)</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   {/* 2. SQL 节点详情 */}
                   {activeNode.type === 'SQL' && (
                     <div className="space-y-3">
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[11px] font-semibold text-slate-500">SQL 资产校验脚本</span>
-                          {activeNode.config?.sql && (
-                            <button
-                              onClick={() => copyText(activeNode.config?.sql || '', 'sql')}
-                              className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1"
-                            >
-                              {copiedKey === 'sql' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                              <span>复制 SQL</span>
-                            </button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {paramViewMode === 'resolved' && (
+                              <span className="text-[10px] text-emerald-600 font-mono flex items-center gap-1">
+                                <Check className="w-2.5 h-2.5" /> 变量已注入
+                              </span>
+                            )}
+                            {displayConfig?.sql && (
+                              <button
+                                onClick={() => copyText(displayConfig?.sql || '', 'sql')}
+                                className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                {copiedKey === 'sql' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                <span>复制 SQL</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <pre className="p-3 rounded-lg bg-[#0F172A] text-[#FDE047] font-mono text-[11px] overflow-x-auto leading-5 border border-slate-800 max-h-56">
-                          {activeNode.config?.sql || '-- 未配置 SQL 语句'}
+                          {displayConfig?.sql || '-- 未配置 SQL 语句'}
                         </pre>
                       </div>
                     </div>
@@ -724,7 +879,106 @@ export function WorkflowDagFlowView({
                     )}
                   </div>
                 </>
-              )}
+              );
+            })()}
+
+            {/* Tab: 全局变量池 (Global Variable Pool) */}
+            {inspectorTab === 'variables' && (
+              <div className="space-y-4">
+                {/* 变量池统计说明 */}
+                <div className="p-2.5 rounded-lg bg-purple-50/70 border border-purple-100 text-[11px] text-purple-900 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600" />
+                    <span>全局变量池（支持在节点配置中插值引用）</span>
+                  </div>
+                  <span className="font-mono font-bold text-purple-700 text-[10px]">
+                    {Object.keys(declaredParams).length} 个参数
+                  </span>
+                </div>
+
+                {/* 1. 用例声明的全局入参 */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-slate-700">用例入参 (params.*)</span>
+                    <span className="text-[10px] text-slate-400">语法: {"{{ params.xxx }}"}</span>
+                  </div>
+                  {Object.keys(declaredParams).length > 0 ? (
+                    <div className="rounded-lg border border-slate-200 overflow-hidden text-[11px]">
+                      {Object.entries(declaredParams).map(([k, v]) => (
+                        <div key={k} className="flex items-center justify-between border-b border-slate-100 last:border-none px-3 py-2 bg-slate-50/60 hover:bg-slate-50">
+                          <div className="min-w-0 pr-2">
+                            <div className="font-mono font-semibold text-slate-800 text-[11px] flex items-center gap-1">
+                              <span className="text-purple-600 font-bold">$</span>
+                              <span>{k}</span>
+                            </div>
+                            <div className="font-mono text-slate-500 text-[10px] truncate">
+                              值: <span className="text-slate-900 font-semibold">{String(v)}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => copyText(`{{ params.${k} }}`, `param-${k}`)}
+                            className="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors shrink-0 cursor-pointer"
+                            title="复制插值表达式"
+                          >
+                            {copiedKey === `param-${k}` ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg border border-dashed border-slate-200 text-center text-slate-400 text-[11px]">
+                      当前用例 YAML 顶层未定义 params 变量池
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. 系统动态内置变量 */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-slate-700">系统内置动态变量 (sys.*)</span>
+                    <span className="text-[10px] text-slate-400">自动实时生成</span>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 overflow-hidden text-[11px]">
+                    {Object.entries(systemParams).map(([k, v]) => (
+                      <div key={k} className="flex items-center justify-between border-b border-slate-100 last:border-none px-3 py-2 bg-slate-50/60 hover:bg-slate-50">
+                        <div className="min-w-0 pr-2">
+                          <div className="font-mono font-semibold text-indigo-700 text-[11px]">
+                            {k}
+                          </div>
+                          <div className="font-mono text-slate-400 text-[10px] truncate">
+                            当前值: {String(v)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => copyText(`{{ ${k} }}`, `sys-${k}`)}
+                          className="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors shrink-0 cursor-pointer"
+                          title="复制表达式"
+                        >
+                          {copiedKey === `sys-${k}` ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. 运行时节点产物与共享上下文 */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-slate-700">节点输出共享上下文 (Context)</span>
+                    <span className="text-[10px] text-slate-400">执行后动态写入</span>
+                  </div>
+                  {executionData?.context ? (
+                    <pre className="p-3 rounded-lg bg-[#0F172A] text-[#34D399] font-mono text-[10px] overflow-x-auto leading-4 max-h-40 border border-slate-800">
+                      {JSON.stringify(executionData.context, null, 2)}
+                    </pre>
+                  ) : (
+                    <div className="p-3 rounded-lg border border-dashed border-slate-200 text-center text-slate-400 text-[10px]">
+                      运行用例后，各节点的 output 将自动注册进上下文变量池供下游节点消费。
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
               {/* Tab 2: 运行产物与证据 */}
               {inspectorTab === 'output' && (
