@@ -336,14 +336,15 @@ export function WorkflowDagFlowView({
     setIsPanelOpen(false);
   }, []);
 
-  // 1. 全局变量池解析 (从 YAML 根节点 params 与 executionData.context 聚合)
-  const { declaredParams, systemParams } = useMemo(() => {
-    let params: Record<string, any> = {};
+  // 1. 全局变量池解析 (从 YAML 根节点 variables/vars 与 executionData.context 聚合)
+  const { declaredVariables, systemParams } = useMemo(() => {
+    let vars: Record<string, any> = {};
     if (yamlContent) {
       try {
         const doc = YAML.parse(yamlContent);
-        if (doc && doc.params && typeof doc.params === 'object') {
-          params = doc.params;
+        const sourceVars = doc?.variables || doc?.vars || doc?.params;
+        if (sourceVars && typeof sourceVars === 'object') {
+          vars = sourceVars;
         }
       } catch (e) {
         // ignore parse error
@@ -354,25 +355,27 @@ export function WorkflowDagFlowView({
       'sys.date': new Date().toISOString().slice(0, 10),
       'sys.uuid': 'e2e-trace-89c0',
     };
-    return { declaredParams: params, systemParams: sys };
+    return { declaredVariables: vars, systemParams: sys };
   }, [yamlContent]);
 
   // 运行时的完整全局变量池
   const activeVariablePool = useMemo(() => {
     const pool: Record<string, any> = {
-      params: declaredParams,
-      ...declaredParams,
+      variables: declaredVariables,
+      vars: declaredVariables,
+      params: declaredVariables, // 向下兼容
+      ...declaredVariables,
       ...systemParams,
     };
     if (executionData?.context) {
       Object.assign(pool, executionData.context);
     }
     return pool;
-  }, [declaredParams, systemParams, executionData]);
+  }, [declaredVariables, systemParams, executionData]);
 
   const varCount = useMemo(() => {
-    return Object.keys(declaredParams).length;
-  }, [declaredParams]);
+    return Object.keys(declaredVariables).length;
+  }, [declaredVariables]);
 
   const copyText = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -917,29 +920,29 @@ export function WorkflowDagFlowView({
             {inspectorTab === 'variables' && (
               <div className="space-y-4">
                 {/* 变量池统计说明 */}
-                <div className="p-2.5 rounded-lg bg-purple-50/70 border border-purple-100 text-[11px] text-purple-900 flex items-center justify-between">
+                <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-200/80 text-[11px] text-slate-700 flex items-center justify-between">
                   <div className="flex items-center gap-1.5 font-medium">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
                     <span>全局变量池（支持在节点配置中插值引用）</span>
                   </div>
-                  <span className="font-mono font-bold text-purple-700 text-[10px]">
-                    {Object.keys(declaredParams).length} 个参数
+                  <span className="font-mono font-bold text-slate-800 text-[10px]">
+                    {Object.keys(declaredVariables).length} 个变量
                   </span>
                 </div>
 
-                {/* 1. 用例声明的全局入参 */}
+                {/* 1. 用例声明的全局变量 */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-bold text-slate-700">用例入参 (params.*)</span>
-                    <span className="text-[10px] text-slate-400">语法: {"{{ params.xxx }}"}</span>
+                    <span className="text-[11px] font-bold text-slate-700">用例变量 (variables.*)</span>
+                    <span className="text-[10px] text-slate-400">语法: {"{{ variables.xxx }}"}</span>
                   </div>
-                  {Object.keys(declaredParams).length > 0 ? (
+                  {Object.keys(declaredVariables).length > 0 ? (
                     <div className="rounded-lg border border-slate-200 overflow-hidden text-[11px]">
-                      {Object.entries(declaredParams).map(([k, v]) => (
+                      {Object.entries(declaredVariables).map(([k, v]) => (
                         <div key={k} className="flex items-center justify-between border-b border-slate-100 last:border-none px-3 py-2 bg-slate-50/60 hover:bg-slate-50">
                           <div className="min-w-0 pr-2">
                             <div className="font-mono font-semibold text-slate-800 text-[11px] flex items-center gap-1">
-                              <span className="text-purple-600 font-bold">$</span>
+                              <span className="text-indigo-600 font-bold">$</span>
                               <span>{k}</span>
                             </div>
                             <div className="font-mono text-slate-500 text-[10px] truncate">
@@ -947,18 +950,19 @@ export function WorkflowDagFlowView({
                             </div>
                           </div>
                           <button
-                            onClick={() => copyText(`{{ params.${k} }}`, `param-${k}`)}
+                            type="button"
+                            onClick={() => copyText(`{{ variables.${k} }}`, `var-${k}`)}
                             className="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors shrink-0 cursor-pointer"
                             title="复制插值表达式"
                           >
-                            {copiedKey === `param-${k}` ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            {copiedKey === `var-${k}` ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="p-3 rounded-lg border border-dashed border-slate-200 text-center text-slate-400 text-[11px]">
-                      当前用例 YAML 顶层未定义 params 变量池
+                      当前用例 YAML 顶层未定义 variables 变量池
                     </div>
                   )}
                 </div>
