@@ -53,6 +53,7 @@ import {
   RepoTreeNode,
   UnifiedTestCase,
 } from '@/services/case-management/service-repo-case';
+import { WorkflowDagFlowView } from './WorkflowDagFlowView';
 
 // ================= 数据模型 =================
 
@@ -183,6 +184,7 @@ export function RepoCaseExplorer({
   // 详情抽屉
   const [activeDrawerCase, setActiveDrawerCase] = useState<UnifiedTestCaseItem | null>(null);
   const [drawerTab, setDrawerTab] = useState<'steps' | 'code' | 'logs'>('steps');
+  const [dagViewMode, setDagViewMode] = useState<'flow' | 'list'>('flow');
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [codeEditBuffer, setCodeEditBuffer] = useState<{ [key: string]: string }>({});
 
@@ -1237,7 +1239,7 @@ export function RepoCaseExplorer({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {drawerTab === 'steps' && (
                   <div className="space-y-4">
-                    {/* 前置条件卡片 */}
+                    {/* 前置条件与业务说明卡片 */}
                     {activeDrawerCase.design.precondition && (
                       <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/60 text-xs flex items-start gap-2.5">
                         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -1250,9 +1252,46 @@ export function RepoCaseExplorer({
                       </div>
                     )}
 
-                    {/* 步骤时间线列表 */}
-                    <div className="space-y-3">
-                      <span className="text-xs font-bold text-slate-700 block">DAG 拓扑节点与执行断言</span>
+                    {/* 视图切换栏：DAG 拓扑流程图 vs 步骤清单 */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">DAG 拓扑节点与执行断言</span>
+                      <div className="inline-flex h-7 rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setDagViewMode('flow')}
+                          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
+                            dagViewMode === 'flow'
+                              ? 'bg-white font-bold text-purple-700 shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <GitMerge className="w-3 h-3 text-purple-600" />
+                          <span>DAG 流程图 (Flow)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDagViewMode('list')}
+                          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
+                            dagViewMode === 'list'
+                              ? 'bg-white font-bold text-slate-900 shadow-2xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          <ListOrdered className="w-3 h-3 text-slate-600" />
+                          <span>步骤清单 (List)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 视图内容切换 */}
+                    {dagViewMode === 'flow' ? (
+                      <WorkflowDagFlowView
+                        yamlContent={activeDrawerCase.implementation.codeContent}
+                        steps={activeDrawerCase.design.steps}
+                        overallStatus={activeDrawerCase.status}
+                      />
+                    ) : (
+                      /* 步骤时间线列表 */
                       <div className="space-y-2.5 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 before:z-0">
                         {activeDrawerCase.design.steps.map((st) => (
                           <div
@@ -1299,7 +1338,7 @@ export function RepoCaseExplorer({
                           </div>
                         ))}
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 
