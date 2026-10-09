@@ -199,6 +199,7 @@ export function RepoCaseExplorer({
   const [newRepoName, setNewRepoName] = useState<string>('');
   const [newRepoPath, setNewRepoPath] = useState<string>('https://github.com/jan-zhang986/trueone-anubis.git');
   const [newRepoBranch, setNewRepoBranch] = useState<string>('main');
+  const [newRepoToken, setNewRepoToken] = useState<string>('');
 
   // 控制台日志
   const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
@@ -407,6 +408,7 @@ export function RepoCaseExplorer({
         name: newRepoName.trim(),
         gitUrl: isGit ? trimmedPath : undefined,
         localPath: !isGit ? trimmedPath : undefined,
+        gitToken: newRepoToken.trim() || undefined,
         defaultBranch: newRepoBranch.trim() || 'main',
         testsDir: 'tests',
         gitPlatform: isGit ? (trimmedPath.includes('github.com') ? 'github' : 'gitlab') : 'local',
@@ -415,6 +417,7 @@ export function RepoCaseExplorer({
       toast.success('成功关联云端/本地代码工程用例库！');
       setIsCreateRepoModalOpen(false);
       setNewRepoName('');
+      setNewRepoToken('');
       await fetchRepositories();
       if (newRepo?.id) {
         setCurrentRepoId(newRepo.id);
@@ -1466,6 +1469,21 @@ export function RepoCaseExplorer({
                 onChange={(e) => setNewRepoBranch(e.target.value)}
                 className="h-8 text-xs font-mono"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-slate-700">Git 访问凭证 (Personal Access Token / 可选)</label>
+                <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded font-medium">支持云端 API 提交</span>
+              </div>
+              <Input
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxx (用于云端通过 GitHub API 直接提交代码)"
+                value={newRepoToken}
+                onChange={(e) => setNewRepoToken(e.target.value)}
+                className="h-8 text-xs font-mono"
+              />
+              <p className="text-[11px] text-slate-400">配置后可实现纯云端无状态提交；若留空则优先使用服务器本地已鉴权的 Git CLI</p>
             </div>
           </div>
 

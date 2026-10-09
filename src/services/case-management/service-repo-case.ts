@@ -18,6 +18,7 @@ export interface CaseRepoItem {
   gitPlatform?: string;
   testsDir?: string;
   localPath?: string;
+  gitToken?: string;
   createdAt?: number;
   updatedAt?: number;
 }
