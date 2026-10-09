@@ -115,10 +115,10 @@ function DagNodeCard({ data }: NodeProps) {
   return (
     <div
       onClick={() => nodeData.onSelectNode?.(nodeData.id)}
-      className={`relative group w-80 rounded-xl bg-white border transition-all p-3.5 font-sans cursor-pointer ${
+      className={`relative group w-72 rounded-xl bg-white border transition-all p-3 font-sans cursor-pointer ${
         nodeData.isSelected
-          ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md'
-          : 'border-slate-200/90 shadow-2xs hover:shadow-md hover:border-indigo-300'
+          ? 'border-indigo-600 ring-2 ring-indigo-500/20 shadow-md'
+          : 'border-slate-200 shadow-2xs hover:shadow-md hover:border-slate-400'
       }`}
     >
       <Handle
@@ -322,9 +322,19 @@ export function WorkflowDagFlowView({
   executionData,
 }: WorkflowDagFlowViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<'config' | 'output' | 'variables' | 'raw'>('config');
   const [paramViewMode, setParamViewMode] = useState<'resolved' | 'template'>('resolved');
+
+  const handleSelectNode = useCallback((id: string) => {
+    setSelectedNodeId(id);
+    setIsPanelOpen(true);
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
+    setIsPanelOpen(false);
+  }, []);
 
   // 1. 全局变量池解析 (从 YAML 根节点 params 与 executionData.context 聚合)
   const { declaredParams, systemParams } = useMemo(() => {
@@ -422,8 +432,8 @@ export function WorkflowDagFlowView({
         resolvedConfig: computedResolved,
         output: matchResult?.output || n.output,
         evidence: matchResult?.evidence || n.evidence,
-        isSelected: n.id === selectedNodeId,
-        onSelectNode: (id: string) => setSelectedNodeId(id),
+        isSelected: n.id === selectedNodeId && isPanelOpen,
+        onSelectNode: handleSelectNode,
       };
     });
 
@@ -471,8 +481,8 @@ export function WorkflowDagFlowView({
           id: n.id,
           type: 'dagNode',
           position: {
-            x: rank * 380 + 40,
-            y: idx * 210 + 40,
+            x: rank * 340 + 30,
+            y: idx * 190 + 30,
           },
           data: n as unknown as Record<string, unknown>,
         });
@@ -514,16 +524,9 @@ export function WorkflowDagFlowView({
     };
   }, [yamlContent, steps, overallStatus, executionData, selectedNodeId]);
 
-  // 默认选中第一个节点，确保一打开抽屉就能看到详情
-  useEffect(() => {
-    if (!selectedNodeId && parsedNodeList.length > 0) {
-      setSelectedNodeId(parsedNodeList[0].id);
-    }
-  }, [parsedNodeList, selectedNodeId]);
-
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id);
-  }, []);
+    handleSelectNode(node.id);
+  }, [handleSelectNode]);
 
   const activeNode = useMemo(() => {
     return parsedNodeList.find((n) => n.id === selectedNodeId) || null;
@@ -531,88 +534,66 @@ export function WorkflowDagFlowView({
 
   return (
     <div className="flex flex-col h-[560px] rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
-      {/* 顶部工具条 */}
-      <div className="h-10 px-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between text-xs shrink-0">
+      {/* 顶部工具条 - 极简现代设计 */}
+      <div className="h-10 px-3.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between text-xs shrink-0 select-none">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-            <GitMerge className="w-3.5 h-3.5 text-purple-600" />
-            <span>DAG 拓扑流向图</span>
+          <span className="font-semibold text-slate-800 flex items-center gap-1.5 text-xs">
+            <GitMerge className="w-3.5 h-3.5 text-indigo-600" />
+            <span>DAG 拓扑流向</span>
           </span>
-          <span className="text-slate-300">|</span>
+          <span className="text-slate-300">/</span>
           <span className="text-[11px] font-mono text-slate-500">
-            {nodeCount} 个节点 · {edgeCount} 条拓扑连线
+            {nodeCount} 节点 · {edgeCount} 连线
           </span>
-          <button
-            onClick={() => {
-              if (!selectedNodeId && parsedNodeList.length > 0) {
-                setSelectedNodeId(parsedNodeList[0].id);
-              }
-              setInspectorTab('variables');
-            }}
-            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium text-[11px] border border-purple-200/80 transition-colors ml-2 cursor-pointer shadow-2xs"
-            title="查看当前用例的全局参数池与运行时变量"
-          >
-            <SlidersHorizontal className="w-3 h-3 text-purple-600" />
-            <span>全局变量池 ({varCount})</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 text-slate-500 text-[11px]">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
-            <span>HTTP</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>SQL</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-purple-500" />
-            <span>门禁</span>
-          </span>
-        </div>
-      </div>
-
-      {/* 🚀 全局变量池常驻横幅 (无需点击Tab，开箱即见所有变量) */}
-      <div className="px-4 py-2 bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-slate-50/80 border-b border-purple-100 flex items-center justify-between text-xs shrink-0 shadow-2xs">
-        <div className="flex items-center gap-2 overflow-x-auto py-0.5 max-w-[85%]">
-          <span className="font-bold text-purple-900 flex items-center gap-1.5 shrink-0 text-[11px]">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600" />
-            <span>全局变量池 (Global Params):</span>
-          </span>
-          {varCount > 0 ? (
-            <div className="flex items-center gap-1.5 shrink-0">
-              {Object.entries(declaredParams).map(([k, v]) => (
-                <span
-                  key={k}
-                  onClick={() => {
-                    setSelectedNodeId(activeNode?.id || parsedNodeList[0]?.id);
-                    setInspectorTab('variables');
-                  }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-purple-200/90 text-[11px] font-mono shadow-2xs cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 transition-all"
-                  title={`点击查看变量 {{ params.${k} }} 详情`}
-                >
-                  <span className="text-purple-600 font-bold">${k}:</span>
-                  <span className="text-slate-900 font-semibold truncate max-w-[150px]">{String(v)}</span>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span className="text-[11px] text-slate-400 italic">
-              当前用例未定义 params 变量池（支持在 YAML 根层级声明 params 注入变量）
-            </span>
+          {varCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedNodeId && parsedNodeList.length > 0) {
+                  setSelectedNodeId(parsedNodeList[0].id);
+                }
+                setIsPanelOpen(true);
+                setInspectorTab('variables');
+              }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium text-[11px] border border-purple-200/80 transition-colors ml-1 cursor-pointer"
+              title="查看当前用例的全局参数池"
+            >
+              <SlidersHorizontal className="w-3 h-3 text-purple-600" />
+              <span>变量池 ({varCount})</span>
+            </button>
           )}
         </div>
-        <button
-          onClick={() => {
-            setSelectedNodeId(activeNode?.id || parsedNodeList[0]?.id);
-            setInspectorTab('variables');
-          }}
-          className="text-[11px] text-purple-700 hover:text-purple-900 font-semibold hover:underline shrink-0 ml-2 cursor-pointer flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-purple-200 shadow-2xs"
-        >
-          <span>检视详情与表达式</span>
-          <ChevronRight className="w-3 h-3 text-purple-600" />
-        </button>
+
+        <div className="flex items-center gap-3 text-slate-500 text-[11px]">
+          <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span>HTTP</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>SQL</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-purple-500" />
+              <span>门禁</span>
+            </span>
+          </div>
+
+          {!isPanelOpen && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedNodeId(selectedNodeId || parsedNodeList[0]?.id || null);
+                setIsPanelOpen(true);
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-medium shadow-2xs transition-colors cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3 h-3 text-slate-500" />
+              <span>检视节点详情</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 画布核心区 + 右侧抽屉检视面板 */}
@@ -641,10 +622,10 @@ export function WorkflowDagFlowView({
         </div>
 
         {/* 节点详情侧边检视面板 (Node Inspector Panel) */}
-        {activeNode && (
-          <div className="w-[380px] lg:w-[420px] h-full bg-white border-l border-slate-200 flex flex-col shadow-lg z-20 shrink-0 animate-in slide-in-from-right-4 duration-150">
+        {activeNode && isPanelOpen && (
+          <div className="w-[360px] lg:w-[400px] h-full bg-white border-l border-slate-200 flex flex-col shadow-sm z-20 shrink-0 animate-in slide-in-from-right-3 duration-150">
             {/* 面板头部 */}
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+            <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold ${
@@ -688,8 +669,9 @@ export function WorkflowDagFlowView({
                     : 'READY'}
                 </span>
                 <button
-                  onClick={() => setSelectedNodeId(null)}
-                  className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-md transition-colors"
+                  type="button"
+                  onClick={handleClosePanel}
+                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-md transition-colors cursor-pointer"
                   title="关闭详情面板"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -697,23 +679,25 @@ export function WorkflowDagFlowView({
               </div>
             </div>
 
-            {/* 面板 Tab 切换 */}
-            <div className="px-3 border-b border-slate-100 flex gap-2.5 text-xs font-medium bg-white">
+            {/* 面板 Tab 切换 - 极简灰度下划线 */}
+            <div className="px-3 border-b border-slate-100 flex gap-1 text-xs font-medium bg-white">
               <button
+                type="button"
                 onClick={() => setInspectorTab('config')}
-                className={`py-2 border-b-2 transition-colors cursor-pointer ${
+                className={`py-2 px-2.5 border-b-2 transition-colors cursor-pointer ${
                   inspectorTab === 'config'
-                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    ? 'border-indigo-600 text-indigo-600 font-semibold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 参数配置
               </button>
               <button
+                type="button"
                 onClick={() => setInspectorTab('output')}
-                className={`py-2 border-b-2 transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`py-2 px-2.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1 ${
                   inspectorTab === 'output'
-                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    ? 'border-indigo-600 text-indigo-600 font-semibold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -721,23 +705,27 @@ export function WorkflowDagFlowView({
                 {activeNode.output && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
               </button>
               <button
+                type="button"
                 onClick={() => setInspectorTab('variables')}
-                className={`py-2 border-b-2 transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`py-2 px-2.5 border-b-2 transition-colors cursor-pointer flex items-center gap-1 ${
                   inspectorTab === 'variables'
-                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    ? 'border-indigo-600 text-indigo-600 font-semibold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <span>全局变量池</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-purple-100 text-purple-700 font-bold">
-                  {varCount}
-                </span>
+                <span>全局变量</span>
+                {varCount > 0 && (
+                  <span className="px-1 py-0.2 rounded text-[9px] bg-slate-100 text-slate-600 font-mono">
+                    {varCount}
+                  </span>
+                )}
               </button>
               <button
+                type="button"
                 onClick={() => setInspectorTab('raw')}
-                className={`py-2 border-b-2 transition-colors cursor-pointer ${
+                className={`py-2 px-2.5 border-b-2 transition-colors cursor-pointer ${
                   inspectorTab === 'raw'
-                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    ? 'border-indigo-600 text-indigo-600 font-semibold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -754,32 +742,33 @@ export function WorkflowDagFlowView({
 
                 return (
                   <>
-                    {/* 变量插值模式切换条 */}
-                    <div className="flex items-center justify-between p-2 bg-indigo-50/60 rounded-lg border border-indigo-100 text-[11px]">
-                      <div className="flex items-center gap-1.5 text-indigo-950 font-semibold">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>变量插值视图:</span>
-                      </div>
-                      <div className="flex items-center bg-white rounded-md p-0.5 border border-indigo-200/80 shadow-2xs">
+                    {/* 现代极简 Segmented Control 变量切换 */}
+                    <div className="flex items-center justify-between p-1 bg-slate-100 rounded-lg text-[11px]">
+                      <span className="text-[11px] font-medium text-slate-500 pl-1.5">
+                        数据视图
+                      </span>
+                      <div className="flex items-center bg-white rounded-md p-0.5 shadow-2xs border border-slate-200/60">
                         <button
+                          type="button"
                           onClick={() => setParamViewMode('resolved')}
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                          className={`px-2 py-0.5 rounded text-[10px] transition-all cursor-pointer ${
                             paramViewMode === 'resolved'
-                              ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                              ? 'bg-slate-900 text-white font-medium'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          ⚡ 变量填充后 (Resolved)
+                          填充后 (Resolved)
                         </button>
                         <button
+                          type="button"
                           onClick={() => setParamViewMode('template')}
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                          className={`px-2 py-0.5 rounded text-[10px] transition-all cursor-pointer ${
                             paramViewMode === 'template'
-                              ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                              ? 'bg-slate-900 text-white font-medium'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
-                          📝 模板原貌 (Template)
+                          原始模板 (Template)
                         </button>
                       </div>
                     </div>
