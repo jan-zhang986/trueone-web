@@ -600,9 +600,9 @@ export function WorkflowDagFlowView({
       </div>
 
       {/* 画布核心区 + 右侧抽屉检视面板 */}
-      <div className="flex-1 relative flex overflow-hidden">
+      <div className="flex-1 relative flex overflow-hidden min-w-0">
         {/* ReactFlow 画布主体 */}
-        <div className="flex-1 h-full relative bg-slate-50/40">
+        <div className="flex-1 h-full relative bg-slate-50/40 min-w-0">
           <ReactFlow
             nodes={initialNodes}
             edges={initialEdges}
@@ -626,7 +626,7 @@ export function WorkflowDagFlowView({
 
         {/* 节点详情侧边检视面板 (Node Inspector Panel) */}
         {activeNode && isPanelOpen && (
-          <div className="w-[360px] lg:w-[400px] h-full bg-white border-l border-slate-200 flex flex-col shadow-sm z-20 shrink-0 animate-in slide-in-from-right-3 duration-150">
+          <div className="w-[300px] sm:w-[340px] lg:w-[380px] max-w-full h-full bg-white border-l border-slate-200 flex flex-col shadow-sm z-20 shrink-0 animate-in slide-in-from-right-3 duration-150">
             {/* 面板头部 */}
             <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
               <div className="flex items-center gap-2 min-w-0">

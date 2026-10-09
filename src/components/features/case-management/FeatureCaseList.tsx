@@ -947,7 +947,7 @@ export function FeatureCaseList({
 
   // 全面统一为代码仓库用例中心 (Git-driven Test as Code / SSOT)
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col bg-gray-50 min-h-0 min-w-0 overflow-hidden">
       <RepoCaseExplorer
         initialRepoName={repositoryId}
         branch={versionId}
