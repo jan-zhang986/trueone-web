@@ -573,6 +573,48 @@ export function WorkflowDagFlowView({
         </div>
       </div>
 
+      {/* 🚀 全局变量池常驻横幅 (无需点击Tab，开箱即见所有变量) */}
+      <div className="px-4 py-2 bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-slate-50/80 border-b border-purple-100 flex items-center justify-between text-xs shrink-0 shadow-2xs">
+        <div className="flex items-center gap-2 overflow-x-auto py-0.5 max-w-[85%]">
+          <span className="font-bold text-purple-900 flex items-center gap-1.5 shrink-0 text-[11px]">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-purple-600" />
+            <span>全局变量池 (Global Params):</span>
+          </span>
+          {varCount > 0 ? (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {Object.entries(declaredParams).map(([k, v]) => (
+                <span
+                  key={k}
+                  onClick={() => {
+                    setSelectedNodeId(activeNode?.id || parsedNodeList[0]?.id);
+                    setInspectorTab('variables');
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-purple-200/90 text-[11px] font-mono shadow-2xs cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 transition-all"
+                  title={`点击查看变量 {{ params.${k} }} 详情`}
+                >
+                  <span className="text-purple-600 font-bold">${k}:</span>
+                  <span className="text-slate-900 font-semibold truncate max-w-[150px]">{String(v)}</span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-[11px] text-slate-400 italic">
+              当前用例未定义 params 变量池（支持在 YAML 根层级声明 params 注入变量）
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => {
+            setSelectedNodeId(activeNode?.id || parsedNodeList[0]?.id);
+            setInspectorTab('variables');
+          }}
+          className="text-[11px] text-purple-700 hover:text-purple-900 font-semibold hover:underline shrink-0 ml-2 cursor-pointer flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded border border-purple-200 shadow-2xs"
+        >
+          <span>检视详情与表达式</span>
+          <ChevronRight className="w-3 h-3 text-purple-600" />
+        </button>
+      </div>
+
       {/* 画布核心区 + 右侧抽屉检视面板 */}
       <div className="flex-1 relative flex overflow-hidden">
         {/* ReactFlow 画布主体 */}
