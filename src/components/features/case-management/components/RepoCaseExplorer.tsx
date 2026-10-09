@@ -787,13 +787,13 @@ export function RepoCaseExplorer({
 
         {/* 右侧：📋 统一用例列表与单层极简工具栏 */}
         <div className="flex-1 flex flex-col min-h-0 bg-white">
-          {/* 单层极简工具栏 (去除了重复的仓库/分支/AI按钮) */}
-          <div className="h-11 shrink-0 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between text-xs z-10">
+          {/* 单层极简工具栏 */}
+          <div className="h-12 shrink-0 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between text-xs z-10">
             {/* 左侧：收起/展开目录树 + 搜索框 + 优先级过滤 */}
             <div className="flex items-center gap-2.5 flex-1 max-w-2xl">
               <button
                 onClick={() => setIsLeftTreeOpen(!isLeftTreeOpen)}
-                className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 px-2 py-1 rounded-md border border-slate-200 transition-colors font-medium cursor-pointer shrink-0"
+                className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 px-2 py-1.5 rounded-md border border-slate-200 transition-colors font-medium cursor-pointer shrink-0"
                 title={isLeftTreeOpen ? '收起左侧目录树' : '展开左侧目录树'}
               >
                 {isLeftTreeOpen ? (
@@ -809,7 +809,7 @@ export function RepoCaseExplorer({
                 )}
               </button>
 
-              <div className="h-3.5 w-px bg-slate-200 shrink-0" />
+              <div className="h-4 w-px bg-slate-200 shrink-0" />
 
               <div className="relative flex-1 max-w-sm">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -817,19 +817,19 @@ export function RepoCaseExplorer({
                   placeholder="搜索用例编号、标题、关联需求、函数名..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
-                  className="h-7.5 pl-8 pr-3 text-xs bg-slate-50/60 hover:bg-white focus:bg-white border-slate-200 rounded-lg transition-colors"
+                  className="h-8 pl-8 pr-3 text-xs bg-slate-50/60 hover:bg-white focus:bg-white border-slate-200 rounded-lg transition-colors"
                 />
               </div>
 
               {/* 优先级过滤 */}
-              <div className="flex items-center gap-1 shrink-0 text-slate-500">
-                <span className="text-[11px]">优先级:</span>
+              <div className="flex items-center gap-1.5 shrink-0 text-slate-500">
+                <span className="text-[11px] font-medium">优先级:</span>
                 <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px]">
                   {['ALL', 'P0', 'P1', 'P2'].map((p) => (
                     <button
                       key={p}
                       onClick={() => setPriorityFilter(p)}
-                      className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                      className={`px-2.5 py-0.5 rounded transition-all cursor-pointer ${
                         priorityFilter === p
                           ? 'bg-white font-bold text-slate-900 shadow-2xs'
                           : 'text-slate-500 hover:text-slate-800'
@@ -842,9 +842,9 @@ export function RepoCaseExplorer({
               </div>
             </div>
 
-            {/* 右侧：同步代码仓 + 批量执行 + 计数统计 */}
+            {/* 右侧：新建用例(核心主操作) + 同步代码仓 + 批量执行 + 计数统计 */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="hidden md:flex items-center gap-1.5 text-slate-400 text-[11px] font-mono">
+              <div className="hidden lg:flex items-center gap-1.5 text-slate-400 text-[11px] font-mono">
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />}
                 <span>共 {cases.length} 条用例</span>
                 {selectedCaseIds.length > 0 && (
@@ -855,16 +855,15 @@ export function RepoCaseExplorer({
                 )}
               </div>
 
-              <div className="h-3.5 w-px bg-slate-200" />
+              <div className="h-4 w-px bg-slate-200" />
 
-              {/* ⭐️ 新建用例按钮 */}
+              {/* ⭐️ 新建用例按钮 (大号主操作按钮) */}
               <Button
-                size="sm"
                 onClick={() => setIsCreateCaseModalOpen(true)}
-                className="h-7.5 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md px-3 shadow-2xs transition-all cursor-pointer"
+                className="h-8.5 px-4 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer shrink-0"
                 title="在当前代码库分支在线新建测试用例"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>新建用例</span>
               </Button>
 
@@ -874,7 +873,7 @@ export function RepoCaseExplorer({
                 size="sm"
                 onClick={handleSyncRepo}
                 disabled={isSyncing}
-                className="h-7.5 text-xs gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer"
+                className="h-8.5 text-xs gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer px-3"
                 title="重新扫描并解析代码工程中的用例"
               >
                 <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
@@ -886,7 +885,7 @@ export function RepoCaseExplorer({
                 size="sm"
                 onClick={handleBatchExecute}
                 disabled={selectedCaseIds.length === 0}
-                className={`h-7.5 text-xs rounded-md px-3 gap-1.5 font-medium shadow-2xs transition-all cursor-pointer ${
+                className={`h-8.5 text-xs rounded-lg px-3.5 gap-1.5 font-medium shadow-2xs transition-all cursor-pointer ${
                   selectedCaseIds.length > 0
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60'
@@ -925,8 +924,37 @@ export function RepoCaseExplorer({
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {cases.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12 text-slate-400">
-                      {loading ? '正在从 Git 代码仓拉取 AST 用例...' : '当前目录下暂无测试用例，点击上方「同步代码仓」重新扫描'}
+                    <td colSpan={7} className="text-center py-16">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto text-slate-500">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-2xs">
+                          <Network className="w-6 h-6" />
+                        </div>
+                        <div className="text-sm font-bold text-slate-800 mb-1">
+                          {loading ? '正在从 Git 代码仓拉取 AST 用例...' : '当前目录下暂无测试用例'}
+                        </div>
+                        <p className="text-xs text-slate-400 mb-4 text-center">
+                          可直接在云端在线创建黄金 DAG 编排用例，或从现有 Git 代码仓同步
+                        </p>
+                        {!loading && (
+                          <div className="flex items-center gap-2.5">
+                            <Button
+                              onClick={() => setIsCreateCaseModalOpen(true)}
+                              className="h-9 px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Plus className="w-4 h-4 stroke-[2.5]" />
+                              <span>新建第一个用例</span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={handleSyncRepo}
+                              className="h-9 px-3 text-xs text-slate-600 rounded-lg cursor-pointer hover:bg-slate-50"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                              同步代码仓
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (
