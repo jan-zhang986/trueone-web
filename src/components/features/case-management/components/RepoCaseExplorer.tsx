@@ -200,6 +200,7 @@ export function RepoCaseExplorer({
   const [newRepoPath, setNewRepoPath] = useState<string>('https://github.com/jan-zhang986/trueone-anubis.git');
   const [newRepoBranch, setNewRepoBranch] = useState<string>('main');
   const [newRepoToken, setNewRepoToken] = useState<string>('');
+  const [dagExecutions, setDagExecutions] = useState<Record<string, any>>({});
 
   // 控制台日志
   const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
@@ -506,6 +507,10 @@ export function RepoCaseExplorer({
       );
 
       if (data.caseType === 'WORKFLOW_DAG' && data.execution?.nodeResults) {
+        setDagExecutions((prev) => ({
+          ...prev,
+          [caseItem.id]: data.execution,
+        }));
         const nodes = Object.values(data.execution.nodeResults);
         const newLogs: LogEntry[] = nodes.map((n: any, idx: number) => ({
           id: `node-${Date.now()}-${idx}`,
@@ -1292,6 +1297,7 @@ export function RepoCaseExplorer({
                         yamlContent={activeDrawerCase.implementation.codeContent}
                         steps={activeDrawerCase.design.steps}
                         overallStatus={activeDrawerCase.status}
+                        executionData={dagExecutions[activeDrawerCase.id]}
                       />
                     ) : (
                       /* 步骤时间线列表 */
