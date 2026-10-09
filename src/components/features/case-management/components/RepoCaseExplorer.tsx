@@ -46,6 +46,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
   repoCaseService,
@@ -749,23 +757,67 @@ export function RepoCaseExplorer({
       <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden relative">
         {/* 左侧：📁 Git 仓库目录树 (Repo Tree) */}
         {isLeftTreeOpen && (
-          <div className="w-52 md:w-56 lg:w-60 xl:w-64 shrink-0 bg-white border-r border-slate-200/80 flex flex-col min-h-0 z-10 animate-in slide-in-from-left-2 duration-150">
-            <div className="h-11 px-3.5 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
-              <div className="flex items-center gap-1.5">
-                <FolderTree className="w-3.5 h-3.5 text-blue-600" />
-                <span>工程测试目录 (tests/)</span>
+          <div className="w-56 md:w-60 lg:w-64 shrink-0 bg-white border-r border-slate-200/80 flex flex-col min-h-0 z-10 animate-in slide-in-from-left-2 duration-150">
+            {/* 顶栏：当前用例库切换器 + 收起纯 Icon */}
+            <div className="h-12 px-3 border-b border-slate-200/80 flex items-center justify-between text-xs bg-slate-50/70">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold text-slate-800 hover:text-blue-700 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg transition-all cursor-pointer min-w-0 max-w-[200px]"
+                      title="点击切换当前代码工程用例库"
+                    >
+                      <FolderGit2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="truncate">{currentRepo?.name || '选择用例库'}</span>
+                      <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-60">
+                    <DropdownMenuLabel className="text-xs text-slate-500 font-medium">
+                      切换代码用例库 ({repoList.length})
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {repoList.map((r) => (
+                      <DropdownMenuItem
+                        key={r.id}
+                        onClick={() => {
+                          setCurrentRepoId(r.id);
+                          setSelectedBranch(r.defaultBranch || 'main');
+                          onBranchChange?.(r.defaultBranch || 'main');
+                        }}
+                        className={`flex items-center justify-between text-xs cursor-pointer ${
+                          currentRepoId === r.id ? 'bg-blue-50 text-blue-700 font-bold' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <FolderGit2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="truncate">{r.name}</span>
+                        </div>
+                        {currentRepoId === r.id && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setIsCreateRepoModalOpen(true)}
+                      className="text-xs text-blue-600 font-medium cursor-pointer flex items-center gap-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>关联新用例库...</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-slate-400 font-mono">AST Live</span>
-                <button
-                  type="button"
-                  onClick={() => setIsLeftTreeOpen(false)}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
-                  title="收起测试目录树"
-                >
-                  <PanelLeftClose className="w-3.5 h-3.5" />
-                </button>
-              </div>
+
+              {/* 收起目录纯 Icon */}
+              <button
+                type="button"
+                onClick={() => setIsLeftTreeOpen(false)}
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer shrink-0 ml-1"
+                title="收起用例库目录树"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
@@ -1148,11 +1200,11 @@ export function RepoCaseExplorer({
         <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 border-l border-slate-200 bg-white flex flex-col h-full shadow-2xl">
           {activeDrawerCase && (
             <div className="flex flex-col h-full overflow-hidden bg-white">
-              {/* Header 区域: 面包屑 + 标题 + 运行与关闭操作 */}
-              <div className="p-6 border-b border-slate-200 bg-slate-50/50">
-                {/* 面包屑 */}
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-2 font-mono">
-                  <div className="flex items-center gap-1.5 truncate">
+              {/* Header 区域: 路径 + 标题 + 核心属性药丸(编号/等级/状态/需求) + Tab 导航 */}
+              <div className="p-5 border-b border-slate-200/80 bg-white">
+                {/* 1. 顶部辅助行：路径面包屑 + 调度运行按钮 */}
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-2.5">
+                  <div className="flex items-center gap-1.5 truncate font-mono text-[11px]">
                     <FolderGit2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="text-slate-700 font-medium">{currentRepo?.name || '仓库'}</span>
                     <span>/</span>
@@ -1161,46 +1213,12 @@ export function RepoCaseExplorer({
                     <span>/</span>
                     <span className="truncate text-slate-500">{activeDrawerCase.implementation.gitFilePath}</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge
-                      variant="outline"
-                      className={`text-[11px] font-bold uppercase ${
-                        activeDrawerCase.priority === 'P0'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : activeDrawerCase.priority === 'P1'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-slate-50 text-slate-600 border-slate-200'
-                      }`}
-                    >
-                      {activeDrawerCase.priority} 优先级
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* 标题行 */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-mono font-bold text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60">
-                        {activeDrawerCase.code}
-                      </span>
-                      {(activeDrawerCase.implementation.scriptLanguage === 'yaml' || activeDrawerCase.reqSource === 'E2E_WORKFLOW_DAG') && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
-                          <GitMerge className="w-3 h-3 text-purple-600" />
-                          Workflow
-                        </span>
-                      )}
-                      <h2 className="text-lg font-bold text-slate-900 leading-snug">
-                        {activeDrawerCase.title}
-                      </h2>
-                    </div>
-                  </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
                       size="sm"
                       onClick={() => handleExecuteSingleCase(activeDrawerCase)}
-                      className="h-8 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium shadow-xs gap-1.5 rounded-lg px-3.5 cursor-pointer"
+                      className="h-8 px-3.5 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-current" />
                       <span>调度运行</span>
@@ -1208,46 +1226,82 @@ export function RepoCaseExplorer({
                   </div>
                 </div>
 
-                {/* 核心属性网格 (4列优雅卡片) */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4 pt-4 border-t border-slate-200/70 text-xs">
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
-                    <span className="text-[10px] text-slate-400 block mb-0.5">关联需求 / 来源</span>
-                    <span className="font-mono font-semibold text-slate-800">
-                      {activeDrawerCase.reqSource || '无关联'}
-                    </span>
-                  </div>
+                {/* 2. 主标题行 */}
+                <h2 className="text-base font-bold text-slate-900 leading-snug mb-3">
+                  {activeDrawerCase.title}
+                </h2>
 
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
-                    <span className="text-[10px] text-slate-400 block mb-0.5">测试函数目标</span>
-                    <span className="font-mono font-semibold text-indigo-600 truncate block" title={activeDrawerCase.implementation.functionName}>
+                {/* 3. 核心元数据药丸栏 (用例编号、用例等级、类型、运行状态、关联需求、源码映射) - 规整归位 */}
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  {/* 用例编号 */}
+                  <span className="font-mono font-bold text-xs text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/60 shadow-2xs">
+                    {activeDrawerCase.code}
+                  </span>
+
+                  {/* ⭐️ 用例等级 (Priority) - 规整归位至核心元数据栏 */}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold shadow-2xs ${
+                      activeDrawerCase.priority === 'P0'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                        : activeDrawerCase.priority === 'P1'
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                        : 'bg-slate-100 text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    等级 {activeDrawerCase.priority}
+                  </span>
+
+                  {/* 用例类型 */}
+                  {(activeDrawerCase.implementation.scriptLanguage === 'yaml' || activeDrawerCase.reqSource === 'E2E_WORKFLOW_DAG') && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
+                      <GitMerge className="w-3 h-3 text-purple-600" />
+                      Workflow
+                    </span>
+                  )}
+
+                  {/* 运行状态 */}
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border shadow-2xs ${
+                      activeDrawerCase.status === 'passed'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                        : activeDrawerCase.status === 'failed'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                        : 'bg-slate-50 text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        activeDrawerCase.status === 'passed'
+                          ? 'bg-emerald-500'
+                          : activeDrawerCase.status === 'failed'
+                          ? 'bg-rose-500'
+                          : 'bg-slate-400'
+                      }`}
+                    />
+                    <span>{activeDrawerCase.status === 'passed' ? `PASS (${activeDrawerCase.executionDuration || '15ms'})` : 'READY'}</span>
+                  </span>
+
+                  {/* 关联需求 */}
+                  {activeDrawerCase.reqSource && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] bg-slate-100 text-slate-600 border border-slate-200/60">
+                      <Tag className="w-2.5 h-2.5 text-slate-400" />
+                      <span>{activeDrawerCase.reqSource}</span>
+                    </span>
+                  )}
+
+                  {/* 源码函数 */}
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] text-indigo-700 bg-indigo-50/70 border border-indigo-200/60 max-w-[220px] truncate" title={activeDrawerCase.implementation.functionName}>
+                    <FileCode2 className="w-3 h-3 text-indigo-500 shrink-0" />
+                    <span className="truncate">
                       {activeDrawerCase.implementation.scriptLanguage === 'yaml'
                         ? activeDrawerCase.implementation.functionName
-                        : `${activeDrawerCase.implementation.functionName || 'TestMain'}()`}
+                        : `${activeDrawerCase.implementation.functionName || 'TestRunner'}()`}
                     </span>
-                  </div>
-
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
-                    <span className="text-[10px] text-slate-400 block mb-0.5">最近执行结果</span>
-                    <span className={`font-semibold flex items-center gap-1 ${
-                      activeDrawerCase.status === 'passed' ? 'text-emerald-600' : 'text-slate-600'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        activeDrawerCase.status === 'passed' ? 'bg-emerald-500' : 'bg-slate-400'
-                      }`} />
-                      {activeDrawerCase.status === 'passed' ? `PASS (${activeDrawerCase.executionDuration || '15ms'})` : 'READY'}
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 shadow-2xs">
-                    <span className="text-[10px] text-slate-400 block mb-0.5">最新 Commit SHA</span>
-                    <span className="font-mono text-slate-600 truncate block">
-                      {activeDrawerCase.implementation.lastCommitHash.slice(0, 8)}
-                    </span>
-                  </div>
+                  </span>
                 </div>
 
-                {/* Tab 导航条 */}
-                <div className="flex items-center gap-1 mt-4 border-b border-slate-200/70 -mb-6 pb-0">
+                {/* 4. Tab 导航条 */}
+                <div className="flex items-center gap-1 mt-4 border-b border-slate-200/80 -mb-5 pb-0">
                   <button
                     onClick={() => setDrawerTab('steps')}
                     className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
