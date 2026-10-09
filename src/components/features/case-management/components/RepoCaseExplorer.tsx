@@ -750,12 +750,22 @@ export function RepoCaseExplorer({
         {/* 左侧：📁 Git 仓库目录树 (Repo Tree) */}
         {isLeftTreeOpen && (
           <div className="w-52 md:w-56 lg:w-60 xl:w-64 shrink-0 bg-white border-r border-slate-200/80 flex flex-col min-h-0 z-10 animate-in slide-in-from-left-2 duration-150">
-            <div className="h-11 px-4 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
+            <div className="h-11 px-3.5 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-600 bg-slate-50/50">
               <div className="flex items-center gap-1.5">
                 <FolderTree className="w-3.5 h-3.5 text-blue-600" />
                 <span>工程测试目录 (tests/)</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">AST Live</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-slate-400 font-mono">AST Live</span>
+                <button
+                  type="button"
+                  onClick={() => setIsLeftTreeOpen(false)}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
+                  title="收起测试目录树"
+                >
+                  <PanelLeftClose className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
@@ -789,27 +799,21 @@ export function RepoCaseExplorer({
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-white overflow-hidden">
           {/* 单层极简工具栏 - 窄屏下弹性收缩并支持水平溢出兜底 */}
           <div className="h-12 shrink-0 bg-white border-b border-slate-200/80 px-3 sm:px-4 flex items-center justify-between text-xs z-10 min-w-0 overflow-x-auto overflow-y-hidden scrollbar-none gap-2">
-            {/* 左侧：收起/展开目录树 + 搜索框 + 优先级过滤 */}
+            {/* 左侧：搜索框 + 优先级过滤 (+ 目录折叠时的唤出纯 Icon 按钮) */}
             <div className="flex items-center gap-2 sm:gap-2.5 flex-1 min-w-0 max-w-2xl">
-              <button
-                onClick={() => setIsLeftTreeOpen(!isLeftTreeOpen)}
-                className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 px-2 py-1.5 rounded-md border border-slate-200 transition-colors font-medium cursor-pointer shrink-0"
-                title={isLeftTreeOpen ? '收起左侧目录树' : '展开左侧目录树'}
-              >
-                {isLeftTreeOpen ? (
-                  <>
-                    <PanelLeftClose className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="hidden sm:inline">收起目录</span>
-                  </>
-                ) : (
-                  <>
-                    <PanelLeftOpen className="w-3.5 h-3.5 text-blue-600" />
-                    <span className="hidden sm:inline">展开目录</span>
-                  </>
-                )}
-              </button>
-
-              <div className="h-4 w-px bg-slate-200 shrink-0" />
+              {!isLeftTreeOpen && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsLeftTreeOpen(true)}
+                    className="p-1.5 text-slate-600 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 rounded-lg border border-slate-200 transition-colors cursor-pointer shrink-0"
+                    title="展开工程测试目录树"
+                  >
+                    <PanelLeftOpen className="w-4 h-4 text-blue-600" />
+                  </button>
+                  <div className="h-4 w-px bg-slate-200 shrink-0" />
+                </>
+              )}
 
               <div className="relative flex-1 min-w-[130px] max-w-xs sm:max-w-sm">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -817,19 +821,19 @@ export function RepoCaseExplorer({
                   placeholder="搜索用例编号、标题、函数名..."
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
-                  className="h-8 pl-8 pr-3 text-xs bg-slate-50/60 hover:bg-white focus:bg-white border-slate-200 rounded-lg transition-colors w-full"
+                  className="h-9 pl-8 pr-3 text-xs bg-slate-50/60 hover:bg-white focus:bg-white border-slate-200 rounded-lg transition-colors w-full"
                 />
               </div>
 
               {/* 优先级过滤 */}
               <div className="flex items-center gap-1.5 shrink-0 text-slate-500">
                 <span className="text-[11px] font-medium hidden md:inline">优先级:</span>
-                <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px]">
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] h-9">
                   {['ALL', 'P0', 'P1', 'P2'].map((p) => (
                     <button
                       key={p}
                       onClick={() => setPriorityFilter(p)}
-                      className={`px-2 sm:px-2.5 py-0.5 rounded transition-all cursor-pointer ${
+                      className={`px-2 sm:px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                         priorityFilter === p
                           ? 'bg-white font-bold text-slate-900 shadow-2xs'
                           : 'text-slate-500 hover:text-slate-800'
@@ -842,7 +846,7 @@ export function RepoCaseExplorer({
               </div>
             </div>
 
-            {/* 右侧：新建用例(核心主操作) + 同步代码仓 + 批量执行 + 计数统计 */}
+            {/* 右侧：新建用例 + 同步代码 + 批量执行 (三主操作统一规格大按钮) + 计数统计 */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <div className="hidden 2xl:flex items-center gap-1.5 text-slate-400 text-[11px] font-mono">
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />}
@@ -857,41 +861,39 @@ export function RepoCaseExplorer({
 
               <div className="h-4 w-px bg-slate-200 hidden 2xl:block" />
 
-              {/* ⭐️ 新建用例按钮 (大号主操作按钮) */}
+              {/* ⭐️ 1. 新建用例按钮 */}
               <Button
                 onClick={() => setIsCreateCaseModalOpen(true)}
-                className="h-8.5 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer shrink-0"
+                className="h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer shrink-0"
                 title="在当前代码库分支在线新建测试用例"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>新建用例</span>
               </Button>
 
-              {/* 同步扫描按钮 */}
+              {/* ⭐️ 2. 同步代码按钮 (与新建用例等高同规格) */}
               <Button
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 onClick={handleSyncRepo}
                 disabled={isSyncing}
-                className="h-8.5 text-xs gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer px-2.5 sm:px-3 shrink-0"
+                className="h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-lg shadow-2xs active:scale-98 transition-all cursor-pointer shrink-0"
                 title="重新扫描并解析代码工程中的用例"
               >
-                <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
-                <span className="hidden sm:inline">{isSyncing ? '扫描中...' : '同步代码仓'}</span>
+                <RotateCcw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-indigo-600' : 'text-slate-600'}`} />
+                <span>{isSyncing ? '同步中...' : '同步代码'}</span>
               </Button>
 
-              {/* 批量执行按钮 */}
+              {/* ⭐️ 3. 批量执行按钮 (与新建用例等高同规格) */}
               <Button
-                size="sm"
                 onClick={handleBatchExecute}
                 disabled={selectedCaseIds.length === 0}
-                className={`h-8.5 text-xs rounded-lg px-3 sm:px-3.5 gap-1.5 font-medium shadow-2xs transition-all cursor-pointer shrink-0 ${
+                className={`h-9 px-3.5 sm:px-4 text-xs font-semibold gap-1.5 rounded-lg shadow-2xs active:scale-98 transition-all cursor-pointer shrink-0 ${
                   selectedCaseIds.length > 0
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500'
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-sm shadow-blue-500/20'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/80 shadow-none'
                 }`}
               >
-                <Play className="w-3 h-3 fill-current" />
+                <Play className="w-3.5 h-3.5 fill-current" />
                 <span>
                   {selectedCaseIds.length > 0 ? `批量执行 (${selectedCaseIds.length})` : '批量执行'}
                 </span>
@@ -991,7 +993,7 @@ export function RepoCaseExplorer({
                             {(c.implementation.scriptLanguage === 'yaml' || c.reqSource === 'E2E_WORKFLOW_DAG') && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs shrink-0">
                                 <GitMerge className="w-2.5 h-2.5 text-purple-600" />
-                                E2E DAG
+                                Workflow
                               </span>
                             )}
                             <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors truncate">
@@ -1185,7 +1187,7 @@ export function RepoCaseExplorer({
                       {(activeDrawerCase.implementation.scriptLanguage === 'yaml' || activeDrawerCase.reqSource === 'E2E_WORKFLOW_DAG') && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
                           <GitMerge className="w-3 h-3 text-purple-600" />
-                          E2E Workflow DAG
+                          Workflow
                         </span>
                       )}
                       <h2 className="text-lg font-bold text-slate-900 leading-snug">
