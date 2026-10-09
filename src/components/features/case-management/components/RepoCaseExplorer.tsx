@@ -54,6 +54,7 @@ import {
   UnifiedTestCase,
 } from '@/services/case-management/service-repo-case';
 import { WorkflowDagFlowView } from './WorkflowDagFlowView';
+import { CreateRepoCaseModal } from './CreateRepoCaseModal';
 
 // ================= 数据模型 =================
 
@@ -194,8 +195,9 @@ export function RepoCaseExplorer({
   const [loading, setLoading] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  // 关联新代码仓 Modal
+  // 关联新代码仓 Modal 与 新建用例 Modal
   const [isCreateRepoModalOpen, setIsCreateRepoModalOpen] = useState<boolean>(false);
+  const [isCreateCaseModalOpen, setIsCreateCaseModalOpen] = useState<boolean>(false);
   const [newRepoName, setNewRepoName] = useState<string>('');
   const [newRepoPath, setNewRepoPath] = useState<string>('https://github.com/jan-zhang986/trueone-anubis.git');
   const [newRepoBranch, setNewRepoBranch] = useState<string>('main');
@@ -855,6 +857,17 @@ export function RepoCaseExplorer({
 
               <div className="h-3.5 w-px bg-slate-200" />
 
+              {/* ⭐️ 新建用例按钮 */}
+              <Button
+                size="sm"
+                onClick={() => setIsCreateCaseModalOpen(true)}
+                className="h-7.5 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md px-3 shadow-2xs transition-all cursor-pointer"
+                title="在当前代码库分支在线新建测试用例"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>新建用例</span>
+              </Button>
+
               {/* 同步扫描按钮 */}
               <Button
                 variant="ghost"
@@ -1512,6 +1525,23 @@ export function RepoCaseExplorer({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ⭐️ 新建测试用例 Modal */}
+      <CreateRepoCaseModal
+        isOpen={isCreateCaseModalOpen}
+        onClose={() => setIsCreateCaseModalOpen(false)}
+        repoId={currentRepoId}
+        currentBranch={selectedBranch}
+        onSuccess={(newCase) => {
+          fetchTree(currentRepoId, selectedBranch);
+          fetchCases(currentRepoId, selectedBranch, selectedDirPath, searchKeyword, priorityFilter);
+          if (newCase) {
+            const mapped = mapBackendCaseToItem(newCase);
+            setActiveDrawerCase(mapped);
+            setDrawerTab('steps');
+          }
+        }}
+      />
     </div>
   );
 }

@@ -18,3 +18,4 @@ export { VersionMergeDrawer } from './VersionMergeDrawer';
 export { ProjectVersionSelect } from './ProjectVersionSelect';
 export { RepoCaseExplorer } from './RepoCaseExplorer';
 export { WorkflowDagFlowView } from './WorkflowDagFlowView';
+export { CreateRepoCaseModal } from './CreateRepoCaseModal';

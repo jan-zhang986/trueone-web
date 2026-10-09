@@ -165,6 +165,29 @@ export const repoCaseService = {
   },
 
   /**
+   * 云端直接新建用例 (支持 DAG 工作流与代码用例，自动落盘提交)
+   */
+  createCase: (
+    id: string,
+    payload: {
+      branch?: string;
+      filePath?: string;
+      title: string;
+      module?: string;
+      priority?: string;
+      type?: string;
+      codeContent?: string;
+    }
+  ) => {
+    return http.post<{
+      message: string;
+      case: UnifiedTestCase;
+      filePath: string;
+      commitSha?: string;
+    }>(`/api/case/repository/${id}/create-case`, payload);
+  },
+
+  /**
    * 手动触发代码仓重新扫描与索引
    */
   syncRepository: (id: string, branch?: string) => {
