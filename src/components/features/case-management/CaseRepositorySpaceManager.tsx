@@ -655,7 +655,7 @@ export function CaseRepositorySpaceManager({
               <TableHeader className="bg-slate-50/80 border-b border-slate-200/70">
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-[220px] text-xs font-bold text-slate-600 py-3">用例库名称</TableHead>
-                  <TableHead className="w-[260px] text-xs font-bold text-slate-600 py-3">绑定的 Git 仓库 (Git URL)</TableHead>
+                  <TableHead className="w-[260px] text-xs font-bold text-slate-600 py-3">仓库</TableHead>
                   <TableHead className="text-xs font-bold text-slate-600 py-3">描述</TableHead>
                   <TableHead className="w-[140px] text-xs font-bold text-slate-600 py-3">分支与基线</TableHead>
                   <TableHead className="w-[90px] text-xs font-bold text-slate-600 py-3">用例关联</TableHead>
@@ -838,7 +838,7 @@ export function CaseRepositorySpaceManager({
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                  <span>Git 仓库地址 (Git URL)</span>
+                  <span>仓库地址</span>
                   <span className="text-red-500">*</span>
                 </Label>
                 <Input
