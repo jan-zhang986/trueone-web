@@ -192,7 +192,6 @@ export function RepoCaseExplorer({
   // 详情抽屉
   const [activeDrawerCase, setActiveDrawerCase] = useState<UnifiedTestCaseItem | null>(null);
   const [drawerTab, setDrawerTab] = useState<'steps' | 'code' | 'logs'>('steps');
-  const [isFlowExpanded, setIsFlowExpanded] = useState<boolean>(true);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [codeEditBuffer, setCodeEditBuffer] = useState<{ [key: string]: string }>({});
 
@@ -1299,6 +1298,45 @@ export function RepoCaseExplorer({
                   </span>
                 </div>
 
+                {/* 3.1 紧凑文字用例步骤与预期 (位于等级下方、Tab上方) */}
+                <div className="mt-3.5 rounded-lg border border-slate-200/80 bg-slate-50/60 p-2 space-y-1.5">
+                  <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-slate-700">
+                    <div className="flex items-center gap-1.5">
+                      <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
+                      <span>文字用例步骤与预期</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {(activeDrawerCase.design?.steps || []).length} 步
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 max-h-[140px] overflow-y-auto pr-0.5">
+                    {(activeDrawerCase.design?.steps || []).map((st) => (
+                      <div
+                        key={st.stepNumber}
+                        className="px-2.5 py-1.5 rounded-md bg-white border border-slate-200/70 text-[11px] flex items-center justify-between gap-2 shadow-2xs hover:border-blue-200 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="w-4 h-4 rounded bg-blue-50 border border-blue-200/60 text-blue-700 font-bold font-mono text-[10px] flex items-center justify-center shrink-0">
+                            {st.stepNumber}
+                          </span>
+                          <span className="font-semibold text-slate-800 truncate" title={st.name}>
+                            {st.name}
+                          </span>
+                          <span className="text-slate-300 shrink-0">|</span>
+                          <span className="text-slate-500 truncate" title={st.expected}>
+                            <span className="text-slate-400">预期：</span>
+                            <span className="text-slate-700 font-mono text-[10px]">{st.expected}</span>
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-emerald-600 shrink-0 font-medium">
+                          {st.durationMs ? `${st.durationMs}ms` : 'READY'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* 4. Tab 导航条 */}
                 <div className="flex items-center gap-1 mt-4 border-b border-slate-200/80 -mb-5 pb-0">
                   <button
@@ -1342,103 +1380,13 @@ export function RepoCaseExplorer({
               {/* Tab 内容区 */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {drawerTab === 'steps' && (
-                  <div className="space-y-6">
-                    {/* 1. 文字用例 (用例步骤与预期) - 顶部直观呈现 */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
-                          <span className="text-xs font-bold text-slate-800">文字用例</span>
-                          <span className="text-[11px] text-slate-400 font-medium">
-                            ({(activeDrawerCase.design?.steps || []).length} 个步骤)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 步骤时间线列表 */}
-                      <div className="space-y-2.5 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 before:z-0">
-                        {(activeDrawerCase.design?.steps || []).map((st) => (
-                          <div
-                            key={st.stepNumber}
-                            className="relative z-10 flex items-start gap-3 p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-blue-200 transition-colors"
-                          >
-                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs shrink-0 font-mono">
-                              {st.stepNumber}
-                            </span>
-                            <div className="flex-1 space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  {st.name.startsWith('[HTTP]') && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                      HTTP 接口
-                                    </span>
-                                  )}
-                                  {st.name.startsWith('[SQL]') && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                                      SQL 核算
-                                    </span>
-                                  )}
-                                  {st.name.startsWith('[QUALITY_GATE]') && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                      门禁校验
-                                    </span>
-                                  )}
-                                  <span className="font-semibold text-slate-800 text-xs">
-                                    {st.name.replace(/^\[[A-Z_]+\]\s*/, '')}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 font-semibold">
-                                  {st.durationMs ? `${st.durationMs}ms` : 'READY'}
-                                </span>
-                              </div>
-                              <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start gap-2 text-[11px] text-slate-600">
-                                <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                                <div>
-                                  <span className="font-medium text-slate-700">用例步骤预期：</span>
-                                  <span>{st.expected}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 2. 步骤流程图 (Workflow DAG) - 紧跟其下 */}
-                    <div className="space-y-3 pt-2 border-t border-slate-200/80">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <GitMerge className="w-3.5 h-3.5 text-purple-600" />
-                          <span className="text-xs font-bold text-slate-800">步骤流程图</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setIsFlowExpanded(!isFlowExpanded)}
-                          className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer font-medium"
-                        >
-                          {isFlowExpanded ? (
-                            <>
-                              <span>收起流程图</span>
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            </>
-                          ) : (
-                            <>
-                              <span>展开流程图</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {isFlowExpanded && (
-                        <WorkflowDagFlowView
-                          yamlContent={activeDrawerCase.implementation?.codeContent || ''}
-                          steps={activeDrawerCase.design?.steps || []}
-                          overallStatus={activeDrawerCase.status}
-                          executionData={dagExecutions[activeDrawerCase.id]}
-                        />
-                      )}
-                    </div>
+                  <div className="space-y-4">
+                    <WorkflowDagFlowView
+                      yamlContent={activeDrawerCase.implementation?.codeContent || ''}
+                      steps={activeDrawerCase.design?.steps || []}
+                      overallStatus={activeDrawerCase.status}
+                      executionData={dagExecutions[activeDrawerCase.id]}
+                    />
                   </div>
                 )}
 
