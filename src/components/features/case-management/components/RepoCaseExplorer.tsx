@@ -26,7 +26,6 @@ import {
   Copy,
   Check,
   Tag,
-  Info,
   GitMerge,
   Network,
 } from 'lucide-react';
@@ -1344,19 +1343,6 @@ export function RepoCaseExplorer({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {drawerTab === 'steps' && (
                   <div className="space-y-4">
-                    {/* 前置条件与业务说明卡片 */}
-                    {activeDrawerCase.design?.precondition && (
-                      <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/60 text-xs flex items-start gap-2.5">
-                        <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold text-blue-900 block mb-0.5">前置说明</span>
-                          <p className="text-blue-800/80 leading-relaxed font-mono text-[11px]">
-                            {activeDrawerCase.design.precondition}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
                     {/* 视图切换栏：流程图 vs 步骤清单 */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700">步骤流程</span>
