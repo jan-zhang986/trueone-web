@@ -300,7 +300,7 @@ function parseCodeASTNodes(codeContent: string, steps: any[]): DagNodeData[] {
       effectiveSteps.push({
         stepNumber: idx++,
         name: match[1],
-        expected: '断言校验通过并留痕',
+        expected: '断言校验通过',
         status: 'passed',
       });
     }
@@ -673,11 +673,11 @@ export function WorkflowDagFlowView({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-800 flex items-center gap-1.5 text-xs">
             <GitMerge className="w-3.5 h-3.5 text-indigo-600" />
-            <span>{isCodeAst ? 'AST 代码拓扑流向' : 'DAG 拓扑流向'}</span>
+            <span>{isCodeAst ? '代码执行链路' : '工作流链路'}</span>
           </span>
           {isCodeAst && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs font-mono">
-              AST Code-to-DAG
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
+              代码流程
             </span>
           )}
           <span className="text-slate-300">/</span>
@@ -729,7 +729,7 @@ export function WorkflowDagFlowView({
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-medium shadow-2xs transition-colors cursor-pointer"
             >
               <SlidersHorizontal className="w-3 h-3 text-slate-500" />
-              <span>检视节点详情</span>
+              <span>节点详情</span>
             </button>
           )}
         </div>
@@ -1028,7 +1028,7 @@ export function WorkflowDagFlowView({
 
                   {/* 依赖前置节点清单 */}
                   <div>
-                    <div className="text-[11px] font-semibold text-slate-500 mb-1.5">拓扑前置依赖</div>
+                    <div className="text-[11px] font-semibold text-slate-500 mb-1.5">前置依赖</div>
                     {activeNode.dependsOn && activeNode.dependsOn.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {activeNode.dependsOn.map((dep) => (
@@ -1036,7 +1036,7 @@ export function WorkflowDagFlowView({
                             key={dep}
                             onClick={() => setSelectedNodeId(dep)}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 font-mono text-[10px] text-slate-700 transition-colors cursor-pointer border border-slate-200"
-                            title="点击跳转并检视该前置节点"
+                            title="点击查看该前置节点"
                           >
                             <GitMerge className="w-2.5 h-2.5 text-slate-400" />
                             <span>{dep}</span>
@@ -1159,7 +1159,7 @@ export function WorkflowDagFlowView({
                       <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200/80">
                         <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>调度通过 (SUCCESS)</span>
+                          <span>执行通过</span>
                         </div>
                         <span className="font-mono text-[11px] text-emerald-700">
                           耗时: {activeNode.durationMs || 15}ms
@@ -1169,7 +1169,7 @@ export function WorkflowDagFlowView({
                       {activeNode.output && (
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-600">节点输出载荷 (Output)</span>
+                            <span className="text-[11px] font-semibold text-slate-600">输出数据</span>
                             <button
                               onClick={() => copyText(JSON.stringify(activeNode.output, null, 2), 'out')}
                               className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1"
@@ -1187,7 +1187,7 @@ export function WorkflowDagFlowView({
                       {activeNode.evidence && (
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-semibold text-slate-600">留痕上下文证据 (Evidence)</span>
+                            <span className="text-[11px] font-semibold text-slate-600">执行结果</span>
                             <button
                               onClick={() => copyText(JSON.stringify(activeNode.evidence, null, 2), 'evi')}
                               className="text-[10px] text-indigo-600 hover:underline flex items-center gap-1"
@@ -1205,9 +1205,9 @@ export function WorkflowDagFlowView({
                   ) : (
                     <div className="py-8 text-center space-y-2">
                       <Terminal className="w-8 h-8 text-slate-300 mx-auto" />
-                      <div className="font-semibold text-slate-700">暂无真实运行产物</div>
+                      <div className="font-semibold text-slate-700">暂无运行输出</div>
                       <p className="text-[11px] text-slate-400 max-w-[240px] mx-auto">
-                        点击抽屉右上角「运行用例」按钮触发真实 DAG 调度后，将在此实时呈现输出快照与证据留痕。
+                        点击右上角「运行」后，将在此展示节点执行输出与结果。
                       </p>
                     </div>
                   )}

@@ -472,7 +472,7 @@ export function RepoCaseExplorer({
   // 单点调试
   const handleExecuteSingleCase = async (caseItem: UnifiedTestCaseItem) => {
     setIsConsoleOpen(true);
-    toast.info(`正在调度执行 [${caseItem.code}]...`);
+    toast.info(`正在运行 [${caseItem.code}]...`);
 
     setCases((prev) =>
       prev.map((item) =>
@@ -488,9 +488,9 @@ export function RepoCaseExplorer({
         id: `run-${Date.now()}`,
         time: new Date().toTimeString().slice(0, 8),
         type: 'info',
-        tag: isWorkflow ? 'DAGEngine' : 'TestRunner',
+        tag: isWorkflow ? 'Workflow' : 'TestRunner',
         text: isWorkflow
-          ? `🚀 [DAG 拓扑调度] 正在触发有向无环图执行: ${caseItem.code} (${caseItem.title})`
+          ? `🚀 [Workflow] 正在执行: ${caseItem.code} (${caseItem.title})`
           : `⚡ [TestRunner] 运行测试: ${caseItem.implementation.gitFilePath}::${caseItem.implementation.functionName}`,
       },
     ]);
@@ -984,10 +984,10 @@ export function RepoCaseExplorer({
                           <Network className="w-6 h-6" />
                         </div>
                         <div className="text-sm font-bold text-slate-800 mb-1">
-                          {loading ? '正在从 Git 代码仓拉取 AST 用例...' : '当前目录下暂无测试用例'}
+                          {loading ? '正在加载测试用例...' : '当前目录下暂无测试用例'}
                         </div>
                         <p className="text-xs text-slate-400 mb-4 text-center">
-                          可直接在云端在线创建黄金 DAG 编排用例，或从现有 Git 代码仓同步
+                          可在线创建工作流用例，或从 Git 代码仓同步
                         </p>
                         {!loading && (
                           <div className="flex items-center gap-2.5">
@@ -1164,7 +1164,7 @@ export function RepoCaseExplorer({
           <div className="h-7 px-4 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px]">
             <div className="flex items-center gap-2 text-slate-300">
               <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-              <span>实时执行与控制台推流 (Pytest Runner Console)</span>
+              <span>执行控制台</span>
             </div>
             <button
               onClick={() => setIsConsoleOpen(false)}
@@ -1221,7 +1221,7 @@ export function RepoCaseExplorer({
                       className="h-8 px-3.5 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-current" />
-                      <span>调度运行</span>
+                      <span>运行用例</span>
                     </Button>
                   </div>
                 </div>
@@ -1311,7 +1311,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <ListOrdered className="w-3.5 h-3.5" />
-                    <span>DAG 步骤拓扑 ({activeDrawerCase.design.steps.length})</span>
+                    <span>用例步骤 ({activeDrawerCase.design.steps.length})</span>
                   </button>
 
                   <button
@@ -1323,7 +1323,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <Code2 className="w-3.5 h-3.5" />
-                    <span>Git 源码与 YAML 编排</span>
+                    <span>用例代码</span>
                   </button>
 
                   <button
@@ -1335,7 +1335,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>执行调度日志</span>
+                    <span>执行日志</span>
                   </button>
                 </div>
               </div>
@@ -1349,7 +1349,7 @@ export function RepoCaseExplorer({
                       <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/60 text-xs flex items-start gap-2.5">
                         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-semibold text-blue-900 block mb-0.5">业务链路说明 (Workflow Specification)</span>
+                          <span className="font-semibold text-blue-900 block mb-0.5">前置说明</span>
                           <p className="text-blue-800/80 leading-relaxed font-mono text-[11px]">
                             {activeDrawerCase.design.precondition}
                           </p>
@@ -1357,9 +1357,9 @@ export function RepoCaseExplorer({
                       </div>
                     )}
 
-                    {/* 视图切换栏：DAG 拓扑流程图 vs 步骤清单 */}
+                    {/* 视图切换栏：流程图 vs 步骤清单 */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">DAG 拓扑节点与执行断言</span>
+                      <span className="text-xs font-bold text-slate-700">步骤流程</span>
                       <div className="inline-flex h-7 rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs">
                         <button
                           type="button"
@@ -1371,7 +1371,7 @@ export function RepoCaseExplorer({
                           }`}
                         >
                           <GitMerge className="w-3 h-3 text-purple-600" />
-                          <span>DAG 流程图 (Flow)</span>
+                          <span>流程图</span>
                         </button>
                         <button
                           type="button"
@@ -1383,7 +1383,7 @@ export function RepoCaseExplorer({
                           }`}
                         >
                           <ListOrdered className="w-3 h-3 text-slate-600" />
-                          <span>步骤清单 (List)</span>
+                          <span>清单</span>
                         </button>
                       </div>
                     </div>
@@ -1482,7 +1482,7 @@ export function RepoCaseExplorer({
                             className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-semibold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
                           >
                             <GitCommit className="w-3 h-3" />
-                            <span>Commit 提交到 Git</span>
+                            <span>提交变更</span>
                           </button>
                         </div>
                       </div>
@@ -1514,7 +1514,7 @@ export function RepoCaseExplorer({
                   <div className="space-y-3 font-mono text-xs">
                     <div className="p-4 rounded-xl bg-[#0F172A] border border-slate-800 text-slate-300 space-y-2">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px] text-slate-400">
-                        <span>测试执行控制台输出 (Runner Logs)</span>
+                        <span>控制台输出</span>
                         <span>最新执行: {activeDrawerCase.lastExecutionTime || '刚刚'}</span>
                       </div>
                       <div className="space-y-1 text-[11px] pt-1">
