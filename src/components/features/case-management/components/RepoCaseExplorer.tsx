@@ -192,7 +192,7 @@ export function RepoCaseExplorer({
   // 详情抽屉
   const [activeDrawerCase, setActiveDrawerCase] = useState<UnifiedTestCaseItem | null>(null);
   const [drawerTab, setDrawerTab] = useState<'steps' | 'code' | 'logs'>('steps');
-  const [dagViewMode, setDagViewMode] = useState<'flow' | 'list'>('flow');
+  const [isFlowExpanded, setIsFlowExpanded] = useState<boolean>(true);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [codeEditBuffer, setCodeEditBuffer] = useState<{ [key: string]: string }>({});
 
@@ -1342,48 +1342,20 @@ export function RepoCaseExplorer({
               {/* Tab 内容区 */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {drawerTab === 'steps' && (
-                  <div className="space-y-4">
-                    {/* 视图切换栏：流程图 vs 步骤清单 */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">步骤流程</span>
-                      <div className="inline-flex h-7 rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs">
-                        <button
-                          type="button"
-                          onClick={() => setDagViewMode('flow')}
-                          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
-                            dagViewMode === 'flow'
-                              ? 'bg-white font-bold text-purple-700 shadow-2xs'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          <GitMerge className="w-3 h-3 text-purple-600" />
-                          <span>流程图</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDagViewMode('list')}
-                          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
-                            dagViewMode === 'list'
-                              ? 'bg-white font-bold text-slate-900 shadow-2xs'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          <ListOrdered className="w-3 h-3 text-slate-600" />
-                          <span>清单</span>
-                        </button>
+                  <div className="space-y-6">
+                    {/* 1. 文字用例 (用例步骤与预期) - 顶部直观呈现 */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="text-xs font-bold text-slate-800">文字用例</span>
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            ({(activeDrawerCase.design?.steps || []).length} 个步骤)
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* 视图内容切换 */}
-                    {dagViewMode === 'flow' ? (
-                      <WorkflowDagFlowView
-                        yamlContent={activeDrawerCase.implementation?.codeContent || ''}
-                        steps={activeDrawerCase.design?.steps || []}
-                        overallStatus={activeDrawerCase.status}
-                        executionData={dagExecutions[activeDrawerCase.id]}
-                      />
-                    ) : (
-                      /* 步骤时间线列表 */
+                      {/* 步骤时间线列表 */}
                       <div className="space-y-2.5 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 before:z-0">
                         {(activeDrawerCase.design?.steps || []).map((st) => (
                           <div
@@ -1408,7 +1380,7 @@ export function RepoCaseExplorer({
                                   )}
                                   {st.name.startsWith('[QUALITY_GATE]') && (
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                      QUALITY_GATE 门禁
+                                      门禁校验
                                     </span>
                                   )}
                                   <span className="font-semibold text-slate-800 text-xs">
@@ -1422,7 +1394,7 @@ export function RepoCaseExplorer({
                               <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start gap-2 text-[11px] text-slate-600">
                                 <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                                 <div>
-                                  <span className="font-medium text-slate-700">预期断言：</span>
+                                  <span className="font-medium text-slate-700">用例步骤预期：</span>
                                   <span>{st.expected}</span>
                                 </div>
                               </div>
@@ -1430,7 +1402,43 @@ export function RepoCaseExplorer({
                           </div>
                         ))}
                       </div>
-                    )}
+                    </div>
+
+                    {/* 2. 步骤流程图 (Workflow DAG) - 紧跟其下 */}
+                    <div className="space-y-3 pt-2 border-t border-slate-200/80">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <GitMerge className="w-3.5 h-3.5 text-purple-600" />
+                          <span className="text-xs font-bold text-slate-800">步骤流程图</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsFlowExpanded(!isFlowExpanded)}
+                          className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer font-medium"
+                        >
+                          {isFlowExpanded ? (
+                            <>
+                              <span>收起流程图</span>
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </>
+                          ) : (
+                            <>
+                              <span>展开流程图</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {isFlowExpanded && (
+                        <WorkflowDagFlowView
+                          yamlContent={activeDrawerCase.implementation?.codeContent || ''}
+                          steps={activeDrawerCase.design?.steps || []}
+                          overallStatus={activeDrawerCase.status}
+                          executionData={dagExecutions[activeDrawerCase.id]}
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
 
