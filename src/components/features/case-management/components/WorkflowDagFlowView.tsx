@@ -541,13 +541,13 @@ export function WorkflowDagFlowView({
 
     // 如果无法从 YAML 中解析（纯代码用例 Go/Python/Java），自动通过 AST 静态语义分析器提取 DAG
     if (parsedNodes.length === 0) {
-      parsedNodes = parseCodeASTNodes(yamlContent || '', steps);
+      parsedNodes = parseCodeASTNodes(yamlContent || '', steps || []);
       isAst = true;
     }
 
     // 填充状态信息与运行产物
     parsedNodes = parsedNodes.map((n, idx) => {
-      const matchStep = steps.find((s) => s.stepNumber === idx + 1);
+      const matchStep = (steps || []).find((s) => s.stepNumber === idx + 1);
       const matchResult = executionData?.nodeResults?.[n.id];
       const status = matchResult?.status === 'SUCCESS'
         ? 'passed'
@@ -654,9 +654,9 @@ export function WorkflowDagFlowView({
       nodeCount: flowNodes.length,
       edgeCount: flowEdges.length,
       parsedNodeList: parsedNodes,
-      isCodeAst,
+      isCodeAst: isAst,
     };
-  }, [yamlContent, steps, overallStatus, executionData, selectedNodeId]);
+  }, [yamlContent, steps, overallStatus, executionData, selectedNodeId, isPanelOpen, activeVariablePool]);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     handleSelectNode(node.id);

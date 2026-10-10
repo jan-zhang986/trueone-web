@@ -1311,7 +1311,7 @@ export function RepoCaseExplorer({
                     }`}
                   >
                     <ListOrdered className="w-3.5 h-3.5" />
-                    <span>用例步骤 ({activeDrawerCase.design.steps.length})</span>
+                    <span>用例步骤 ({(activeDrawerCase.design?.steps || []).length})</span>
                   </button>
 
                   <button
@@ -1345,7 +1345,7 @@ export function RepoCaseExplorer({
                 {drawerTab === 'steps' && (
                   <div className="space-y-4">
                     {/* 前置条件与业务说明卡片 */}
-                    {activeDrawerCase.design.precondition && (
+                    {activeDrawerCase.design?.precondition && (
                       <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/60 text-xs flex items-start gap-2.5">
                         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                         <div>
@@ -1391,15 +1391,15 @@ export function RepoCaseExplorer({
                     {/* 视图内容切换 */}
                     {dagViewMode === 'flow' ? (
                       <WorkflowDagFlowView
-                        yamlContent={activeDrawerCase.implementation.codeContent}
-                        steps={activeDrawerCase.design.steps}
+                        yamlContent={activeDrawerCase.implementation?.codeContent || ''}
+                        steps={activeDrawerCase.design?.steps || []}
                         overallStatus={activeDrawerCase.status}
                         executionData={dagExecutions[activeDrawerCase.id]}
                       />
                     ) : (
                       /* 步骤时间线列表 */
                       <div className="space-y-2.5 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 before:z-0">
-                        {activeDrawerCase.design.steps.map((st) => (
+                        {(activeDrawerCase.design?.steps || []).map((st) => (
                           <div
                             key={st.stepNumber}
                             className="relative z-10 flex items-start gap-3 p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-blue-200 transition-colors"
