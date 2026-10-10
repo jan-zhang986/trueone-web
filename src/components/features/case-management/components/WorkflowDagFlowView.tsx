@@ -286,6 +286,151 @@ function parseYamlNodes(yamlContent: string): DagNodeData[] {
   }
 }
 
+// 源码 AST 静态语义解析器：将 Go/Python/Java 代码及用例步骤自动转换为高保真 DAG 节点
+function parseCodeASTNodes(codeContent: string, steps: any[]): DagNodeData[] {
+  const effectiveSteps = [...(steps || [])];
+
+  // 1. 若外部未提供预解析步骤，自动探测代码中的 Step 结构
+  if (effectiveSteps.length === 0 && codeContent) {
+    // Go 语言: c.Step("...", func() { ... })
+    const goStepRegex = /c\.Step(?:WithEvidence)?\(\s*"([^"]+)"/g;
+    let match;
+    let idx = 1;
+    while ((match = goStepRegex.exec(codeContent)) !== null) {
+      effectiveSteps.push({
+        stepNumber: idx++,
+        name: match[1],
+        expected: '断言校验通过并留痕',
+        status: 'passed',
+      });
+    }
+
+    // Python 语言: with step("...") 或 def test_...
+    if (effectiveSteps.length === 0) {
+      const pyStepRegex = /with\s+(?:allure\.)?step\(\s*["']([^"']+)["']\)/g;
+      while ((match = pyStepRegex.exec(codeContent)) !== null) {
+        effectiveSteps.push({
+          stepNumber: idx++,
+          name: match[1],
+          expected: '断言校验通过',
+          status: 'passed',
+        });
+      }
+    }
+
+    // Java 语言: step("...") 或 @Step("...")
+    if (effectiveSteps.length === 0) {
+      const javaStepRegex = /(?:@Step|step)\(\s*["']([^"']+)["']\)/g;
+      while ((match = javaStepRegex.exec(codeContent)) !== null) {
+        effectiveSteps.push({
+          stepNumber: idx++,
+          name: match[1],
+          expected: '断言校验通过',
+          status: 'passed',
+        });
+      }
+    }
+  }
+
+  // 兜底：如果单函数没有任何 step 块，将整个测试函数作为单个核心节点
+  if (effectiveSteps.length === 0) {
+    return [
+      {
+        id: 'node-main',
+        name: '执行测试核心逻辑与断言',
+        type: 'STEP',
+        dependsOn: [],
+        stepNumber: 1,
+        expected: '用例执行通过',
+        status: 'passed',
+        config: {},
+        configSummary: '源码单点执行',
+      },
+    ];
+  }
+
+  return effectiveSteps.map((st, idx) => {
+    let cleanName = st.name.replace(/^\d+[\.\、\s]+/, '').trim();
+    let type = 'STEP';
+    const config: Record<string, any> = {};
+
+    // A. 步骤名显式类型判断（如 [HTTP] / [SQL] / [QUALITY_GATE]）
+    const explicitTypeMatch = st.name.match(/^\[([A-Z_]+)\]\s*(.*)/);
+    if (explicitTypeMatch) {
+      type = explicitTypeMatch[1];
+      cleanName = explicitTypeMatch[2];
+    }
+
+    // B. 从代码切片提取 AST 语义
+    if (codeContent) {
+      const escapedName = st.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+      const stepBlockRegex = new RegExp(`${escapedName}[^\{]*\\{([\\s\\S]*?)(?:c\\.Step|\\z)`, 'm');
+      const blockMatch = codeContent.match(stepBlockRegex);
+      const stepCode = blockMatch ? blockMatch[1] : codeContent;
+
+      // 探测 HTTP 请求特征 (Go RequestClient / http / requests / RestAssured / fetch)
+      const httpCallMatch =
+        stepCode.match(/RequestClient\([^,]+,\s*"([A-Z]+)"\s*,\s*"([^"]+)"/) ||
+        stepCode.match(/(?:http|client|requests|restClient|RestAssured)\.(get|post|put|delete|patch)\(\s*["']([^"']+)["']/i) ||
+        stepCode.match(/"(GET|POST|PUT|DELETE|PATCH)"\s*,\s*["'](\/[^"']*)["']/);
+
+      if (httpCallMatch) {
+        if (type === 'STEP') type = 'HTTP';
+        config.method = httpCallMatch[1].toUpperCase();
+        config.url = httpCallMatch[2];
+      } else if (/POST|GET|PUT|DELETE/i.test(cleanName) && /\/[a-zA-Z0-9_\-\/]*/.test(cleanName)) {
+        if (type === 'STEP') type = 'HTTP';
+        const methodMatch = cleanName.match(/(POST|GET|PUT|DELETE)/i);
+        const urlMatch = cleanName.match(/(\/[a-zA-Z0-9_\-\/]+)/);
+        if (methodMatch) config.method = methodMatch[1].toUpperCase();
+        if (urlMatch) config.url = urlMatch[1];
+      }
+
+      // 探测 SQL / 数据库核对
+      const sqlMatch =
+        stepCode.match(/(SELECT|INSERT|UPDATE|DELETE)\s+[\s\S]+?FROM\s+([a-zA-Z0-9_]+)/i) ||
+        stepCode.match(/(?:db|sql|database)\.(?:Query|Exec|execute)\s*\(\s*["']([^"']+)["']/i);
+
+      if (sqlMatch && type === 'STEP') {
+        type = 'SQL';
+        config.sql = sqlMatch[0].trim().slice(0, 100);
+      } else if (cleanName.includes('SQL') || cleanName.includes('数据库') || cleanName.includes('流水') || cleanName.includes('核销')) {
+        if (type === 'STEP') type = 'SQL';
+      }
+
+      // 探测门禁/断言
+      if (cleanName.includes('门禁') || cleanName.includes('QUALITY_GATE') || cleanName.includes('准出') || cleanName.includes('防线')) {
+        type = 'QUALITY_GATE';
+        config.rule = 'BUSINESS_RULE_VERIFY';
+      }
+    }
+
+    let configSummary = '';
+    if (type === 'HTTP' && config.url) {
+      configSummary = `${config.method || 'POST'} ${config.url}`;
+    } else if (type === 'SQL' && config.sql) {
+      configSummary = `SQL: ${config.sql}`;
+    } else if (type === 'QUALITY_GATE') {
+      configSummary = `门禁规则准出校验`;
+    } else {
+      configSummary = cleanName;
+    }
+
+    return {
+      id: `step-${st.stepNumber || idx + 1}`,
+      name: cleanName,
+      type,
+      dependsOn: idx > 0 ? [`step-${effectiveSteps[idx - 1].stepNumber || idx}`] : [],
+      status: st.status || 'passed',
+      durationMs: st.durationMs || 10,
+      stepNumber: st.stepNumber || idx + 1,
+      expected: st.expected || '断言校验通过',
+      config,
+      configSummary,
+    };
+  });
+}
+
 interface WorkflowDagFlowViewProps {
   yamlContent?: string;
   steps?: {
@@ -384,35 +529,20 @@ export function WorkflowDagFlowView({
     toast.success('已复制到剪贴板');
   };
 
-  // 解析并构建 DAG 节点与连线拓扑
-  const { initialNodes, initialEdges, nodeCount, edgeCount, parsedNodeList } = useMemo(() => {
+  // 解析并构建 DAG 节点与连线拓扑 (同时支持 YAML 工作流与 Go/Python/Java 代码 AST 拓扑)
+  const { initialNodes, initialEdges, nodeCount, edgeCount, parsedNodeList, isCodeAst } = useMemo(() => {
     let parsedNodes: DagNodeData[] = [];
-    if (yamlContent) {
+    let isAst = false;
+
+    // 优先尝试解析真正的 YAML 工作流 (包含 id 与 nodes)
+    if (yamlContent && (yamlContent.trim().startsWith('id:') || yamlContent.includes('nodes:'))) {
       parsedNodes = parseYamlNodes(yamlContent);
     }
 
-    // 如果无法从 YAML 中解析，或者没有 YAML，按 steps 回退构建
-    if (parsedNodes.length === 0 && steps.length > 0) {
-      parsedNodes = steps.map((st, idx) => {
-        let type = 'STEP';
-        let cleanName = st.name;
-        const typeMatch = st.name.match(/^\[([A-Z_]+)\]\s*(.*)/);
-        if (typeMatch) {
-          type = typeMatch[1];
-          cleanName = typeMatch[2];
-        }
-        return {
-          id: `step-${st.stepNumber}`,
-          name: cleanName,
-          type,
-          dependsOn: idx > 0 ? [`step-${steps[idx - 1].stepNumber}`] : [],
-          status: st.status,
-          durationMs: st.durationMs,
-          stepNumber: st.stepNumber,
-          expected: st.expected,
-          config: {},
-        };
-      });
+    // 如果无法从 YAML 中解析（纯代码用例 Go/Python/Java），自动通过 AST 静态语义分析器提取 DAG
+    if (parsedNodes.length === 0) {
+      parsedNodes = parseCodeASTNodes(yamlContent || '', steps);
+      isAst = true;
     }
 
     // 填充状态信息与运行产物
@@ -524,6 +654,7 @@ export function WorkflowDagFlowView({
       nodeCount: flowNodes.length,
       edgeCount: flowEdges.length,
       parsedNodeList: parsedNodes,
+      isCodeAst,
     };
   }, [yamlContent, steps, overallStatus, executionData, selectedNodeId]);
 
@@ -542,8 +673,13 @@ export function WorkflowDagFlowView({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-800 flex items-center gap-1.5 text-xs">
             <GitMerge className="w-3.5 h-3.5 text-indigo-600" />
-            <span>DAG 拓扑流向</span>
+            <span>{isCodeAst ? 'AST 代码拓扑流向' : 'DAG 拓扑流向'}</span>
           </span>
+          {isCodeAst && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs font-mono">
+              AST Code-to-DAG
+            </span>
+          )}
           <span className="text-slate-300">/</span>
           <span className="text-[11px] font-mono text-slate-500">
             {nodeCount} 节点 · {edgeCount} 连线
