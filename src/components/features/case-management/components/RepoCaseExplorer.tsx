@@ -127,7 +127,7 @@ function mapBackendCaseToItem(c: UnifiedTestCase): UnifiedTestCaseItem {
       steps: (c.steps || []).map((s, idx) => ({
         stepNumber: s.stepNumber || idx + 1,
         name: s.name || `执行步骤 ${idx + 1}`,
-        expected: s.expected || '无异常抛出，断言通过',
+        expected: (s.expected && s.expected !== '断言校验通过并留痕') ? s.expected : '业务规则与断言校验通过',
         status: s.status || 'ready',
         durationMs: s.durationMs,
       })),
@@ -1298,40 +1298,66 @@ export function RepoCaseExplorer({
                   </span>
                 </div>
 
-                {/* 3.1 紧凑文字用例步骤与预期 (位于等级下方、Tab上方) */}
-                <div className="mt-3.5 rounded-lg border border-slate-200/80 bg-slate-50/60 p-2 space-y-1.5">
-                  <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-slate-700">
-                    <div className="flex items-center gap-1.5">
+                {/* 3.1 文字用例设计步骤与预期 (高品质工程设计卡片，位于等级下方、Tab上方) */}
+                <div className="mt-3.5 rounded-xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
+                  <div className="h-8 px-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
                       <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
-                      <span>文字用例步骤与预期</span>
+                      <span>步骤与预期断言</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200/60 shadow-2xs">
                       {(activeDrawerCase.design?.steps || []).length} 步
                     </span>
                   </div>
 
-                  <div className="space-y-1 max-h-[140px] overflow-y-auto pr-0.5">
+                  <div className="divide-y divide-slate-100 max-h-[175px] overflow-y-auto">
                     {(activeDrawerCase.design?.steps || []).map((st) => (
                       <div
                         key={st.stepNumber}
-                        className="px-2.5 py-1.5 rounded-md bg-white border border-slate-200/70 text-[11px] flex items-center justify-between gap-2 shadow-2xs hover:border-blue-200 transition-colors"
+                        className="px-3 py-2 hover:bg-slate-50/60 transition-colors flex items-start gap-2.5"
                       >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="w-4 h-4 rounded bg-blue-50 border border-blue-200/60 text-blue-700 font-bold font-mono text-[10px] flex items-center justify-center shrink-0">
-                            {st.stepNumber}
-                          </span>
-                          <span className="font-semibold text-slate-800 truncate" title={st.name}>
-                            {st.name}
-                          </span>
-                          <span className="text-slate-300 shrink-0">|</span>
-                          <span className="text-slate-500 truncate" title={st.expected}>
-                            <span className="text-slate-400">预期：</span>
-                            <span className="text-slate-700 font-mono text-[10px]">{st.expected}</span>
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-mono text-emerald-600 shrink-0 font-medium">
-                          {st.durationMs ? `${st.durationMs}ms` : 'READY'}
+                        {/* 序号徽章 */}
+                        <span className="w-4 h-4 rounded bg-blue-50 border border-blue-200/70 text-blue-700 font-bold font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                          {st.stepNumber}
                         </span>
+
+                        {/* 步骤与预期两行清晰结构 */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {st.name.startsWith('[HTTP]') && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60 shrink-0">
+                                  HTTP
+                                </span>
+                              )}
+                              {st.name.startsWith('[SQL]') && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 shrink-0">
+                                  SQL
+                                </span>
+                              )}
+                              {st.name.startsWith('[QUALITY_GATE]') && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200/60 shrink-0">
+                                  GATE
+                                </span>
+                              )}
+                              <span className="font-semibold text-slate-800 text-xs truncate" title={st.name}>
+                                {st.name.replace(/^\[[A-Z_]+\]\s*/, '')}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 shrink-0 font-medium">
+                              {st.durationMs ? `${st.durationMs}ms` : 'READY'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 text-[11px]">
+                            <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50/80 px-1.5 py-0.2 rounded border border-emerald-200/60 shrink-0">
+                              预期
+                            </span>
+                            <span className="text-slate-600 truncate font-normal text-[11px]" title={st.expected}>
+                              {st.expected}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
