@@ -73,6 +73,24 @@ export interface QueryCasesResult {
   records: UnifiedTestCase[];
 }
 
+export interface GitCommitItem {
+  hash: string;
+  shortHash: string;
+  author: string;
+  date: string;
+  message: string;
+  diff: string;
+  linesAdded: number;
+  linesDel: number;
+}
+
+export interface FileGitHistoryResult {
+  filePath: string;
+  uncommittedDiff?: string;
+  hasWorkingTreeChanges?: boolean;
+  commits: GitCommitItem[];
+}
+
 export interface CommitCodePayload {
   repositoryId?: string;
   branch?: string;
@@ -251,6 +269,15 @@ export const repoCaseService = {
         context?: Record<string, any>;
       };
     }>(`/api/case/repository/${id}/execute-case`, data);
+  },
+
+  /**
+   * 获取指定用例文件的 Git 提交历史与 Diff
+   */
+  getFileGitHistory: (id: string, filePath: string, branch?: string) => {
+    return http.get<FileGitHistoryResult>(`/api/case/repository/${id}/git-history`, {
+      params: { filePath, branch },
+    });
   },
 };
 

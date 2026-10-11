@@ -28,6 +28,7 @@ import {
   Tag,
   GitMerge,
   Network,
+  GitCompare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,9 +60,11 @@ import {
   CaseRepoItem,
   RepoTreeNode,
   UnifiedTestCase,
+  FileGitHistoryResult,
 } from '@/services/case-management/service-repo-case';
 import { WorkflowDagFlowView } from './WorkflowDagFlowView';
 import { CreateRepoCaseModal } from './CreateRepoCaseModal';
+import { GitDiffViewer } from './GitDiffViewer';
 
 // ================= 数据模型 =================
 
@@ -191,7 +194,9 @@ export function RepoCaseExplorer({
 
   // 详情抽屉
   const [activeDrawerCase, setActiveDrawerCase] = useState<UnifiedTestCaseItem | null>(null);
-  const [drawerTab, setDrawerTab] = useState<'steps' | 'code' | 'logs'>('steps');
+  const [drawerTab, setDrawerTab] = useState<'steps' | 'code' | 'diff' | 'logs'>('steps');
+  const [gitHistory, setGitHistory] = useState<FileGitHistoryResult | null>(null);
+  const [loadingGitHistory, setLoadingGitHistory] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [codeEditBuffer, setCodeEditBuffer] = useState<{ [key: string]: string }>({});
 
@@ -243,6 +248,32 @@ export function RepoCaseExplorer({
         console.warn('获取 Git 分支失败:', err);
       });
   }, [currentRepoId]);
+
+  // 加载用例文件的 Git 提交历史与 Diff
+  const loadGitHistory = useCallback(async () => {
+    if (!activeDrawerCase || !currentRepoId) return;
+    const filePath = activeDrawerCase.implementation.gitFilePath;
+    if (!filePath) return;
+
+    setLoadingGitHistory(true);
+    try {
+      const res: any = await repoCaseService.getFileGitHistory(currentRepoId, filePath, selectedBranch);
+      const data = res?.data || res;
+      setGitHistory(data);
+    } catch (err) {
+      console.warn('获取 Git 变更日志失败:', err);
+    } finally {
+      setLoadingGitHistory(false);
+    }
+  }, [activeDrawerCase?.id, activeDrawerCase?.implementation?.gitFilePath, currentRepoId, selectedBranch]);
+
+  useEffect(() => {
+    if (activeDrawerCase) {
+      loadGitHistory();
+    } else {
+      setGitHistory(null);
+    }
+  }, [activeDrawerCase?.id, loadGitHistory]);
 
   // 可选分支列表 (优先使用后端实时拉取的真实 Git 分支)
   const branchOptions = useMemo(() => {
@@ -641,6 +672,7 @@ export function RepoCaseExplorer({
       });
 
       toast.success(`代码已成功写入并提交至 Git (${caseItem.implementation.gitFilePath})！`, { id: 'commit-git' });
+      loadGitHistory();
 
       // 局部刷新代码展示
       setCases((prev) =>
@@ -1390,6 +1422,21 @@ export function RepoCaseExplorer({
                   </button>
 
                   <button
+                    onClick={() => setDrawerTab('diff')}
+                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                      drawerTab === 'diff'
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <GitCompare className="w-3.5 h-3.5" />
+                    <span>变更日志</span>
+                    {(gitHistory?.hasWorkingTreeChanges || (codeEditBuffer[activeDrawerCase.id] !== undefined && codeEditBuffer[activeDrawerCase.id] !== activeDrawerCase.implementation.codeContent)) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="存在未提交代码变动" />
+                    )}
+                  </button>
+
+                  <button
                     onClick={() => setDrawerTab('logs')}
                     className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                       drawerTab === 'logs'
@@ -1476,6 +1523,18 @@ export function RepoCaseExplorer({
                       </div>
                     </div>
                   </div>
+                )}
+
+                {drawerTab === 'diff' && (
+                  <GitDiffViewer
+                    filePath={activeDrawerCase.implementation.gitFilePath}
+                    gitHistory={gitHistory}
+                    loading={loadingGitHistory}
+                    onRefresh={loadGitHistory}
+                    draftCode={codeEditBuffer[activeDrawerCase.id]}
+                    originalCode={activeDrawerCase.implementation.codeContent}
+                    onCommitDraft={() => handleCommitToGit(activeDrawerCase)}
+                  />
                 )}
 
                 {drawerTab === 'logs' && (
