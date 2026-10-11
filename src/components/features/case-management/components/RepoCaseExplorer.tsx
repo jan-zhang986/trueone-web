@@ -194,10 +194,10 @@ export function RepoCaseExplorer({
   // 表格多选复选框
   const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
 
-  // 详情抽屉与全屏放大模态
+  // 详情抽屉与单窗口全屏状态
   const [activeDrawerCase, setActiveDrawerCase] = useState<UnifiedTestCaseItem | null>(null);
   const [drawerTab, setDrawerTab] = useState<'steps' | 'code' | 'diff' | 'logs'>('steps');
-  const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState<boolean>(false);
+  const [isDrawerMaximized, setIsDrawerMaximized] = useState<boolean>(false);
   const [gitHistory, setGitHistory] = useState<FileGitHistoryResult | null>(null);
   const [loadingGitHistory, setLoadingGitHistory] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
@@ -1228,14 +1228,30 @@ export function RepoCaseExplorer({
         </div>
       )}
 
-      {/* ================= 4. 统一用例详情专业抽屉 ================= */}
-      <Sheet open={!!activeDrawerCase} onOpenChange={(open) => !open && setActiveDrawerCase(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 border-l border-slate-200 bg-white flex flex-col h-full shadow-2xl">
+      {/* ================= 4. 统一用例详情专业抽屉 (单窗口支持全屏展开/还原) ================= */}
+      <Sheet
+        open={!!activeDrawerCase}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveDrawerCase(null);
+            setIsDrawerMaximized(false);
+          }
+        }}
+      >
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          className={`p-0 border-l border-slate-200 bg-white flex flex-col h-full shadow-2xl transition-all duration-300 ease-in-out ${
+            isDrawerMaximized
+              ? '!w-screen sm:!max-w-none md:!max-w-none lg:!max-w-none inset-0'
+              : 'w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl'
+          }`}
+        >
           {activeDrawerCase && (
             <div className="flex flex-col h-full overflow-hidden bg-white">
               {/* Header 区域: 路径 + 标题 + 核心属性药丸(编号/等级/状态/需求) + Tab 导航 */}
               <div className="p-5 border-b border-slate-200/80 bg-white">
-                {/* 1. 顶部辅助行：路径面包屑 + 调度运行按钮 */}
+                {/* 1. 顶部辅助行：路径面包屑 + 调度运行按钮 + 窗口全屏控制 */}
                 <div className="flex items-center justify-between text-xs text-slate-500 mb-2.5">
                   <div className="flex items-center gap-1.5 truncate font-mono text-[11px]">
                     <FolderGit2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -1247,7 +1263,7 @@ export function RepoCaseExplorer({
                     <span className="truncate text-slate-500">{activeDrawerCase.implementation.gitFilePath}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <Button
                       size="sm"
                       onClick={() => handleExecuteSingleCase(activeDrawerCase)}
@@ -1256,6 +1272,37 @@ export function RepoCaseExplorer({
                       <Play className="w-3 h-3 fill-current" />
                       <span>运行用例</span>
                     </Button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
+                      className="h-8 px-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-1 text-xs font-medium cursor-pointer"
+                      title={isDrawerMaximized ? '还原为侧边抽屉' : '单窗口全屏展开'}
+                    >
+                      {isDrawerMaximized ? (
+                        <>
+                          <Minimize2 className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="hidden sm:inline">还原窗口</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+                          <span className="hidden sm:inline">全屏单窗口</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveDrawerCase(null);
+                        setIsDrawerMaximized(false);
+                      }}
+                      className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                      title="关闭用例详情"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
@@ -1453,16 +1500,25 @@ export function RepoCaseExplorer({
                     </button>
                   </div>
 
-                  {/* 弹窗放大快捷入口 */}
+                  {/* 窗口全屏/还原切换按钮 */}
                   <div className="pb-1">
                     <button
                       type="button"
-                      onClick={() => setIsFullscreenModalOpen(true)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium shadow-2xs transition-colors cursor-pointer"
-                      title="弹窗全屏放大查看当前面板"
+                      onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-medium border border-slate-200 hover:border-blue-200 transition-colors cursor-pointer shadow-2xs"
+                      title={isDrawerMaximized ? '还原为侧边抽屉' : '单窗口全屏展开'}
                     >
-                      <Maximize2 className="w-3 h-3 text-slate-600" />
-                      <span>弹窗放大</span>
+                      {isDrawerMaximized ? (
+                        <>
+                          <Minimize2 className="w-3.5 h-3.5 text-blue-600" />
+                          <span>还原窗口</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+                          <span>全屏单窗口</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1477,7 +1533,9 @@ export function RepoCaseExplorer({
                       steps={activeDrawerCase.design?.steps || []}
                       overallStatus={activeDrawerCase.status}
                       executionData={dagExecutions[activeDrawerCase.id]}
-                      onMaximize={() => setIsFullscreenModalOpen(true)}
+                      height={isDrawerMaximized ? 'h-[calc(100vh-320px)] min-h-[580px]' : 'h-[560px]'}
+                      isMaximized={isDrawerMaximized}
+                      onMaximize={() => setIsDrawerMaximized(!isDrawerMaximized)}
                     />
                   </div>
                 )}
@@ -1497,12 +1555,21 @@ export function RepoCaseExplorer({
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setIsFullscreenModalOpen(true)}
+                            onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
                             className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
-                            title="弹窗放大编辑代码"
+                            title={isDrawerMaximized ? '还原窗口' : '全屏放大'}
                           >
-                            <Maximize2 className="w-3 h-3 text-slate-400" />
-                            <span>放大</span>
+                            {isDrawerMaximized ? (
+                              <>
+                                <Minimize2 className="w-3 h-3 text-blue-400" />
+                                <span>还原</span>
+                              </>
+                            ) : (
+                              <>
+                                <Maximize2 className="w-3 h-3 text-slate-400" />
+                                <span>全屏</span>
+                              </>
+                            )}
                           </button>
 
                           <button
@@ -1545,7 +1612,7 @@ export function RepoCaseExplorer({
                               [activeDrawerCase.id]: e.target.value,
                             }));
                           }}
-                          rows={16}
+                          rows={isDrawerMaximized ? 26 : 16}
                           className="w-full bg-transparent text-[#E2E8F0] text-xs font-mono leading-6 outline-none resize-y selection:bg-blue-600 selection:text-white"
                           placeholder="请输入测试代码..."
                         />
@@ -1563,24 +1630,30 @@ export function RepoCaseExplorer({
                     draftCode={codeEditBuffer[activeDrawerCase.id]}
                     originalCode={activeDrawerCase.implementation.codeContent}
                     onCommitDraft={() => handleCommitToGit(activeDrawerCase)}
-                    onMaximize={() => setIsFullscreenModalOpen(true)}
+                    maxHeight={isDrawerMaximized ? 'max-h-[calc(100vh-340px)] min-h-[520px]' : 'max-h-[500px]'}
+                    isMaximized={isDrawerMaximized}
+                    onMaximize={() => setIsDrawerMaximized(!isDrawerMaximized)}
                   />
                 )}
 
                 {drawerTab === 'logs' && (
                   <div className="space-y-3 font-mono text-xs">
-                    <div className="p-4 rounded-xl bg-[#0F172A] border border-slate-800 text-slate-300 space-y-2">
+                    <div className={`p-4 rounded-xl bg-[#0F172A] border border-slate-800 text-slate-300 space-y-2 ${isDrawerMaximized ? 'min-h-[500px]' : ''}`}>
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px] text-slate-400">
                         <span>控制台输出</span>
                         <div className="flex items-center gap-2">
                           <span>最新执行: {activeDrawerCase.lastExecutionTime || '刚刚'}</span>
                           <button
                             type="button"
-                            onClick={() => setIsFullscreenModalOpen(true)}
+                            onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
                             className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-                            title="弹窗全屏放大查看日志"
+                            title={isDrawerMaximized ? '还原窗口' : '全屏放大查看日志'}
                           >
-                            <Maximize2 className="w-3 h-3" />
+                            {isDrawerMaximized ? (
+                              <Minimize2 className="w-3.5 h-3.5 text-blue-400" />
+                            ) : (
+                              <Maximize2 className="w-3.5 h-3.5" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1598,231 +1671,6 @@ export function RepoCaseExplorer({
           )}
         </SheetContent>
       </Sheet>
-
-      {/* ================= 4.2 用例详情全屏模态弹窗 (弹窗放大) ================= */}
-      {activeDrawerCase && (
-        <Dialog open={isFullscreenModalOpen} onOpenChange={setIsFullscreenModalOpen}>
-          <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden bg-slate-50/90 backdrop-blur-sm rounded-2xl shadow-2xl border border-slate-200">
-            {/* 模态框顶部导航栏 */}
-            <div className="h-14 px-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="font-mono font-bold text-sm text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200 shrink-0">
-                  {activeDrawerCase.code}
-                </span>
-                <span className="font-bold text-slate-900 text-sm truncate max-w-[320px]" title={activeDrawerCase.title}>
-                  {activeDrawerCase.title}
-                </span>
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] font-bold shrink-0 ${
-                    activeDrawerCase.priority === 'P0'
-                      ? 'border-rose-300 text-rose-700 bg-rose-50'
-                      : activeDrawerCase.priority === 'P1'
-                      ? 'border-amber-300 text-amber-700 bg-amber-50'
-                      : 'border-slate-300 text-slate-700 bg-slate-50'
-                  }`}
-                >
-                  {activeDrawerCase.priority}
-                </Badge>
-                <span className="hidden lg:inline-flex items-center gap-1 text-slate-500 text-xs font-mono bg-slate-100 px-2 py-0.5 rounded truncate max-w-[280px]">
-                  <FileCode2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="truncate">{activeDrawerCase.implementation.gitFilePath}</span>
-                </span>
-              </div>
-
-              {/* 中间 Tab 切换栏 */}
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-                <button
-                  type="button"
-                  onClick={() => setDrawerTab('steps')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    drawerTab === 'steps'
-                      ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <ListOrdered className="w-3.5 h-3.5" />
-                  <span>用例步骤 ({(activeDrawerCase.design?.steps || []).length})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDrawerTab('code')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    drawerTab === 'code'
-                      ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Code2 className="w-3.5 h-3.5" />
-                  <span>用例代码</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDrawerTab('diff')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    drawerTab === 'diff'
-                      ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <GitCompare className="w-3.5 h-3.5" />
-                  <span>变更日志</span>
-                  {(gitHistory?.hasWorkingTreeChanges || (codeEditBuffer[activeDrawerCase.id] !== undefined && codeEditBuffer[activeDrawerCase.id] !== activeDrawerCase.implementation.codeContent)) && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDrawerTab('logs')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    drawerTab === 'logs'
-                      ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>执行日志</span>
-                </button>
-              </div>
-
-              {/* 右侧动作 */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  onClick={() => handleExecuteSingleCase(activeDrawerCase)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8 gap-1.5 shadow-2xs cursor-pointer font-medium"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>单用例调试</span>
-                </Button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsFullscreenModalOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-                  title="退出放大"
-                >
-                  <Minimize2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* 模态框主体内容 */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 bg-slate-50/50">
-              {drawerTab === 'steps' && (
-                <div className="h-full flex flex-col">
-                  <WorkflowDagFlowView
-                    yamlContent={activeDrawerCase.implementation?.codeContent || ''}
-                    steps={activeDrawerCase.design?.steps || []}
-                    overallStatus={activeDrawerCase.status}
-                    executionData={dagExecutions[activeDrawerCase.id]}
-                    height="h-[calc(92vh-120px)]"
-                    isMaximized={true}
-                    onMaximize={() => setIsFullscreenModalOpen(false)}
-                  />
-                </div>
-              )}
-
-              {drawerTab === 'code' && (
-                <div className="h-[calc(92vh-120px)] flex flex-col rounded-xl bg-[#0F172A] border border-slate-800 overflow-hidden shadow-xl font-mono text-xs">
-                  <div className="h-10 px-4 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px] shrink-0">
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Code2 className="w-4 h-4 text-indigo-400" />
-                      <span className="font-semibold text-xs">{activeDrawerCase.implementation.gitFilePath}</span>
-                      <span className="text-slate-500 text-[11px]">({activeDrawerCase.implementation.scriptLanguage})</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          const code = codeEditBuffer[activeDrawerCase.id] !== undefined
-                            ? codeEditBuffer[activeDrawerCase.id]
-                            : activeDrawerCase.implementation.codeContent;
-                          navigator.clipboard.writeText(code);
-                          setCopiedCode(true);
-                          setTimeout(() => setCopiedCode(false), 2000);
-                          toast.success('代码已复制到剪贴板');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedCode ? '已复制' : '复制代码'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleCommitToGit(activeDrawerCase)}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        <GitCommit className="w-3.5 h-3.5" />
-                        <span>提交变更</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 p-5 overflow-y-auto">
-                    <textarea
-                      value={
-                        codeEditBuffer[activeDrawerCase.id] !== undefined
-                          ? codeEditBuffer[activeDrawerCase.id]
-                          : activeDrawerCase.implementation.codeContent
-                      }
-                      onChange={(e) => {
-                        setCodeEditBuffer((prev) => ({
-                          ...prev,
-                          [activeDrawerCase.id]: e.target.value,
-                        }));
-                      }}
-                      className="w-full h-full min-h-[500px] bg-transparent text-[#E2E8F0] text-xs font-mono leading-6 outline-none resize-none selection:bg-blue-600 selection:text-white"
-                      placeholder="请输入测试代码..."
-                    />
-                  </div>
-                </div>
-              )}
-
-              {drawerTab === 'diff' && (
-                <div className="h-full">
-                  <GitDiffViewer
-                    filePath={activeDrawerCase.implementation.gitFilePath}
-                    gitHistory={gitHistory}
-                    loading={loadingGitHistory}
-                    onRefresh={loadGitHistory}
-                    draftCode={codeEditBuffer[activeDrawerCase.id]}
-                    originalCode={activeDrawerCase.implementation.codeContent}
-                    onCommitDraft={() => handleCommitToGit(activeDrawerCase)}
-                    maxHeight="max-h-[calc(92vh-280px)]"
-                    isMaximized={true}
-                    onMaximize={() => setIsFullscreenModalOpen(false)}
-                  />
-                </div>
-              )}
-
-              {drawerTab === 'logs' && (
-                <div className="h-[calc(92vh-120px)] flex flex-col rounded-xl bg-[#0F172A] border border-slate-800 text-slate-300 font-mono text-xs overflow-hidden shadow-xl">
-                  <div className="h-10 px-4 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 shrink-0">
-                    <span className="flex items-center gap-2">
-                      <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>测试运行终端输出</span>
-                    </span>
-                    <span>最新执行: {activeDrawerCase.lastExecutionTime || '刚刚'}</span>
-                  </div>
-                  <div className="flex-1 p-5 space-y-2 overflow-y-auto leading-6">
-                    <div className="text-emerald-400 font-semibold">✓ pytest tests/ -k "{activeDrawerCase.implementation.functionName}"</div>
-                    <div className="text-slate-400">test session starts (platform: TrueOne Universal Engine, rootdir: /workspace)</div>
-                    <div className="text-slate-400">plugins: timeout-2.1.0, metadata-3.0.0, trueone-harness-1.0.0</div>
-                    <div className="text-slate-400">collected 1 item</div>
-                    <div className="text-slate-300 font-bold mt-2">tests/{activeDrawerCase.implementation.gitFilePath}::test_{activeDrawerCase.implementation.functionName}</div>
-                    <div className="text-emerald-400 font-bold">PASSED [100%] in {activeDrawerCase.executionDuration || '48ms'}</div>
-                    <div className="text-slate-500 pt-4 border-t border-slate-800/80">======================= 1 passed in {activeDrawerCase.executionDuration || '0.05s'} =======================</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* ================= 5. 关联新代码仓 Modal ================= */}
       <Dialog open={isCreateRepoModalOpen} onOpenChange={setIsCreateRepoModalOpen}>
