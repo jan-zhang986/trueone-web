@@ -738,18 +738,6 @@ export function WorkflowDagFlowView({
               <span>节点详情</span>
             </button>
           )}
-
-          {onMaximize && (
-            <button
-              type="button"
-              onClick={onMaximize}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-medium shadow-2xs transition-colors cursor-pointer"
-              title={isMaximized ? '退出放大' : '弹窗放大查看流程图'}
-            >
-              <Maximize2 className="w-3 h-3 text-slate-600" />
-              <span>{isMaximized ? '还原' : '放大'}</span>
-            </button>
-          )}
         </div>
       </div>
 
