@@ -458,6 +458,9 @@ interface WorkflowDagFlowViewProps {
     }>;
     context?: Record<string, any>;
   };
+  height?: string;
+  onMaximize?: () => void;
+  isMaximized?: boolean;
 }
 
 export function WorkflowDagFlowView({
@@ -465,6 +468,9 @@ export function WorkflowDagFlowView({
   steps = [],
   overallStatus,
   executionData,
+  height,
+  onMaximize,
+  isMaximized = false,
 }: WorkflowDagFlowViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
@@ -667,7 +673,7 @@ export function WorkflowDagFlowView({
   }, [parsedNodeList, selectedNodeId]);
 
   return (
-    <div className="flex flex-col h-[560px] rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+    <div className={`flex flex-col ${height || 'h-[560px]'} rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs`}>
       {/* 顶部工具条 - 极简现代设计 */}
       <div className="h-10 px-3.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between text-xs shrink-0 select-none">
         <div className="flex items-center gap-2">
@@ -703,7 +709,7 @@ export function WorkflowDagFlowView({
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-slate-500 text-[11px]">
+        <div className="flex items-center gap-2 text-slate-500 text-[11px]">
           <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -730,6 +736,18 @@ export function WorkflowDagFlowView({
             >
               <SlidersHorizontal className="w-3 h-3 text-slate-500" />
               <span>节点详情</span>
+            </button>
+          )}
+
+          {onMaximize && (
+            <button
+              type="button"
+              onClick={onMaximize}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-medium shadow-2xs transition-colors cursor-pointer"
+              title={isMaximized ? '退出放大' : '弹窗放大查看流程图'}
+            >
+              <Maximize2 className="w-3 h-3 text-slate-600" />
+              <span>{isMaximized ? '还原' : '放大'}</span>
             </button>
           )}
         </div>
