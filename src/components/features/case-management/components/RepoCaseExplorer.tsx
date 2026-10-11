@@ -1249,25 +1249,78 @@ export function RepoCaseExplorer({
         >
           {activeDrawerCase && (
             <div className="flex flex-col h-full overflow-hidden bg-white">
-              {/* Header 区域: 路径 + 标题 + 核心属性药丸(编号/等级/状态/需求) + Tab 导航 */}
-              <div className="p-5 border-b border-slate-200/80 bg-white">
-                {/* 1. 顶部辅助行：路径面包屑 + 调度运行按钮 + 窗口全屏控制 */}
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-2.5">
-                  <div className="flex items-center gap-1.5 truncate font-mono text-[11px]">
-                    <FolderGit2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="text-slate-700 font-medium">{currentRepo?.name || '仓库'}</span>
-                    <span>/</span>
-                    <GitBranch className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="text-emerald-700 font-medium">{selectedBranch}</span>
-                    <span>/</span>
-                    <span className="truncate text-slate-500">{activeDrawerCase.implementation.gitFilePath}</span>
+              {isDrawerMaximized ? (
+                /* ================= 全屏单窗口模式：极致精简顶栏 (48px)，100% 释放下方 Workflow/代码/变更日志空间 ================= */
+                <div className="h-12 px-5 border-b border-slate-200 bg-white flex items-center justify-between shrink-0 select-none">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="font-mono font-bold text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200 shrink-0">
+                      {activeDrawerCase.code}
+                    </span>
+                    <span className="font-bold text-slate-900 text-sm truncate max-w-[320px]" title={activeDrawerCase.title}>
+                      {activeDrawerCase.title}
+                    </span>
+                    <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[280px]">
+                      <FileCode2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                      <span className="truncate">{activeDrawerCase.implementation.gitFilePath}</span>
+                    </span>
                   </div>
 
+                  {/* 中间 Tab 切换栏 */}
+                  <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab('steps')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                        drawerTab === 'steps' ? 'bg-white text-blue-600 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <GitMerge className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Workflow 链路 ({(activeDrawerCase.design?.steps || []).length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab('code')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                        drawerTab === 'code' ? 'bg-white text-blue-600 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Code2 className="w-3.5 h-3.5" />
+                      <span>用例代码</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab('diff')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                        drawerTab === 'diff' ? 'bg-white text-blue-600 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <GitCompare className="w-3.5 h-3.5" />
+                      <span>变更日志</span>
+                      {(gitHistory?.hasWorkingTreeChanges || (codeEditBuffer[activeDrawerCase.id] !== undefined && codeEditBuffer[activeDrawerCase.id] !== activeDrawerCase.implementation.codeContent)) && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab('logs')}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                        drawerTab === 'logs' ? 'bg-white text-blue-600 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Terminal className="w-3.5 h-3.5" />
+                      <span>执行日志</span>
+                    </button>
+                  </div>
+
+                  {/* 右侧控制区 */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Button
                       size="sm"
                       onClick={() => handleExecuteSingleCase(activeDrawerCase)}
-                      className="h-8 px-3.5 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer"
+                      className="h-8 px-3 text-xs font-semibold gap-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-sm cursor-pointer"
                     >
                       <Play className="w-3 h-3 fill-current" />
                       <span>运行用例</span>
@@ -1275,21 +1328,12 @@ export function RepoCaseExplorer({
 
                     <button
                       type="button"
-                      onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
+                      onClick={() => setIsDrawerMaximized(false)}
                       className="h-8 px-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-1 text-xs font-medium cursor-pointer"
-                      title={isDrawerMaximized ? '还原为侧边抽屉' : '单窗口全屏展开'}
+                      title="还原为侧边抽屉"
                     >
-                      {isDrawerMaximized ? (
-                        <>
-                          <Minimize2 className="w-3.5 h-3.5 text-blue-600" />
-                          <span className="hidden sm:inline">还原窗口</span>
-                        </>
-                      ) : (
-                        <>
-                          <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
-                          <span className="hidden sm:inline">全屏单窗口</span>
-                        </>
-                      )}
+                      <Minimize2 className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="hidden sm:inline">还原窗口</span>
                     </button>
 
                     <button
@@ -1299,241 +1343,281 @@ export function RepoCaseExplorer({
                         setIsDrawerMaximized(false);
                       }}
                       className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
-                      title="关闭用例详情"
+                      title="关闭窗口"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-
-                {/* 2. 主标题行 */}
-                <h2 className="text-base font-bold text-slate-900 leading-snug mb-3">
-                  {activeDrawerCase.title}
-                </h2>
-
-                {/* 3. 核心元数据药丸栏 (用例编号、用例等级、类型、运行状态、关联需求、源码映射) - 规整归位 */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {/* 用例编号 */}
-                  <span className="font-mono font-bold text-xs text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/60 shadow-2xs">
-                    {activeDrawerCase.code}
-                  </span>
-
-                  {/* ⭐️ 用例等级 (Priority) - 规整归位至核心元数据栏 */}
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold shadow-2xs ${
-                      activeDrawerCase.priority === 'P0'
-                        ? 'bg-rose-50 text-rose-700 border border-rose-200/80'
-                        : activeDrawerCase.priority === 'P1'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                        : 'bg-slate-100 text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    等级 {activeDrawerCase.priority}
-                  </span>
-
-                  {/* 用例类型 */}
-                  {(activeDrawerCase.implementation.scriptLanguage === 'yaml' || activeDrawerCase.reqSource === 'E2E_WORKFLOW_DAG') && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
-                      <GitMerge className="w-3 h-3 text-purple-600" />
-                      Workflow
-                    </span>
-                  )}
-
-                  {/* 运行状态 */}
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border shadow-2xs ${
-                      activeDrawerCase.status === 'passed'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                        : activeDrawerCase.status === 'failed'
-                        ? 'bg-rose-50 text-rose-700 border-rose-200/80'
-                        : 'bg-slate-50 text-slate-600 border-slate-200'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        activeDrawerCase.status === 'passed'
-                          ? 'bg-emerald-500'
-                          : activeDrawerCase.status === 'failed'
-                          ? 'bg-rose-500'
-                          : 'bg-slate-400'
-                      }`}
-                    />
-                    <span>{activeDrawerCase.status === 'passed' ? `PASS (${activeDrawerCase.executionDuration || '15ms'})` : 'READY'}</span>
-                  </span>
-
-                  {/* 关联需求 */}
-                  {activeDrawerCase.reqSource && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] bg-slate-100 text-slate-600 border border-slate-200/60">
-                      <Tag className="w-2.5 h-2.5 text-slate-400" />
-                      <span>{activeDrawerCase.reqSource}</span>
-                    </span>
-                  )}
-
-                  {/* 源码函数 */}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] text-indigo-700 bg-indigo-50/70 border border-indigo-200/60 max-w-[220px] truncate" title={activeDrawerCase.implementation.functionName}>
-                    <FileCode2 className="w-3 h-3 text-indigo-500 shrink-0" />
-                    <span className="truncate">
-                      {activeDrawerCase.implementation.scriptLanguage === 'yaml'
-                        ? activeDrawerCase.implementation.functionName
-                        : `${activeDrawerCase.implementation.functionName || 'TestRunner'}()`}
-                    </span>
-                  </span>
-                </div>
-
-                {/* 3.1 文字用例设计步骤与预期 (高品质工程设计卡片，位于等级下方、Tab上方) */}
-                <div className="mt-3.5 rounded-xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
-                  <div className="h-8 px-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-                      <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
-                      <span>步骤与预期断言</span>
+              ) : (
+                /* ================= 侧边抽屉模式：完整 Header (带有路径、标题、等级、文字用例步骤卡片、Tab栏) ================= */
+                <div className="p-5 border-b border-slate-200/80 bg-white">
+                  {/* 1. 顶部辅助行：路径面包屑 + 调度运行按钮 + 窗口全屏控制 */}
+                  <div className="flex items-center justify-between text-xs text-slate-500 mb-2.5">
+                    <div className="flex items-center gap-1.5 truncate font-mono text-[11px]">
+                      <FolderGit2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="text-slate-700 font-medium">{currentRepo?.name || '仓库'}</span>
+                      <span>/</span>
+                      <GitBranch className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="text-emerald-700 font-medium">{selectedBranch}</span>
+                      <span>/</span>
+                      <span className="truncate text-slate-500">{activeDrawerCase.implementation.gitFilePath}</span>
                     </div>
-                    <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200/60 shadow-2xs">
-                      {(activeDrawerCase.design?.steps || []).length} 步
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => handleExecuteSingleCase(activeDrawerCase)}
+                        className="h-8 px-3.5 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow shadow-blue-500/20 active:scale-98 transition-all cursor-pointer"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        <span>运行用例</span>
+                      </Button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsDrawerMaximized(true)}
+                        className="h-8 px-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-1 text-xs font-medium cursor-pointer"
+                        title="单窗口全屏展开工作区"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+                        <span className="hidden sm:inline">放大工作区</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveDrawerCase(null);
+                          setIsDrawerMaximized(false);
+                        }}
+                        className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                        title="关闭用例详情"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. 主标题行 */}
+                  <h2 className="text-base font-bold text-slate-900 leading-snug mb-3">
+                    {activeDrawerCase.title}
+                  </h2>
+
+                  {/* 3. 核心元数据药丸栏 (用例编号、用例等级、类型、运行状态、关联需求、源码映射) */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {/* 用例编号 */}
+                    <span className="font-mono font-bold text-xs text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/60 shadow-2xs">
+                      {activeDrawerCase.code}
+                    </span>
+
+                    {/* 用例等级 (Priority) */}
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold shadow-2xs ${
+                        activeDrawerCase.priority === 'P0'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                          : activeDrawerCase.priority === 'P1'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                          : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      等级 {activeDrawerCase.priority}
+                    </span>
+
+                    {/* 用例类型 */}
+                    {(activeDrawerCase.implementation.scriptLanguage === 'yaml' || activeDrawerCase.reqSource === 'E2E_WORKFLOW_DAG') && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
+                        <GitMerge className="w-3 h-3 text-purple-600" />
+                        Workflow
+                      </span>
+                    )}
+
+                    {/* 运行状态 */}
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border shadow-2xs ${
+                        activeDrawerCase.status === 'passed'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                          : activeDrawerCase.status === 'failed'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                          : 'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          activeDrawerCase.status === 'passed'
+                            ? 'bg-emerald-500'
+                            : activeDrawerCase.status === 'failed'
+                            ? 'bg-rose-500'
+                            : 'bg-slate-400'
+                        }`}
+                      />
+                      <span>{activeDrawerCase.status === 'passed' ? `PASS (${activeDrawerCase.executionDuration || '15ms'})` : 'READY'}</span>
+                    </span>
+
+                    {/* 关联需求 */}
+                    {activeDrawerCase.reqSource && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] bg-slate-100 text-slate-600 border border-slate-200/60">
+                        <Tag className="w-2.5 h-2.5 text-slate-400" />
+                        <span>{activeDrawerCase.reqSource}</span>
+                      </span>
+                    )}
+
+                    {/* 源码函数 */}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-mono text-[11px] text-indigo-700 bg-indigo-50/70 border border-indigo-200/60 max-w-[220px] truncate" title={activeDrawerCase.implementation.functionName}>
+                      <FileCode2 className="w-3 h-3 text-indigo-500 shrink-0" />
+                      <span className="truncate">
+                        {activeDrawerCase.implementation.scriptLanguage === 'yaml'
+                          ? activeDrawerCase.implementation.functionName
+                          : `${activeDrawerCase.implementation.functionName || 'TestRunner'}()`}
+                      </span>
                     </span>
                   </div>
 
-                  <div className="divide-y divide-slate-100 max-h-[175px] overflow-y-auto">
-                    {(activeDrawerCase.design?.steps || []).map((st) => (
-                      <div
-                        key={st.stepNumber}
-                        className="px-3 py-2 hover:bg-slate-50/60 transition-colors flex items-start gap-2.5"
-                      >
-                        {/* 序号徽章 */}
-                        <span className="w-4 h-4 rounded bg-blue-50 border border-blue-200/70 text-blue-700 font-bold font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                          {st.stepNumber}
-                        </span>
+                  {/* 3.1 文字用例设计步骤与预期 (高品质工程设计卡片，位于等级下方、Tab上方) */}
+                  <div className="mt-3.5 rounded-xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
+                    <div className="h-8 px-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                        <ListOrdered className="w-3.5 h-3.5 text-blue-600" />
+                        <span>步骤与预期断言</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200/60 shadow-2xs">
+                        {(activeDrawerCase.design?.steps || []).length} 步
+                      </span>
+                    </div>
 
-                        {/* 步骤与预期两行清晰结构 */}
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              {st.name.startsWith('[HTTP]') && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60 shrink-0">
-                                  HTTP
+                    <div className="divide-y divide-slate-100 max-h-[175px] overflow-y-auto">
+                      {(activeDrawerCase.design?.steps || []).map((st) => (
+                        <div
+                          key={st.stepNumber}
+                          className="px-3 py-2 hover:bg-slate-50/60 transition-colors flex items-start gap-2.5"
+                        >
+                          {/* 序号徽章 */}
+                          <span className="w-4 h-4 rounded bg-blue-50 border border-blue-200/70 text-blue-700 font-bold font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                            {st.stepNumber}
+                          </span>
+
+                          {/* 步骤与预期两行清晰结构 */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                {st.name.startsWith('[HTTP]') && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60 shrink-0">
+                                    HTTP
+                                  </span>
+                                )}
+                                {st.name.startsWith('[SQL]') && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 shrink-0">
+                                    SQL
+                                  </span>
+                                )}
+                                {st.name.startsWith('[QUALITY_GATE]') && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200/60 shrink-0">
+                                    GATE
+                                  </span>
+                                )}
+                                <span className="font-semibold text-slate-800 text-xs truncate" title={st.name}>
+                                  {st.name.replace(/^\[[A-Z_]+\]\s*/, '')}
                                 </span>
-                              )}
-                              {st.name.startsWith('[SQL]') && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 shrink-0">
-                                  SQL
-                                </span>
-                              )}
-                              {st.name.startsWith('[QUALITY_GATE]') && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200/60 shrink-0">
-                                  GATE
-                                </span>
-                              )}
-                              <span className="font-semibold text-slate-800 text-xs truncate" title={st.name}>
-                                {st.name.replace(/^\[[A-Z_]+\]\s*/, '')}
+                              </div>
+                              <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 shrink-0 font-medium">
+                                {st.durationMs ? `${st.durationMs}ms` : 'READY'}
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200/60 shrink-0 font-medium">
-                              {st.durationMs ? `${st.durationMs}ms` : 'READY'}
-                            </span>
-                          </div>
 
-                          <div className="flex items-center gap-1.5 text-[11px]">
-                            <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50/80 px-1.5 py-0.2 rounded border border-emerald-200/60 shrink-0">
-                              预期
-                            </span>
-                            <span className="text-slate-600 truncate font-normal text-[11px]" title={st.expected}>
-                              {st.expected}
-                            </span>
+                            <div className="flex items-center gap-1.5 text-[11px]">
+                              <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50/80 px-1.5 py-0.2 rounded border border-emerald-200/60 shrink-0">
+                                预期
+                              </span>
+                              <span className="text-slate-600 truncate font-normal text-[11px]" title={st.expected}>
+                                {st.expected}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4. Tab 导航条 */}
+                  <div className="flex items-center justify-between gap-1 mt-4 border-b border-slate-200/80 -mb-5 pb-0">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setDrawerTab('steps')}
+                        className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                          drawerTab === 'steps'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <GitMerge className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Workflow 链路 ({(activeDrawerCase.design?.steps || []).length})</span>
+                      </button>
+
+                      <button
+                        onClick={() => setDrawerTab('code')}
+                        className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                          drawerTab === 'code'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <Code2 className="w-3.5 h-3.5" />
+                        <span>用例代码</span>
+                      </button>
+
+                      <button
+                        onClick={() => setDrawerTab('diff')}
+                        className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                          drawerTab === 'diff'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <GitCompare className="w-3.5 h-3.5" />
+                        <span>变更日志</span>
+                        {(gitHistory?.hasWorkingTreeChanges || (codeEditBuffer[activeDrawerCase.id] !== undefined && codeEditBuffer[activeDrawerCase.id] !== activeDrawerCase.implementation.codeContent)) && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="存在未提交代码变动" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => setDrawerTab('logs')}
+                        className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                          drawerTab === 'logs'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        <Terminal className="w-3.5 h-3.5" />
+                        <span>执行日志</span>
+                      </button>
+                    </div>
+
+                    {/* 窗口全屏/还原切换按钮 */}
+                    <div className="pb-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsDrawerMaximized(true)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-medium border border-slate-200 hover:border-blue-200 transition-colors cursor-pointer shadow-2xs"
+                        title="全屏放大工作区"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+                        <span>放大工作区</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
+              )}
 
-                {/* 4. Tab 导航条 */}
-                <div className="flex items-center justify-between gap-1 mt-4 border-b border-slate-200/80 -mb-5 pb-0">
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setDrawerTab('steps')}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-                        drawerTab === 'steps'
-                          ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      <ListOrdered className="w-3.5 h-3.5" />
-                      <span>用例步骤 ({(activeDrawerCase.design?.steps || []).length})</span>
-                    </button>
-
-                    <button
-                      onClick={() => setDrawerTab('code')}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-                        drawerTab === 'code'
-                          ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      <Code2 className="w-3.5 h-3.5" />
-                      <span>用例代码</span>
-                    </button>
-
-                    <button
-                      onClick={() => setDrawerTab('diff')}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-                        drawerTab === 'diff'
-                          ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      <GitCompare className="w-3.5 h-3.5" />
-                      <span>变更日志</span>
-                      {(gitHistory?.hasWorkingTreeChanges || (codeEditBuffer[activeDrawerCase.id] !== undefined && codeEditBuffer[activeDrawerCase.id] !== activeDrawerCase.implementation.codeContent)) && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="存在未提交代码变动" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => setDrawerTab('logs')}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
-                        drawerTab === 'logs'
-                          ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      <Terminal className="w-3.5 h-3.5" />
-                      <span>执行日志</span>
-                    </button>
-                  </div>
-
-                  {/* 窗口全屏/还原切换按钮 */}
-                  <div className="pb-1">
-                    <button
-                      type="button"
-                      onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-medium border border-slate-200 hover:border-blue-200 transition-colors cursor-pointer shadow-2xs"
-                      title={isDrawerMaximized ? '还原为侧边抽屉' : '单窗口全屏展开'}
-                    >
-                      {isDrawerMaximized ? (
-                        <>
-                          <Minimize2 className="w-3.5 h-3.5 text-blue-600" />
-                          <span>还原窗口</span>
-                        </>
-                      ) : (
-                        <>
-                          <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
-                          <span>全屏单窗口</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tab 内容区 */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Tab 内容区 - 全屏时撑满 100% 视口 */}
+              <div className={`flex-1 min-h-0 bg-white ${isDrawerMaximized ? 'p-3 flex flex-col h-[calc(100vh-48px)] overflow-hidden' : 'overflow-y-auto p-6 space-y-6'}`}>
                 {drawerTab === 'steps' && (
-                  <div className="space-y-4">
+                  <div className="h-full flex flex-col flex-1 min-h-0">
                     <WorkflowDagFlowView
                       yamlContent={activeDrawerCase.implementation?.codeContent || ''}
                       steps={activeDrawerCase.design?.steps || []}
                       overallStatus={activeDrawerCase.status}
                       executionData={dagExecutions[activeDrawerCase.id]}
-                      height={isDrawerMaximized ? 'h-[calc(100vh-320px)] min-h-[580px]' : 'h-[560px]'}
+                      height={isDrawerMaximized ? 'h-full flex-1' : 'h-[560px]'}
                       isMaximized={isDrawerMaximized}
                       onMaximize={() => setIsDrawerMaximized(!isDrawerMaximized)}
                     />
@@ -1541,128 +1625,130 @@ export function RepoCaseExplorer({
                 )}
 
                 {drawerTab === 'code' && (
-                  <div className="space-y-3">
-                    {/* 代码编辑器面板 */}
-                    <div className="rounded-xl bg-[#0F172A] border border-slate-800 overflow-hidden shadow-lg font-mono text-xs">
-                      {/* 仿 VS Code 代码顶栏 */}
-                      <div className="h-9 px-4 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px]">
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <Code2 className="w-3.5 h-3.5 text-indigo-400" />
-                          <span className="font-semibold">{activeDrawerCase.implementation.gitFilePath}</span>
-                          <span className="text-slate-500 text-[10px]">({activeDrawerCase.implementation.scriptLanguage})</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
-                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
-                            title={isDrawerMaximized ? '还原窗口' : '全屏放大'}
-                          >
-                            {isDrawerMaximized ? (
-                              <>
-                                <Minimize2 className="w-3 h-3 text-blue-400" />
-                                <span>还原</span>
-                              </>
-                            ) : (
-                              <>
-                                <Maximize2 className="w-3 h-3 text-slate-400" />
-                                <span>全屏</span>
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              const code = codeEditBuffer[activeDrawerCase.id] !== undefined
-                                ? codeEditBuffer[activeDrawerCase.id]
-                                : activeDrawerCase.implementation.codeContent;
-                              navigator.clipboard.writeText(code);
-                              setCopiedCode(true);
-                              setTimeout(() => setCopiedCode(false), 2000);
-                              toast.success('代码已复制到剪贴板');
-                            }}
-                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
-                          >
-                            {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                            <span>{copiedCode ? '已复制' : '复制代码'}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleCommitToGit(activeDrawerCase)}
-                            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-semibold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
-                          >
-                            <GitCommit className="w-3 h-3" />
-                            <span>提交变更</span>
-                          </button>
-                        </div>
+                  <div className={`flex flex-col rounded-xl bg-[#0F172A] border border-slate-800 overflow-hidden shadow-lg font-mono text-xs ${isDrawerMaximized ? 'h-full flex-1' : 'space-y-3'}`}>
+                    {/* 仿 VS Code 代码顶栏 */}
+                    <div className="h-9 px-4 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px] shrink-0">
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <Code2 className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="font-semibold">{activeDrawerCase.implementation.gitFilePath}</span>
+                        <span className="text-slate-500 text-[10px]">({activeDrawerCase.implementation.scriptLanguage})</span>
                       </div>
 
-                      {/* 编辑代码文本区 */}
-                      <div className="p-4">
-                        <textarea
-                          value={
-                            codeEditBuffer[activeDrawerCase.id] !== undefined
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
+                          title={isDrawerMaximized ? '还原窗口' : '全屏放大'}
+                        >
+                          {isDrawerMaximized ? (
+                            <>
+                              <Minimize2 className="w-3 h-3 text-blue-400" />
+                              <span>还原</span>
+                            </>
+                          ) : (
+                            <>
+                              <Maximize2 className="w-3 h-3 text-slate-400" />
+                              <span>全屏</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const code = codeEditBuffer[activeDrawerCase.id] !== undefined
                               ? codeEditBuffer[activeDrawerCase.id]
-                              : activeDrawerCase.implementation.codeContent
-                          }
-                          onChange={(e) => {
-                            setCodeEditBuffer((prev) => ({
-                              ...prev,
-                              [activeDrawerCase.id]: e.target.value,
-                            }));
+                              : activeDrawerCase.implementation.codeContent;
+                            navigator.clipboard.writeText(code);
+                            setCopiedCode(true);
+                            setTimeout(() => setCopiedCode(false), 2000);
+                            toast.success('代码已复制到剪贴板');
                           }}
-                          rows={isDrawerMaximized ? 26 : 16}
-                          className="w-full bg-transparent text-[#E2E8F0] text-xs font-mono leading-6 outline-none resize-y selection:bg-blue-600 selection:text-white"
-                          placeholder="请输入测试代码..."
-                        />
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedCode ? '已复制' : '复制代码'}</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleCommitToGit(activeDrawerCase)}
+                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[10px] font-semibold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <GitCommit className="w-3 h-3" />
+                          <span>提交变更</span>
+                        </button>
                       </div>
+                    </div>
+
+                    {/* 编辑代码文本区 */}
+                    <div className="flex-1 p-4 overflow-y-auto">
+                      <textarea
+                        value={
+                          codeEditBuffer[activeDrawerCase.id] !== undefined
+                            ? codeEditBuffer[activeDrawerCase.id]
+                            : activeDrawerCase.implementation.codeContent
+                        }
+                        onChange={(e) => {
+                          setCodeEditBuffer((prev) => ({
+                            ...prev,
+                            [activeDrawerCase.id]: e.target.value,
+                          }));
+                        }}
+                        rows={isDrawerMaximized ? 32 : 16}
+                        className="w-full h-full min-h-[360px] bg-transparent text-[#E2E8F0] text-xs font-mono leading-6 outline-none resize-none selection:bg-blue-600 selection:text-white"
+                        placeholder="请输入测试代码..."
+                      />
                     </div>
                   </div>
                 )}
 
                 {drawerTab === 'diff' && (
-                  <GitDiffViewer
-                    filePath={activeDrawerCase.implementation.gitFilePath}
-                    gitHistory={gitHistory}
-                    loading={loadingGitHistory}
-                    onRefresh={loadGitHistory}
-                    draftCode={codeEditBuffer[activeDrawerCase.id]}
-                    originalCode={activeDrawerCase.implementation.codeContent}
-                    onCommitDraft={() => handleCommitToGit(activeDrawerCase)}
-                    maxHeight={isDrawerMaximized ? 'max-h-[calc(100vh-340px)] min-h-[520px]' : 'max-h-[500px]'}
-                    isMaximized={isDrawerMaximized}
-                    onMaximize={() => setIsDrawerMaximized(!isDrawerMaximized)}
-                  />
+                  <div className={isDrawerMaximized ? 'h-full flex-1 flex flex-col min-h-0 overflow-hidden' : ''}>
+                    <GitDiffViewer
+                      filePath={activeDrawerCase.implementation.gitFilePath}
+                      gitHistory={gitHistory}
+                      loading={loadingGitHistory}
+                      onRefresh={loadGitHistory}
+                      draftCode={codeEditBuffer[activeDrawerCase.id]}
+                      originalCode={activeDrawerCase.implementation.codeContent}
+                      onCommitDraft={() => handleCommitToGit(activeDrawerCase)}
+                      maxHeight={isDrawerMaximized ? 'max-h-[calc(100vh-170px)]' : 'max-h-[500px]'}
+                      isMaximized={isDrawerMaximized}
+                      onMaximize={() => setIsDrawerMaximized(!isDrawerMaximized)}
+                    />
+                  </div>
                 )}
 
                 {drawerTab === 'logs' && (
-                  <div className="space-y-3 font-mono text-xs">
-                    <div className={`p-4 rounded-xl bg-[#0F172A] border border-slate-800 text-slate-300 space-y-2 ${isDrawerMaximized ? 'min-h-[500px]' : ''}`}>
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px] text-slate-400">
+                  <div className={`rounded-xl bg-[#0F172A] border border-slate-800 text-slate-300 font-mono text-xs overflow-hidden ${isDrawerMaximized ? 'h-full flex-1 flex flex-col' : 'space-y-3'}`}>
+                    <div className="h-9 px-4 bg-[#1E293B] border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                      <span className="flex items-center gap-2">
+                        <Terminal className="w-3.5 h-3.5 text-emerald-400" />
                         <span>控制台输出</span>
-                        <div className="flex items-center gap-2">
-                          <span>最新执行: {activeDrawerCase.lastExecutionTime || '刚刚'}</span>
-                          <button
-                            type="button"
-                            onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
-                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-                            title={isDrawerMaximized ? '还原窗口' : '全屏放大查看日志'}
-                          >
-                            {isDrawerMaximized ? (
-                              <Minimize2 className="w-3.5 h-3.5 text-blue-400" />
-                            ) : (
-                              <Maximize2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span>最新执行: {activeDrawerCase.lastExecutionTime || '刚刚'}</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsDrawerMaximized(!isDrawerMaximized)}
+                          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                          title={isDrawerMaximized ? '还原窗口' : '全屏放大查看日志'}
+                        >
+                          {isDrawerMaximized ? (
+                            <Minimize2 className="w-3.5 h-3.5 text-blue-400" />
+                          ) : (
+                            <Maximize2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
-                      <div className="space-y-1 text-[11px] pt-1">
-                        <div className="text-emerald-400">✓ pytest tests/ -k "{activeDrawerCase.implementation.functionName}"</div>
-                        <div className="text-slate-400">test session starts (platform: TrueOne Universal Engine)</div>
-                        <div className="text-slate-400">collected 1 item</div>
-                        <div className="text-emerald-400">PASSED [100%] in {activeDrawerCase.executionDuration || '48ms'}</div>
-                      </div>
+                    </div>
+                    <div className="flex-1 p-5 space-y-1.5 overflow-y-auto leading-6 text-[11px]">
+                      <div className="text-emerald-400 font-semibold">✓ pytest tests/ -k "{activeDrawerCase.implementation.functionName}"</div>
+                      <div className="text-slate-400">test session starts (platform: TrueOne Universal Engine)</div>
+                      <div className="text-slate-400">collected 1 item</div>
+                      <div className="text-slate-300 font-bold mt-2">tests/{activeDrawerCase.implementation.gitFilePath}::test_{activeDrawerCase.implementation.functionName}</div>
+                      <div className="text-emerald-400 font-bold">PASSED [100%] in {activeDrawerCase.executionDuration || '48ms'}</div>
+                      <div className="text-slate-500 pt-4 border-t border-slate-800/80">======================= 1 passed in {activeDrawerCase.executionDuration || '0.05s'} =======================</div>
                     </div>
                   </div>
                 )}
